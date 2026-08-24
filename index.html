@@ -1,1 +1,38 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Courtside Kitchen</title><style>body{font-family:Arial;margin:0;background:#f4f6f9}header{background:#163a70;color:#fff;text-align:center;padding:16px}header img{max-width:180px}.container{padding:12px;max-width:900px;margin:auto}.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 5px rgba(0,0,0,.1)}.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eee}.item div{flex:1}.qty button{width:34px;height:34px}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.order{width:100%;padding:14px;background:#163a70;color:#fff;border:none;border-radius:8px;font-weight:bold}.hidden{display:none}.qr{max-width:220px;width:100%}.payment-details{margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px}input,select{width:100%;padding:10px;margin:6px 0}.subcategory{color:#163a70;border-bottom:2px solid #eee;padding-bottom:4px;margin-top:16px}.addon{display:block;margin-top:4px;font-size:12px}</style></head><body><header><img src="logo.png" onerror="this.style.display='none'"><h1>Courtside Kitchen</h1></header><div class="container"><div id="menu"></div></div><div class="cart"><div id="summary">No items selected</div><h2>Total ₱<span id="total">0</span></h2></div><script>const menu={'🥤 Refresh Between Sets':{'Fruit Shakes':[['Mango Smash','Fresh Mango Shake',150],['Melon Match Point','Refreshing Melon Shake',150],['Strawberry Rally','Strawberry Yoghurt Shake',150],['Watermelon Winner','Fresh Watermelon Shake',150],['Banana Serve','Creamy Banana Shake',150]],'Fruit Sodas':[['Strawberry Serve Fizz','Strawberry Fruit Soda',100],['Peach Drop Shot','Peach Fruit Soda',100]],'Milk Tea':[['Sweet Spot Okinawa','Okinawa Milk Tea',95,true],['Grand Slam Choco','Chocolate Milk Tea',95,true],['Baseline Matcha','Matcha Milk Tea',95,true],['Nutty Dink Delight','Nutella Milk Tea',95,true]]}};let cart={},addons={};const menuEl=document.getElementById('menu');function addItem(i,h,t,s){let q=cart[i[0]]||0;let boba=addons[i[0]]||false;let price=i[2]+(boba?5:0);h.push(`<div class="item"><div><strong>${i[0]}</strong><br><small>${i[1]}</small><br><strong>₱${i[2]}</strong>${i[3]?`<label class="addon"><input type="checkbox" ${boba?'checked':''} onchange="toggleBoba('${i[0]}')"> Add Boba (+₱5)</label>`:''}</div><span class="qty"><button onclick="chg('${i[0]}',-1)">-</button> ${q} <button onclick="chg('${i[0]}',1)">+</button></span></div>`);if(q){t.v+=q*price;s.v+=i[0]+(boba?' + Boba':'')+' x'+q+'<br>';}}function render(){let h=[],t={v:0},s={v:''};for(const c in menu){h.push(`<div class="card"><h2>${c}</h2>`);for(const sub in menu[c]){h.push(`<h3 class="subcategory">${sub}</h3>`);menu[c][sub].forEach(i=>addItem(i,h,t,s));}h.push('</div>');}menuEl.innerHTML=h.join('');summary.innerHTML=s.v||'No items selected';total.innerText=t.v;}function chg(n,v){cart[n]=Math.max(0,(cart[n]||0)+v);render()}function toggleBoba(n){addons[n]=!addons[n];render()}render();</script></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Courtside Kitchen</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9}header{background:#163a70;color:#fff;text-align:center;padding:16px}.container{max-width:900px;margin:auto;padding:12px}.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:12px}.item{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0}.qty button{width:32px}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.subcategory{color:#163a70;font-weight:bold;margin-top:10px}.hidden{display:none}.qr{max-width:220px;width:100%}.order{width:100%;padding:12px;background:#163a70;color:#fff;border:none;border-radius:8px}
+</style>
+</head>
+<body>
+<header><h1>Courtside Kitchen</h1></header>
+<div class='container'>
+<div id='menu'></div>
+<div class='card'>
+<input id='name' placeholder='Name' style='width:100%;padding:8px'><br>
+<input id='mobile' placeholder='Mobile Number' style='width:100%;padding:8px'><br>
+<select id='payment' onchange='payChange()' style='width:100%;padding:8px'><option>GCash</option><option>BPI</option></select>
+<div id='g'><img class='qr' src='GCASH.jpg'><p><b>GCash</b><br>PA****K NI**O L.<br>09178512376</p></div>
+<div id='b' class='hidden'><img class='qr' src='BPI.jpg'><p><b>BPI</b><br>PA****K NI**O LA***O.<br>0846454643</p></div>
+<input id='ref' placeholder='Payment Reference Number' style='width:100%;padding:8px'>
+<div style='background:#fff8e1;padding:10px;margin-top:10px'>📸 After clicking PLACE ORDER, Messenger will open. Send your payment screenshot and payment reference number via Messenger.<br><b style='color:red'>⚠️ Only confirmed paid orders will be processed.</b></div>
+</div></div>
+<div class='cart'><div id='summary'>No items selected</div><h2>Total ₱<span id='total'>0</span></h2><button class='order' onclick='placeOrder()'>PLACE ORDER</button></div>
+<script>
+const menu={
+'Fruit Shakes':[['Mango Smash',150],['Melon Match Point',150],['Strawberry Rally',150],['Watermelon Winner',150],['Banana Serve',150]],
+'Fruit Sodas':[['Strawberry Serve Fizz',100],['Peach Drop Shot',100]],
+'Milk Tea':[['Sweet Spot Okinawa',95,true],['Grand Slam Choco',95,true],['Baseline Matcha',95,true],['Nutty Dink Delight',95,true]],
+'Quick Points':[['Paddle Popper Combo',180],['Courtside Cheese Steak Sandwich',270],['The Third Shot Sausage',150],['Hungarian Slice',100],['Sideout Sticks',120],['Golden Dink Fries',100]],
+'Power Plays':[['Tapa Topspin Bowl',220],['Sweet Serve Tocino',200],['Spam Smash Bowl',200],['Slice Serve Sisig',200],['Hungarian Heavy Hit',180],['Courtside Cheese Steak Rice Bowl',270]]};
+let cart={},boba={};
+function chg(n,v){cart[n]=Math.max(0,(cart[n]||0)+v);render();}
+function payChange(){g.classList.toggle('hidden',payment.value!=='GCash');b.classList.toggle('hidden',payment.value!=='BPI');}
+function render(){let h='',t=0,s='';for(let c in menu){h+=`<div class='card'><div class='subcategory'>${c}</div>`;menu[c].forEach(i=>{let q=cart[i[0]]||0;let bb=boba[i[0]]||false;let price=i[1]+(bb?5:0);h+=`<div class='item'><div><b>${i[0]}</b><br>₱${i[1]} ${i[2]?`<br><label><input type='checkbox' ${bb?'checked':''} onchange="boba['${i[0]}']=this.checked;render();"> Add Boba (+₱5)</label>`:''}</div><div><button onclick="chg('${i[0]}',-1)">-</button>${q}<button onclick="chg('${i[0]}',1)">+</button></div></div>`;if(q){t+=q*price;s+=i[0]+(bb?' + Boba':'')+' x'+q+'<br>';}});h+='</div>';}menuDiv.innerHTML=h;summary.innerHTML=s||'No items selected';total.innerText=t;}
+function placeOrder(){if(!ref.value.trim()){alert('Please enter payment reference number');return;}window.open('https://m.me/1282294331624336','_blank');}
+const menuDiv=document.getElementById('menu');payChange();render();
+</script></body></html>
