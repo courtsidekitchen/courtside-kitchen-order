@@ -1,127 +1,587 @@
-function placeOrder(){
+<!DOCTYPE html>
 2
- 
+<html>
 3
-const customerName=document.getElementById('name').value.trim();
+<head>
 4
-const totalAmount=parseFloat(total.innerText)||0;
+<meta charset="utf-8">
 5
- 
+<meta name="viewport" content="width=device-width,initial-scale=1">
 6
-if(customerName===''){
+<title>Courtside Kitchen Ordering</title>
 7
-alert('Please enter your name.');
+ 
 8
-return;
+<style>
 9
-}
+body{font-family:Arial;margin:0;background:#f4f6f9}
 10
- 
+.logo-container{text-align:center;padding:20px 15px 10px}
 11
-if(totalAmount<=0){
+.logo{max-width:350px;width:100%;height:auto}
 12
-alert('Please select at least one item before placing an order.');
+.container{max-width:900px;margin:auto;padding:12px}
 13
-return;
+.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:12px}
 14
-}
+.item{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0}
 15
- 
+.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}
 16
-const now=new Date();
+.subcategory{color:#163a70;font-weight:bold;margin-top:10px}
 17
- 
+.hidden{display:none}
 18
-const timestamp=now.toLocaleString('en-PH',{
+.qr{max-width:220px;width:100%;display:block;margin:auto}
 19
-year:'numeric',
+.order{width:100%;padding:12px;background:#163a70;color:#fff;border:none;border-radius:8px}
 20
-month:'short',
+.download-btn{display:block;text-align:center;background:#163a70;color:#fff;padding:8px;border-radius:6px;text-decoration:none;margin-top:8px}
 21
-day:'numeric',
+small{color:#666}
 22
-hour:'numeric',
+button{padding:4px 10px}
 23
-minute:'2-digit'
+</style>
 24
-});
+</head>
 25
  
 26
-const orderNumber='CK-'+Date.now().toString().slice(-8);
+<body>
 27
  
 28
-const msg=`COURTSIDE KITCHEN ORDER
+<div class="logo-container">
 29
- 
+<img src="logo.png" class="logo" alt="Courtside Kitchen">
 30
-Order Number: ${orderNumber}
+</div>
 31
-Date & Time: ${timestamp}
+ 
 32
- 
+<div class="container">
 33
-Name: ${customerName}
-34
  
+34
+<div id="menu"></div>
 35
-Items:
+ 
 36
-${summary.innerText}
+<div class="card">
 37
  
 38
-Total: ₱${total.innerText}
+<input id="name" placeholder="Name" style="width:100%;padding:8px">
 39
  
 40
-Payment Method: ${payment.value}
+<br><br>
 41
  
 42
-Payment screenshot will be sent separately.`;
+<select id="payment" onchange="payChange()" style="width:100%;padding:8px">
 43
- 
+<option>GCash</option>
 44
-navigator.clipboard.writeText(msg).catch(()=>{});
+<option>BPI</option>
 45
- 
+</select>
 46
-alert(
+ 
 47
-'✅ Order copied to clipboard.\n\n' +
+<div id="g">
 48
-'Order Number: ' + orderNumber +
+<a href="GCASH.jpg" download>
 49
-'\n\nMessenger will now open.\n' +
+<img class="qr" src="GCASH.jpg">
 50
-'Paste your order and send your payment screenshot.'
+</a>
 51
-);
+ 
 52
- 
+<a class="download-btn" href="GCASH.jpg" download>
 53
-const messengerUrl='https://m.me/1282294331624336';
+⬇ Download GCash QR
 54
- 
+</a>
 55
-// Open Messenger
-56
-window.location.href=messengerUrl;
-57
  
+56
+<p>
+57
+<b>GCash</b><br>
 58
-// Fallback if app/browser blocks first attempt
+PA****K NI**O L.<br>
 59
-setTimeout(()=>{
+09178512376
 60
-try{
+</p>
 61
-window.open(messengerUrl,'_blank');
+</div>
 62
-}catch(e){}
+ 
 63
-},1000);
+<div id="b" class="hidden">
 64
+<a href="BPI.jpg" download>
+65
+<img class="qr" src="BPI.jpg">
+66
+</a>
+67
+ 
+68
+<a class="download-btn" href="BPI.jpg" download>
+69
+⬇ Download BPI QR
+70
+</a>
+71
+ 
+72
+<p>
+73
+<b>BPI</b><br>
+74
+PA****K NI**O LA***O.<br>
+75
+0846454643
+76
+</p>
+77
+</div>
+78
+ 
+79
+<div style="background:#fff8e1;padding:10px;margin-top:10px">
+80
+📸 After clicking PLACE ORDER, your order details will be copied automatically and Messenger will open.
+81
+<br><br>
+82
+Please paste the copied order into Messenger and send your payment confirmation screenshot.
+83
+<br><br>
+84
+📱 You may tap the QR code or download it to your phone for easier payment.
+85
+<br><br>
+86
+<b style="color:red">
+87
+⚠️ Only confirmed paid orders will be processed.
+88
+</b>
+89
+</div>
+90
+ 
+91
+</div>
+92
+ 
+93
+</div>
+94
+ 
+95
+<div class="cart">
+96
+<div id="summary">No items selected</div>
+97
+<h2>Total ₱<span id="total">0</span></h2>
+98
+<button class="order" onclick="placeOrder()">
+99
+📋 COPY ORDER & OPEN MESSENGER
+100
+</button>
+101
+</div>
+102
+ 
+103
+<script>
+104
+ 
+105
+const menu = {
+106
+'Fruit Shakes':[
+107
+['Mango Smash','Mango Shake',150],
+108
+['Melon Match Point','Melon Shake',150],
+109
+['Strawberry Rally','Strawberry Yoghurt Shake',150],
+110
+['Watermelon Winner','Watermelon Shake',150],
+111
+['Banana Serve','Banana Shake',150]
+112
+],
+113
+ 
+114
+'Fruit Sodas':[
+115
+['Strawberry Serve Fizz','Strawberry Fruit Soda',100],
+116
+['Peach Drop Shot','Peach Fruit Soda',100]
+117
+],
+118
+ 
+119
+'Milk Tea':[
+120
+['Sweet Spot Okinawa','Okinawa Milk Tea',95,true],
+121
+['Grand Slam Choco','Chocolate Milk Tea',95,true],
+122
+['Baseline Matcha','Matcha Milk Tea',95,true],
+123
+['Nutty Dink Delight','Nutella Milk Tea',95,true]
+124
+],
+125
+ 
+126
+'Quick Points':[
+127
+['Paddle Popper Combo','Chicken Poppers & Fries',180],
+128
+['Courtside Cheese Steak Sandwich','Philly Cheese Steak Sandwich',270],
+129
+['The Third Shot Sausage','Hungarian Sausage Sandwich',150],
+130
+['Hungarian Slice','Sliced Hungarian Sausage',100],
+131
+['Sideout Sticks','Cheese Sticks',120],
+132
+['Golden Dink Fries','Cheesy French Fries',100]
+133
+],
+134
+ 
+135
+'Power Plays':[
+136
+['Tapa Topspin Bowl','Tapa Rice Bowl',220],
+137
+['Sweet Serve Tocino','Tocino Rice Bowl',200],
+138
+['Spam Smash Bowl','Teriyaki Spam Rice Bowl',200],
+139
+['Slice Serve Sisig','Sisig Rice Bowl',200],
+140
+['Hungarian Heavy Hit','Hungarian Sausage Rice Bowl',180],
+141
+['Courtside Cheese Steak Rice Bowl','Philly Cheese Steak Rice Bowl',270]
+142
+]
+143
+};
+144
+ 
+145
+let cart = {};
+146
+let boba = {};
+147
+ 
+148
+function chg(name,value){
+149
+cart[name]=Math.max(0,(cart[name]||0)+value);
+150
+render();
+151
 }
+152
+ 
+153
+function payChange(){
+154
+document.getElementById('g').classList.toggle(
+155
+'hidden',
+156
+payment.value!=='GCash'
+157
+);
+158
+ 
+159
+document.getElementById('b').classList.toggle(
+160
+'hidden',
+161
+payment.value!=='BPI'
+162
+);
+163
+}
+164
+ 
+165
+function render(){
+166
+ 
+167
+let html='';
+168
+let totalPrice=0;
+169
+let summaryText='';
+170
+ 
+171
+for(let category in menu){
+172
+ 
+173
+html+=`
+174
+<div class="card">
+175
+<div class="subcategory">${category}</div>
+176
+`;
+177
+ 
+178
+menu[category].forEach(item=>{
+179
+ 
+180
+let qty=cart[item[0]]||0;
+181
+let hasBoba=boba[item[0]]||false;
+182
+let price=item[2]+(hasBoba?5:0);
+183
+ 
+184
+html+=`
+185
+<div class="item">
+186
+<div>
+187
+<b>${item[0]}</b><br>
+188
+<small>${item[1]}</small><br>
+189
+₱${item[2]}
+190
+${
+191
+item[3]
+192
+? `<br>
+193
+<label>
+194
+<input type="checkbox"
+195
+${hasBoba ? 'checked' : ''}
+196
+onchange="boba['${item[0]}']=this.checked;render();">
+197
+Add Boba (+₱5)
+198
+</label>`
+199
+: ''
+200
+}
+201
+</div>
+202
+ 
+203
+<div>
+204
+<button onclick="chg('${item[0]}',-1)">-</button>
+205
+${qty}
+206
+<button onclick="chg('${item[0]}',1)">+</button>
+207
+</div>
+208
+</div>
+209
+`;
+210
+ 
+211
+if(qty){
+212
+totalPrice += qty * price;
+213
+summaryText += item[0] + (hasBoba ? ' + Boba' : '') + ' x' + qty + '\n';
+214
+}
+215
+ 
+216
+});
+217
+ 
+218
+html+='</div>';
+219
+}
+220
+ 
+221
+menuDiv.innerHTML=html;
+222
+summary.innerText=summaryText || 'No items selected';
+223
+total.innerText=totalPrice;
+224
+}
+225
+ 
+226
+function placeOrder(){
+227
+ 
+228
+const customerName=document.getElementById('name').value.trim();
+229
+ 
+230
+if(customerName===''){
+231
+alert('Please enter your name.');
+232
+return;
+233
+}
+234
+ 
+235
+if(parseFloat(total.innerText)<=0){
+236
+alert('Please select at least one item before placing an order.');
+237
+return;
+238
+}
+239
+ 
+240
+const now=new Date();
+241
+ 
+242
+const timestamp=now.toLocaleString('en-PH',{
+243
+year:'numeric',
+244
+month:'short',
+245
+day:'numeric',
+246
+hour:'numeric',
+247
+minute:'2-digit'
+248
+});
+249
+ 
+250
+const orderNumber='CK-'+Date.now().toString().slice(-8);
+251
+ 
+252
+const msg=`COURTSIDE KITCHEN ORDER
+253
+ 
+254
+Order Number: ${orderNumber}
+255
+Date & Time: ${timestamp}
+256
+ 
+257
+Name: ${customerName}
+258
+ 
+259
+Items:
+260
+${summary.innerText}
+261
+ 
+262
+Total: ₱${total.innerText}
+263
+ 
+264
+Payment Method: ${payment.value}
+265
+ 
+266
+Payment screenshot will be sent separately.`;
+267
+ 
+268
+navigator.clipboard.writeText(msg).catch(()=>{});
+269
+ 
+270
+alert(
+271
+'✅ Order copied to clipboard.\n\n' +
+272
+'Order Number: ' + orderNumber +
+273
+'\n\nMessenger will now open.\n' +
+274
+'Paste your order and send your payment screenshot.'
+275
+);
+276
+ 
+277
+const messengerUrl='https://www.facebook.com/messages/t/1282294331624336';
+278
+ 
+279
+window.location.href=messengerUrl;
+280
+ 
+281
+setTimeout(()=>{
+282
+window.open(messengerUrl,'_blank');
+283
+},1000);
+284
+}
+285
+ 
+286
+const menuDiv=document.getElementById('menu');
+287
+ 
+288
+payChange();
+289
+render();
+290
+ 
+291
+</script>
+292
+ 
+293
+</body>
+294
+</html>
