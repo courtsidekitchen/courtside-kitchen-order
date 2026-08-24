@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Courtside Kitchen Seller Portal</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;max-width:1100px;margin:auto;padding:20px}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px}
+input,select,textarea{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}
+button{padding:10px 15px;margin:5px;cursor:pointer}
+.hidden{display:none}.product{border-bottom:1px solid #ddd;padding:10px 0}
+.out{color:red;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="login" class="card">
+<h2>Seller Login</h2>
+<input type="password" id="pwd" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
+<div id="app" class="hidden">
+<div class="card">
+<h2>Add / Edit Product</h2>
+<input id="category" placeholder="Category">
+<input id="name" placeholder="Product Name">
+<input id="description" placeholder="Description">
+<input id="price" type="number" placeholder="Price">
+<input id="qty" type="number" placeholder="Quantity">
+<label><input type="checkbox" id="outstock"> Out of Stock</label><br>
+<button onclick="saveProduct()">Save Product</button>
+</div>
+<div class="card"><h2>Products</h2><div id="products"></div></div>
+<div class="card">
+<input type="file" id="importFile" accept=".json">
+<button onclick="importJSON()">Import products.json</button>
+<button onclick="exportJSON()">Export products.json</button>
+</div>
+</div>
+<script>
+const PASSWORD='pickleball123';
+let products=[];let editing=-1;
+function login(){if(document.getElementById('pwd').value===PASSWORD){login.classList?.remove;document.getElementById('login').style.display='none';document.getElementById('app').classList.remove('hidden');}else alert('Invalid password');}
+function render(){let h='';products.forEach((p,i)=>{h+=`<div class="product"><b>${p.name}</b> ${p.outOfStock?'<span class="out">❌ OUT OF STOCK</span>':''}<br>Category: ${p.category}<br>Description: ${p.description}<br>Price: ₱${p.price}<br>Qty: ${p.qty}<br><button onclick="editProduct(${i})">Edit</button><button onclick="deleteProduct(${i})">Delete</button></div>`});document.getElementById('products').innerHTML=h||'No products';}
+function saveProduct(){const p={category:category.value,name:name.value,description:description.value,price:Number(price.value),qty:Number(qty.value),outOfStock:outstock.checked};if(!p.name)return alert('Product name required');if(editing>-1){products[editing]=p;editing=-1;}else products.push(p);clearForm();render();}
+function editProduct(i){const p=products[i];category.value=p.category;name.value=p.name;description.value=p.description;price.value=p.price;qty.value=p.qty;outstock.checked=p.outOfStock;editing=i;}
+function deleteProduct(i){if(confirm('Delete product?')){products.splice(i,1);render();}}
+function clearForm(){category.value=name.value=description.value=price.value=qty.value='';outstock.checked=false;}
+function exportJSON(){const blob=new Blob([JSON.stringify(products,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='products.json';a.click();}
+function importJSON(){const f=document.getElementById('importFile').files[0];if(!f)return alert('Choose products.json');const r=new FileReader();r.onload=e=>{products=JSON.parse(e.target.result);render();};r.readAsText(f);}
+</script>
+</body>
+</html>
