@@ -1,123 +1,261 @@
-function placeOrder(){
+<script>
 2
-const customerName=document.getElementById('name').value.trim();
+const menu={'Fruit Shakes':[['Mango Smash','Mango Shake',150],['Melon Match Point','Melon Shake',150],['Strawberry Rally','Strawberry Yoghurt Shake',150],['Watermelon Winner','Watermelon Shake',150],['Banana Serve','Banana Shake',150]],'Fruit Sodas':[['Strawberry Serve Fizz','Strawberry Fruit Soda',100],['Peach Drop Shot','Peach Fruit Soda',100]],'Milk Tea':[['Sweet Spot Okinawa','Okinawa Milk Tea',95,true],['Grand Slam Choco','Chocolate Milk Tea',95,true],['Baseline Matcha','Matcha Milk Tea',95,true],['Nutty Dink Delight','Nutella Milk Tea',95,true]],'Quick Points':[['Paddle Popper Combo','Chicken Poppers & Fries',180],['Courtside Cheese Steak Sandwich','Philly Cheese Steak Sandwich',270],['The Third Shot Sausage','Hungarian Sausage Sandwich',150],['Hungarian Slice','Sliced Hungarian Sausage',100],['Sideout Sticks','Cheese Sticks',120],['Golden Dink Fries','Cheesy French Fries',100]],'Power Plays':[['Tapa Topspin Bowl','Tapa Rice Bowl',220],['Sweet Serve Tocino','Tocino Rice Bowl',200],['Spam Smash Bowl','Teriyaki Spam Rice Bowl',200],['Slice Serve Sisig','Sisig Rice Bowl',200],['Hungarian Heavy Hit','Hungarian Sausage Rice Bowl',180],['Courtside Cheese Steak Rice Bowl','Philly Cheese Steak Rice Bowl',270]]};
 3
-const totalAmount=parseFloat(total.innerText)||0;
+ 
 4
- 
+let cart={},boba={};
 5
-if(customerName===''){
+ 
 6
-alert('Please enter your name.');
+function chg(n,v){
 7
-return;
+cart[n]=Math.max(0,(cart[n]||0)+v);
 8
-}
+render();
 9
- 
-10
-if(totalAmount<=0){
-11
-alert('Please select at least one item before placing an order.');
-12
-return;
-13
 }
+10
+ 
+11
+function payChange(){
+12
+g.classList.toggle('hidden',payment.value!=='GCash');
+13
+b.classList.toggle('hidden',payment.value!=='BPI');
 14
- 
+}
 15
-const now=new Date();
+ 
 16
- 
+function render(){
 17
-const timestamp=now.toLocaleString('en-PH',{
+let h='',t=0,s='';
 18
-year:'numeric',
-19
-month:'short',
-20
-day:'numeric',
-21
-hour:'numeric',
-22
-minute:'2-digit'
-23
-});
-24
  
+19
+for(let c in menu){
+20
+h+=`<div class='card'><div class='subcategory'>${c}</div>`;
+21
+ 
+22
+menu[c].forEach(i=>{
+23
+let q=cart[i[0]]||0;
+24
+let bb=boba[i[0]]||false;
 25
-const orderNumber='CK-'+Date.now().toString().slice(-8);
+let p=i[2]+(bb?5:0);
 26
  
 27
-const msg=`COURTSIDE KITCHEN ORDER
+h+=`<div class='item'>
 28
- 
+<div>
 29
-Order Number: ${orderNumber}
+<b>${i[0]}</b><br>
 30
-Date & Time: ${timestamp}
+<small>${i[1]}</small><br>
 31
- 
+₱${i[2]}
 32
-Name: ${customerName}
+${i[3] ? `
 33
- 
+<br>
 34
-Items:
+<label>
 35
-${summary.innerText}
+<input type='checkbox'
 36
-Total: ₱${total.innerText}
+${bb?'checked':''}
 37
- 
+onchange="boba['${i[0]}']=this.checked;render()">
 38
-Payment Method: ${payment.value}
+Add Boba (+₱5)
 39
- 
+</label>` : ''}
 40
-Payment screenshot will be sent separately.`;
+</div>
 41
- 
+<div>
 42
-navigator.clipboard.writeText(msg).catch(()=>{});
+<button onclick="chg('${i[0]}',-1)">-</button>
 43
- 
+${q}
 44
-alert(
+<button onclick="chg('${i[0]}',1)">+</button>
 45
-'✅ Order copied to clipboard.\n\n' +
+</div>
 46
-'Order Number: ' + orderNumber +
+</div>`;
 47
-'\n\nMessenger will now open.\n' +
+ 
 48
-'Paste your order and send your payment screenshot.'
+if(q){
 49
-);
+t+=q*p;
 50
- 
+s+=i[0]+(bb?' + Boba':'')+' x'+q+'\n';
 51
-const messengerUrl='https://m.me/1282294331624336';
-52
- 
-53
-// Web, Android and iOS
-54
-window.location.href=messengerUrl;
-55
- 
-56
-// Fallback
-57
-setTimeout(()=>{
-58
-try{
-59
-window.open(messengerUrl,'_blank');
-60
-}catch(e){}
-61
-},1000);
-62
 }
+52
+});
+53
+ 
+54
+h+='</div>';
+55
+}
+56
+ 
+57
+menuDiv.innerHTML=h;
+58
+summary.innerText=s||'No items selected';
+59
+total.innerText=t;
+60
+}
+61
+ 
+62
+function placeOrder(){
+63
+ 
+64
+const customerName=document.getElementById('name').value.trim();
+65
+const totalAmount=parseFloat(total.innerText)||0;
+66
+ 
+67
+if(customerName===''){
+68
+alert('Please enter your name.');
+69
+return;
+70
+}
+71
+ 
+72
+if(totalAmount<=0){
+73
+alert('Please select at least one item before placing an order.');
+74
+return;
+75
+}
+76
+ 
+77
+const now=new Date();
+78
+ 
+79
+const timestamp=now.toLocaleString('en-PH',{
+80
+year:'numeric',
+81
+month:'short',
+82
+day:'numeric',
+83
+hour:'numeric',
+84
+minute:'2-digit'
+85
+});
+86
+ 
+87
+const orderNumber='CK-'+Date.now().toString().slice(-8);
+88
+ 
+89
+const msg=`COURTSIDE KITCHEN ORDER
+90
+ 
+91
+Order Number: ${orderNumber}
+92
+Date & Time: ${timestamp}
+93
+ 
+94
+Name: ${customerName}
+95
+ 
+96
+Items:
+97
+${summary.innerText}
+98
+ 
+99
+Total: ₱${total.innerText}
+100
+ 
+101
+Payment Method: ${payment.value}
+102
+ 
+103
+Payment screenshot will be sent separately.`;
+104
+ 
+105
+navigator.clipboard.writeText(msg).catch(()=>{});
+106
+ 
+107
+alert(
+108
+'✅ Order copied to clipboard.\n\n' +
+109
+'Order Number: ' + orderNumber +
+110
+'\n\nMessenger will now open.\n' +
+111
+'Paste your order and send your payment screenshot.'
+112
+);
+113
+ 
+114
+const messengerUrl='https://m.me/1282294331624336';
+115
+ 
+116
+// Android, iPhone, iPad, Desktop
+117
+window.location.href=messengerUrl;
+118
+ 
+119
+// Browser fallback
+120
+setTimeout(()=>{
+121
+try{
+122
+window.open(messengerUrl,'_blank');
+123
+}catch(e){}
+124
+},1000);
+125
+}
+126
+ 
+127
+const menuDiv=document.getElementById('menu');
+128
+ 
+129
+payChange();
+130
+render();
+131
+</script>
