@@ -1,261 +1,127 @@
-<script>
+function placeOrder(){
 2
-const menu={'Fruit Shakes':[['Mango Smash','Mango Shake',150],['Melon Match Point','Melon Shake',150],['Strawberry Rally','Strawberry Yoghurt Shake',150],['Watermelon Winner','Watermelon Shake',150],['Banana Serve','Banana Shake',150]],'Fruit Sodas':[['Strawberry Serve Fizz','Strawberry Fruit Soda',100],['Peach Drop Shot','Peach Fruit Soda',100]],'Milk Tea':[['Sweet Spot Okinawa','Okinawa Milk Tea',95,true],['Grand Slam Choco','Chocolate Milk Tea',95,true],['Baseline Matcha','Matcha Milk Tea',95,true],['Nutty Dink Delight','Nutella Milk Tea',95,true]],'Quick Points':[['Paddle Popper Combo','Chicken Poppers & Fries',180],['Courtside Cheese Steak Sandwich','Philly Cheese Steak Sandwich',270],['The Third Shot Sausage','Hungarian Sausage Sandwich',150],['Hungarian Slice','Sliced Hungarian Sausage',100],['Sideout Sticks','Cheese Sticks',120],['Golden Dink Fries','Cheesy French Fries',100]],'Power Plays':[['Tapa Topspin Bowl','Tapa Rice Bowl',220],['Sweet Serve Tocino','Tocino Rice Bowl',200],['Spam Smash Bowl','Teriyaki Spam Rice Bowl',200],['Slice Serve Sisig','Sisig Rice Bowl',200],['Hungarian Heavy Hit','Hungarian Sausage Rice Bowl',180],['Courtside Cheese Steak Rice Bowl','Philly Cheese Steak Rice Bowl',270]]};
-3
  
+3
+const customerName=document.getElementById('name').value.trim();
 4
-let cart={},boba={};
+const totalAmount=parseFloat(total.innerText)||0;
 5
  
 6
-function chg(n,v){
+if(customerName===''){
 7
-cart[n]=Math.max(0,(cart[n]||0)+v);
+alert('Please enter your name.');
 8
-render();
+return;
 9
 }
 10
  
 11
-function payChange(){
+if(totalAmount<=0){
 12
-g.classList.toggle('hidden',payment.value!=='GCash');
+alert('Please select at least one item before placing an order.');
 13
-b.classList.toggle('hidden',payment.value!=='BPI');
+return;
 14
 }
 15
  
 16
-function render(){
-17
-let h='',t=0,s='';
-18
- 
-19
-for(let c in menu){
-20
-h+=`<div class='card'><div class='subcategory'>${c}</div>`;
-21
- 
-22
-menu[c].forEach(i=>{
-23
-let q=cart[i[0]]||0;
-24
-let bb=boba[i[0]]||false;
-25
-let p=i[2]+(bb?5:0);
-26
- 
-27
-h+=`<div class='item'>
-28
-<div>
-29
-<b>${i[0]}</b><br>
-30
-<small>${i[1]}</small><br>
-31
-₱${i[2]}
-32
-${i[3] ? `
-33
-<br>
-34
-<label>
-35
-<input type='checkbox'
-36
-${bb?'checked':''}
-37
-onchange="boba['${i[0]}']=this.checked;render()">
-38
-Add Boba (+₱5)
-39
-</label>` : ''}
-40
-</div>
-41
-<div>
-42
-<button onclick="chg('${i[0]}',-1)">-</button>
-43
-${q}
-44
-<button onclick="chg('${i[0]}',1)">+</button>
-45
-</div>
-46
-</div>`;
-47
- 
-48
-if(q){
-49
-t+=q*p;
-50
-s+=i[0]+(bb?' + Boba':'')+' x'+q+'\n';
-51
-}
-52
-});
-53
- 
-54
-h+='</div>';
-55
-}
-56
- 
-57
-menuDiv.innerHTML=h;
-58
-summary.innerText=s||'No items selected';
-59
-total.innerText=t;
-60
-}
-61
- 
-62
-function placeOrder(){
-63
- 
-64
-const customerName=document.getElementById('name').value.trim();
-65
-const totalAmount=parseFloat(total.innerText)||0;
-66
- 
-67
-if(customerName===''){
-68
-alert('Please enter your name.');
-69
-return;
-70
-}
-71
- 
-72
-if(totalAmount<=0){
-73
-alert('Please select at least one item before placing an order.');
-74
-return;
-75
-}
-76
- 
-77
 const now=new Date();
-78
+17
  
-79
+18
 const timestamp=now.toLocaleString('en-PH',{
-80
+19
 year:'numeric',
-81
+20
 month:'short',
-82
+21
 day:'numeric',
-83
+22
 hour:'numeric',
-84
+23
 minute:'2-digit'
-85
+24
 });
-86
+25
  
-87
+26
 const orderNumber='CK-'+Date.now().toString().slice(-8);
-88
+27
  
-89
+28
 const msg=`COURTSIDE KITCHEN ORDER
-90
+29
  
-91
+30
 Order Number: ${orderNumber}
-92
+31
 Date & Time: ${timestamp}
-93
+32
  
-94
+33
 Name: ${customerName}
-95
+34
  
-96
+35
 Items:
-97
+36
 ${summary.innerText}
-98
+37
  
-99
+38
 Total: ₱${total.innerText}
-100
+39
  
-101
+40
 Payment Method: ${payment.value}
-102
+41
  
-103
+42
 Payment screenshot will be sent separately.`;
-104
+43
  
-105
+44
 navigator.clipboard.writeText(msg).catch(()=>{});
-106
+45
  
-107
+46
 alert(
-108
+47
 '✅ Order copied to clipboard.\n\n' +
-109
+48
 'Order Number: ' + orderNumber +
-110
+49
 '\n\nMessenger will now open.\n' +
-111
+50
 'Paste your order and send your payment screenshot.'
-112
+51
 );
-113
+52
  
-114
+53
 const messengerUrl='https://m.me/1282294331624336';
-115
+54
  
-116
-// Android, iPhone, iPad, Desktop
-117
+55
+// Open Messenger
+56
 window.location.href=messengerUrl;
-118
+57
  
-119
-// Browser fallback
-120
+58
+// Fallback if app/browser blocks first attempt
+59
 setTimeout(()=>{
-121
+60
 try{
-122
+61
 window.open(messengerUrl,'_blank');
-123
+62
 }catch(e){}
-124
+63
 },1000);
-125
+64
 }
-126
- 
-127
-const menuDiv=document.getElementById('menu');
-128
- 
-129
-payChange();
-130
-render();
-131
-</script>
