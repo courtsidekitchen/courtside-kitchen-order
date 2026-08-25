@@ -1,7 +1,7 @@
 <!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>Seller RC1</title>
 <style>
-body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f7f7f7;border-radius:12px;padding:10px}.card{background:#fff;border-radius:10px;padding:10px;margin:8px 0}.note{background:#fff8c4;padding:6px;border-radius:6px}.metrics{display:flex;gap:10px;margin-bottom:12px}.metric{background:#fff;padding:10px;border-radius:10px}.items{background:#f4f4f4;padding:6px;border-radius:6px;margin:6px 0}
+body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.col{background:#fff;padding:10px;border-radius:5px}.card{background:#fff;padding:15px;border-radius:5px;margin:10px 0}.metric{display:inline-block;margin:10px 20px 10px 0;padding:10px 20px;background:#fff;border-radius:5px}.items{background:#f0f0f0;padding:10px;border-radius:3px;margin:10px 0}button{padding:8px 15px;background:#0066cc;color:#fff;border:none;border-radius:3px;cursor:pointer}button:hover{background:#0052a3}input{width:100%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:3px;box-sizing:border-box}
 </style></head><body>
 <h1>Courtside Kitchen</h1>
 <div class='metrics'><div class='metric'>Revenue: ₱<span id='rev'>0</span></div><div class='metric'>Completed: <span id='cnt'>0</span></div><div class='metric'>Avg: ₱<span id='avg'>0</span></div></div>
@@ -10,75 +10,75 @@ body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{pad
 <button onclick="tab('history')">History</button>
 <button onclick="tab('products')">Products</button>
 </div>
-<div id='orders' class='tab active'><div class='board'><div class='col'><h3>PENDING</h3><div id='pending'></div></div><div class='col'><h3>ORDER_RECEIVED</h3><div id='received'></div></div><div class='col'><h3>PREPARING</h3><div id='preparing'></div></div><div class='col'><h3>READY</h3><div id='ready'></div></div></div></div>
+<div id='orders' class='tab active'><div class='board'><div class='col'><h3>PENDING</h3><div id='pending'></div></div><div class='col'><h3>ORDER_RECEIVED</h3><div id='received'></div></div><div class='col'><h3>PREPARING</h3><div id='preparing'></div></div><div class='col'><h3>COMPLETED</h3><div id='completed'></div></div></div></div>
 <div id='history' class='tab'>
 <button onclick='exportCsv()'>Export CSV</button>
 <div id='historyList'></div>
 </div>
- 
+ 
 <div class='metrics'>
 <div class='metric'>
 Products:
 <span id='prodCount'>0</span>
 </div>
- 
+ 
 <div class='metric'>
 Out Of Stock:
 <span id='outCount'>0</span>
 </div>
- 
+ 
 <div class='metric'>
 Categories:
 <span id='catCount'>0</span>
 </div>
 </div>
- 
+ 
 <div class='card'>
 <input id='searchProducts'
 placeholder='Search products...'
 oninput='renderProducts()'>
- 
+ 
 <br><br>
- 
+ 
 <button onclick='toggleAdd()'>
 ➕ Add Product
 </button>
 </div>
- 
+ 
 <div id='addBox'
 class='card'
 style='display:none'>
- 
+ 
 <h3>Add Product</h3>
- 
+ 
 <input id='aCategory'
 placeholder='Category'>
- 
+ 
 <input id='aName'
 placeholder='Product Name'>
- 
+ 
 <input id='aDescription'
 placeholder='Description'>
- 
+ 
 <input id='aPrice'
 type='number'
 placeholder='Price'>
- 
+ 
 <input id='aQty'
 type='number'
 placeholder='Quantity'>
- 
+ 
 <input id='aImage'
 placeholder='Image URL'>
- 
+ 
 <button onclick='addProduct()'>
 Save Product
 </button>
- 
+ 
 </div>
- 
+ 
 <div id='productsList'></div>
- 
+ 
 </div>
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -95,112 +95,127 @@ const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDo
 let hist=[];let products=[];window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
 window.move=(id,s)=>updateDoc(doc(db,'orders',id),{status:s});
 window.decline=async(id)=>{let r=prompt('Reason');if(r) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
-window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click();};
+window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
 function itemsHtml(items=[]){return items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>');}
-function card(id,o){return `<div class='card'><b>${o.orderNumber||id}</b><br>Customer: ${o.customerName||''}<br>${o.status==='PENDING'?`Pending: ${remain(o.createdAt)}`:''}<div class='items'>${itemsHtml(o.items||[])}</div>Subtotal: ₱${o.subtotal||0}<br>Boba: ₱${o.bobaTotal||0}<br>Discount: ${o.discountType||'None'}<br>Discount Amt: ₱${o.discountAmount||0}<br><b>Total: ₱${o.total||0}</b>${o.notes?`<div class='note'>📝 ${o.notes}</div>`:''}${o.declineReason?`<div>Decline: ${o.declineReason}</div>`:''}<br><button onclick="move('${id}','ORDER_RECEIVED')">Receive</button><button onclick="move('${id}','PREPARING')">Preparing</button><button onclick="move('${id}','READY')">Ready</button><button onclick="move('${id}','COMPLETED')">Complete</button><button onclick="move('${id}','CANCELLED')">Cancel</button><button onclick="decline('${id}')">Decline</button></div>`}
-JavaScript
+function card(id,o){return `<div class='card'><b>${o.orderNumber||id}</b><br>Customer: ${o.customerName||''}<br>${o.status==='PENDING'?`Pending: ${remain(o.createdAt)}`:''}<div class='items'>${itemsHtml(o.items)}</div>Total: ₱${o.total}<br>${o.status!=='COMPLETED'&&o.status!=='DECLINED'?`<button onclick="move('${id}','ORDER_RECEIVED')">Receive</button><button onclick="move('${id}','PREPARING')">Prepare</button><button onclick="move('${id}','COMPLETED')">Complete</button><button onclick="decline('${id}')">Decline</button>`:o.status==='DECLINED'?`<b style='color:red'>DECLINED: ${o.declineReason}</b>`:''}</div>`;}
 window.toggleAdd = () => {
- 
+
 const box =
 document.getElementById('addBox');
- 
+
 box.style.display =
 box.style.display === 'none'
 ? 'block'
 : 'none';
 };
- 
+
 function slug(s){
- 
+
 return s
 .toLowerCase()
 .replace(/[^a-z0-9]+/g,'-')
 .replace(/^-|-$/g,'');
- 
+
 }
- 
+
 window.addProduct = async() => {
- 
-if(!aName.value.trim())
+
+const category = document.getElementById('aCategory').value.trim();
+const name = document.getElementById('aName').value.trim();
+const description = document.getElementById('aDescription').value.trim();
+const price = document.getElementById('aPrice').value.trim();
+const qty = document.getElementById('aQty').value.trim();
+const image = document.getElementById('aImage').value.trim();
+
+if(!name)
 return alert('Product name required');
- 
+
 await setDoc(
 doc(
 db,
 'products',
-slug(aName.value)
+slug(name)
 ),
 {
-category:aCategory.value,
-name:aName.value,
-description:aDescription.value,
-price:Number(aPrice.value||0),
-qty:Number(aQty.value||0),
-image:aImage.value
+category: category,
+name: name,
+description: description,
+price: Number(price || 0),
+qty: Number(qty || 0),
+image: image
 }
 );
- 
-alert('Saved');
+
+// Clear form after saving
+document.getElementById('aCategory').value = '';
+document.getElementById('aName').value = '';
+document.getElementById('aDescription').value = '';
+document.getElementById('aPrice').value = '';
+document.getElementById('aQty').value = '';
+document.getElementById('aImage').value = '';
+toggleAdd();
+
+alert('Product saved!');
 };
- 
+
 window.saveProduct = async(id) => {
- 
+
 await setDoc(
 doc(db,'products',id),
 {
 category:
 document.getElementById('c_'+id).value,
- 
+
 name:
 document.getElementById('n_'+id).value,
- 
+
 description:
 document.getElementById('d_'+id).value,
- 
+
 price:Number(
 document.getElementById('p_'+id).value
 ),
- 
+
 qty:Number(
 document.getElementById('q_'+id).value
 ),
- 
+
 image:
 document.getElementById('i_'+id).value
 },
 {merge:true}
 );
- 
+
 alert('Updated');
 };
- 
+
 window.deleteProduct = async(id) => {
- 
+
 if(confirm('Delete Product?')){
- 
+
 await deleteDoc(
 doc(db,'products',id)
 );
 }
 };
- 
+
 window.editProduct = id => {
- 
+
 document
 .getElementById('e_'+id)
 .classList
 .toggle('active');
 };
- 
+
 window.renderProducts = () => {
- 
+
 const q =
 (searchProducts?.value || '')
 .toLowerCase();
- 
+
 let h='';
- 
+
 products
 .filter(
 p =>
@@ -209,104 +224,104 @@ p =>
 .includes(q)
 )
 .forEach(p => {
- 
+
 h += `
 <div class='card'>
- 
+
 ${p.image
-? `${p.image}<br>`
+? `<img src='${p.image}' style='max-width:100%;border-radius:3px'><br>`
 : ''}
- 
+
 <b>${p.name}</b>
- 
+
 <br>
- 
+
 ₱${p.price||0}
- 
+
 <br>
- 
+
 Qty:
 ${p.qty||0}
- 
+
 ${(p.qty||0)<=0
 ? "<div style='color:red;font-weight:bold'>❌ OUT OF STOCK</div>"
 : ""}
- 
+
 <br><br>
- 
+
 <button onclick="editProduct('${p.id}')">
 Edit
 </button>
- 
+
 <button onclick="deleteProduct('${p.id}')">
 Delete
 </button>
- 
+
 <div
 id="e_${p.id}"
 class="tab">
- 
+
 <input
 id="c_${p.id}"
 value="${p.category||''}">
- 
+
 <input
 id="n_${p.id}"
 value="${p.name||''}">
- 
+
 <input
 id="d_${p.id}"
 value="${p.description||''}">
- 
+
 <input
 id="p_${p.id}"
 value="${p.price||0}">
- 
+
 <input
 id="q_${p.id}"
 value="${p.qty||0}">
- 
+
 <input
 id="i_${p.id}"
 value="${p.image||''}">
- 
+
 <button
 onclick="saveProduct('${p.id}')">
- 
+
 Save
- 
+
 </button>
- 
+
 </div>
- 
+
 </div>
 `;
 });
- 
+
 let cats = new Set();
 let out = 0;
- 
+
 products.forEach(p => {
- 
+
 cats.add(p.category || 'Other');
- 
+
 if((p.qty || 0) <= 0){
 out++;
 }
- 
+
 });
- 
+
 prodCount.textContent = products.length;
 outCount.textContent = out;
 catCount.textContent = cats.size;productsList.innerHTML = h;
 };
- 
+
 onSnapshot(
 collection(db,'products'),
 snap => {
- 
+
 products=[];
- 
+
 snap.forEach(
 d =>
 products.push({
@@ -314,8 +329,8 @@ id:d.id,
 ...d.data()
 })
 );
- 
+
 renderProducts();
 }
-);onSnapshot(collection(db,'orders'),snap=>{let p='',r='',pr='',re='',h='';let revenue=0,c=0;hist=[];snap.forEach(d=>{const o={id:d.id,...d.data()};hist.push(o);if(o.status==='COMPLETED'){revenue+=Number(o.total||0);c++;}if(o.status==='PENDING')p+=card(d.id,o);else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);else if(o.status==='PREPARING')pr+=card(d.id,o);else if(o.status==='READY')re+=card(d.id,o);else h+=card(d.id,o);});pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;ready.innerHTML=re;historyList.innerHTML=h;rev.textContent=revenue;cnt.textContent=c;avg.textContent=c?Math.round(revenue/c):0;});
+);onSnapshot(collection(db,'orders'),snap=>{let p='',r='',pr='',re='',h='';let revenue=0,c=0;hist=[];snap.forEach(d=>{const o={id:d.id,...d.data()};hist.push(o);if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}h+=card(d.id,o);if(o.status==='PENDING')p+=card(d.id,o);else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);else if(o.status==='PREPARING')pr+=card(d.id,o);else if(o.status==='COMPLETED')re+=card(d.id,o);});pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;completed.innerHTML=re;historyList.innerHTML=h;rev.textContent=revenue;cnt.textContent=c;avg.textContent=c?Math.round(revenue/c):0;});
 </script></body></html>
