@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Firebase Product Importer</title>
+<style>
+body{font-family:Arial;max-width:900px;margin:auto;padding:20px;background:#f4f6f9}
+.card{background:#fff;padding:20px;border-radius:10px}
+button{padding:10px 15px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class='card'>
+<h2>Courtside Kitchen Firebase Importer</h2>
+<p>Select your products.json file and import all products into Firebase.</p>
+<input type='file' id='file' accept='.json'>
+<br>
+<button onclick='importProducts()'>Import to Firebase</button>
+<div id='status'></div>
+</div>
+<script type='module'>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const firebaseConfig={apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'};
+const app=initializeApp(firebaseConfig); const db=getFirestore(app);
+window.importProducts=async function(){
+ const f=document.getElementById('file').files[0];
+ if(!f){alert('Choose products.json');return;}
+ const txt=await f.text();
+ const products=JSON.parse(txt);
+ let count=0;
+ for(const p of products){
+   const id=(p.name||('product-'+count)).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+   await setDoc(doc(db,'products',id),p);
+   count++;
+ }
+ document.getElementById('status').innerHTML='✅ Imported '+count+' products into Firebase';
+};
+</script>
+</body>
+</html>
