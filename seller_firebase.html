@@ -3,7 +3,7 @@
 <style>
 body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f7f7f7;border-radius:12px;padding:10px}.card{background:#fff;border-radius:10px;padding:10px;margin:8px 0}.note{background:#fff8c4;padding:6px;border-radius:6px}.metrics{display:flex;gap:10px;margin-bottom:12px}.metric{background:#fff;padding:10px;border-radius:10px}.items{background:#f4f4f4;padding:6px;border-radius:6px;margin:6px 0}
 </style></head><body>
-<h1>Seller RC1</h1>
+<h1>Courtside Kitchen</h1>
 <div class='metrics'><div class='metric'>Revenue: ₱<span id='rev'>0</span></div><div class='metric'>Completed: <span id='cnt'>0</span></div><div class='metric'>Avg: ₱<span id='avg'>0</span></div></div>
 <div class='tabs'>
 <button onclick="tab('orders')">Orders</button>
@@ -16,7 +16,22 @@ body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{pad
 <div id='historyList'></div>
 </div>
  
-<div id='products' class='tab'>
+<div class='metrics'>
+<div class='metric'>
+Products:
+<span id='prodCount'>0</span>
+</div>
+ 
+<div class='metric'>
+Out Of Stock:
+<span id='outCount'>0</span>
+</div>
+ 
+<div class='metric'>
+Categories:
+<span id='catCount'>0</span>
+</div>
+</div>
  
 <div class='card'>
 <input id='searchProducts'
@@ -260,7 +275,22 @@ Save
 `;
 });
  
-productsList.innerHTML = h;
+let cats = new Set();
+let out = 0;
+ 
+products.forEach(p => {
+ 
+cats.add(p.category || 'Other');
+ 
+if((p.qty || 0) <= 0){
+out++;
+}
+ 
+});
+ 
+prodCount.textContent = products.length;
+outCount.textContent = out;
+catCount.textContent = cats.size;productsList.innerHTML = h;
 };
  
 onSnapshot(
