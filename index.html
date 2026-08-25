@@ -1,32 +1,30 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset='utf-8'>
-<meta name='viewport' content='width=device-width,initial-scale=1'>
+<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>Courtside Kitchen Ordering</title>
 <style>
-body{font-family:Arial;margin:0;background:#f4f6f9}.container{max-width:1000px;margin:auto;padding:12px}.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:12px}.item{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:10px 0}.cat{font-weight:bold;color:#163a70}.img{width:80px;height:80px;object-fit:cover;border-radius:8px}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.out{color:red;font-weight:bold}
-</style>
-</head>
-<body>
+body{font-family:Arial;margin:0;background:#f4f6f9}.logo{text-align:center;padding:20px}.logo img{max-width:320px;width:100%}.container{max-width:1000px;margin:auto;padding:12px}.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:12px}.item{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:10px 0}.cat{font-weight:bold;color:#163a70;font-size:18px}.img{width:80px;height:80px;object-fit:cover;border-radius:8px}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.btn{background:#163a70;color:#fff;border:none;padding:12px;border-radius:8px;width:100%}.out{color:red;font-weight:bold}.success{background:#e8f5e9}
+</style></head><body>
+<div class='logo'><img src='logo.png'></div>
 <div class='container'>
-<h1>Courtside Kitchen</h1>
 <div id='menu'></div>
 <div class='card'>
 <input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br>
 <select id='payment' style='width:100%;padding:10px'><option>GCash</option><option>BPI</option></select>
+<div style='margin-top:10px'><img src='GCASH.jpg' style='max-width:220px;width:100%'></div>
 </div>
+<div id='successBox' class='card success' style='display:none'></div>
 </div>
-<div class='cart'><div id='summary'>No items selected</div><h2>Total ₱<span id='total'>0</span></h2><button onclick='placeOrder()'>📱 PLACE ORDER VIA WHATSAPP</button></div>
+<div class='cart'><div id='summary'>No items selected</div><h2>Total ₱<span id='total'>0</span></h2><button class='btn' onclick='placeOrder()'>PLACE ORDER</button></div>
 <script type='module'>
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const firebaseConfig={apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'};
-const app=initializeApp(firebaseConfig);const db=getFirestore(app);
-let products=[],cart={};
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getFirestore,collection,onSnapshot,doc,getDoc,runTransaction,setDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});
+const db=getFirestore(app); let products=[],cart={};
 window.qty=(id,v)=>{cart[id]=Math.max(0,(cart[id]||0)+v);render();};
-function render(){let grouped={},h='',t=0,s='';products.forEach(p=>{let c=p.category||'Other';(grouped[c]??=[]).push(p)});for(let c in grouped){h+=`<div class='card'><div class='cat'>${c}</div>`;grouped[c].forEach(p=>{let q=cart[p.id]||0;let disabled=p.outOfStock||Number(p.qty)<=0;h+=`<div class='item'><div>${p.image?`<img class='img' src='${p.image}'>`:''}</div><div style='flex:1;padding-left:10px'><b>${p.name||p.id}</b><br>${p.description||''}<br>₱${p.price||0}<br>${disabled?'<span class="out">❌ OUT OF STOCK</span>':'Qty: '+(p.qty||0)}</div><div>${disabled?'':`<button onclick="qty('${p.id}',-1)">-</button>${q}<button onclick="qty('${p.id}',1)">+</button>`}</div></div>`;if(q){t+=q*Number(p.price||0);s+=`${p.name} x${q}\n`;}});h+='</div>';}menu.innerHTML=h;summary.innerText=s||'No items selected';total.innerText=t;}
-window.placeOrder=()=>{const n=document.getElementById('customerName').value.trim();if(!n)return alert('Enter your name');if(Number(total.innerText)<=0)return alert('Select items');const msg=`🍽️ COURTSIDE KITCHEN ORDER\n\nName: ${n}\n\nItems:\n${summary.innerText}\nTotal: ₱${total.innerText}\nPayment: ${payment.value}`;location.href=`https://wa.me/639178512376?text=${encodeURIComponent(msg)}`;};
-onSnapshot(collection(db,'products'),snap=>{products=[];snap.forEach(d=>products.push({id:d.id,...d.data()}));render();});
-</script>
-</body></html>
+function render(){let g={},html='',t=0,s='';products.forEach(p=>{(g[p.category||'Other']??=[]).push(p)});for(const c in g){html+=`<div class='card'><div class='cat'>${c}</div>`;g[c].forEach(p=>{const q=cart[p.id]||0;const o=(p.qty||0)<=0;html+=`<div class='item'><div>${p.image?`<img class='img' src='${p.image}'>`:''}</div><div style='flex:1;padding-left:10px'><b>${p.name}</b><br>${p.description||''}<br>₱${p.price||0}<br>${o?'<span class="out">❌ OUT OF STOCK</span>':'Available'}</div><div>${o?'':`<button onclick="qty('${p.id}',-1)">-</button>${q}<button onclick="qty('${p.id}',1)">+</button>`}</div></div>`;if(q){t+=q*(p.price||0);s+=`${p.name} x${q}\n`;}});html+='</div>';}menu.innerHTML=html;summary.innerText=s||'No items selected';total.innerText=t;}
+async function nextOrder(){const ref=doc(db,'counters','orders');let num=0;await runTransaction(db,async(tx)=>{const snap=await tx.get(ref);num=(snap.data()?.lastOrderNumber||0)+1;tx.update(ref,{lastOrderNumber:num});});return 'CK-'+String(num).padStart(4,'0');}
+window.placeOrder=async()=>{const customer=document.getElementById('customerName').value.trim();if(!customer)return alert('Enter name');let items=[];let totalAmt=Number(total.innerText);if(totalAmt<=0)return alert('Select items');products.forEach(p=>{let q=cart[p.id]||0;if(q)items.push({name:p.name,qty:q,price:p.price});});const orderNo=await nextOrder();const order={orderNumber:orderNo,customerName:customer,paymentMethod:payment.value,status:'ORDER_RECEIVED',total:totalAmt,items,createdAt:new Date().toISOString()};await setDoc(doc(db,'orders',orderNo),order);
+const msg=`Hello Courtside Kitchen,%0A%0AOrder Number: ${orderNo}%0AName: ${customer}%0A%0AItems:%0A${encodeURIComponent(summary.innerText)}%0A%0ATotal: ₱${totalAmt}%0A%0APayment screenshot attached below.`;
+successBox.style.display='block';successBox.innerHTML=`<h3>✅ Order Created</h3><p>Order Number: <b>${orderNo}</b></p><p>Status: ORDER RECEIVED</p><a href='https://wa.me/639178512376?text=${msg}' target='_blank'><button class='btn'>OPEN WHATSAPP</button></a>`;window.scrollTo(0,0);};
+onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();});
+</script></body></html>
