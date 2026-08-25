@@ -1,69 +1,23 @@
 <!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen Seller v9</title>
+<title>Seller RC1</title>
 <style>
-body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px 14px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f7f7f7;border-radius:12px;padding:10px}.card{background:#fff;border-radius:10px;padding:10px;margin:8px 0;box-shadow:0 1px 4px rgba(0,0,0,.1)}.note{background:#fff8c4;padding:6px;border-radius:6px}.declined{color:#b71c1c}.toolbar input,.toolbar select{padding:8px;margin-right:6px}
+body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f7f7f7;border-radius:12px;padding:10px}.card{background:#fff;border-radius:10px;padding:10px;margin:8px 0}.note{background:#fff8c4;padding:6px;border-radius:6px}.metrics{display:flex;gap:10px;margin-bottom:12px}.metric{background:#fff;padding:10px;border-radius:10px}.items{background:#f4f4f4;padding:6px;border-radius:6px;margin:6px 0}
 </style></head><body>
-<h1>Seller Dashboard v9</h1>
-<div class='tabs'>
-<button onclick="showTab('orders')">🛒 Orders</button>
-<button onclick="showTab('history')">📜 History</button>
-<button onclick="showTab('settings')">⚙ Settings</button>
-</div>
-<div id='orders' class='tab active'>
-<div class='board'>
-<div class='col'><h3>PENDING</h3><div id='pending'></div></div>
-<div class='col'><h3>ORDER RECEIVED</h3><div id='received'></div></div>
-<div class='col'><h3>PREPARING</h3><div id='preparing'></div></div>
-<div class='col'><h3>READY</h3><div id='ready'></div></div>
-</div>
-</div>
-<div id='history' class='tab'>
-<h2>History</h2>
-<div class='toolbar'>
-<input id='searchBox' placeholder='Order / Customer'>
-<select id='statusFilter'><option value=''>All</option><option>COMPLETED</option><option>CANCELLED</option><option>DECLINED</option></select>
-<button onclick='exportCsv()'>Export CSV</button>
-</div>
-<div id='historyList'></div>
-</div>
-<div id='settings' class='tab'>
-<h2>Settings</h2>
-<label>Default Preparation Time <input value='10'> mins</label>
-</div>
+<h1>Seller RC1</h1>
+<div class='metrics'><div class='metric'>Revenue: ₱<span id='rev'>0</span></div><div class='metric'>Completed: <span id='cnt'>0</span></div><div class='metric'>Avg: ₱<span id='avg'>0</span></div></div>
+<div class='tabs'><button onclick="tab('orders')">Orders</button><button onclick="tab('history')">History</button></div>
+<div id='orders' class='tab active'><div class='board'><div class='col'><h3>PENDING</h3><div id='pending'></div></div><div class='col'><h3>ORDER_RECEIVED</h3><div id='received'></div></div><div class='col'><h3>PREPARING</h3><div id='preparing'></div></div><div class='col'><h3>READY</h3><div id='ready'></div></div></div></div>
+<div id='history' class='tab'><button onclick='exportCsv()'>Export CSV</button><div id='historyList'></div></div>
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getFirestore,collection,onSnapshot,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});
-const db=getFirestore(app);
-window.showTab=id=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active')}
-window.move=async(id,status)=>updateDoc(doc(db,'orders',id),{status});
-window.decline=async(id)=>{const reason=prompt('Decline reason');if(reason) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:reason});}
-window.exportCsv=()=>alert('CSV export placeholder');
-function card(id,o){
-return `<div class='card'><b>${o.orderNumber||id}</b><br>
-Customer: ${o.customerName||''}<br>
-Payment: ${o.paymentMethod||'-'}<br>
-Discount: ${o.discountType||'None'}<br>
-Boba: ${o.bobaSummary||'No'}<br>
-Total: ₱${o.total||0}<br>
-${o.notes?`<div class='note'>📝 ${o.notes}</div>`:''}
-${o.declineReason?`<div class='declined'>Reason: ${o.declineReason}</div>`:''}
-<button onclick="move('${id}','ORDER_RECEIVED')">Receive</button>
-<button onclick="move('${id}','PREPARING')">Preparing</button>
-<button onclick="move('${id}','READY')">Ready</button>
-<button onclick="move('${id}','COMPLETED')">Complete</button>
-<button onclick="move('${id}','CANCELLED')">Cancel</button>
-<button onclick="decline('${id}')">Decline</button>
-</div>`}
-onSnapshot(collection(db,'orders'),snap=>{
-let p='',r='',pr='',re='',h='';
-snap.forEach(d=>{const o=d.data();
-if(o.status==='PENDING')p+=card(d.id,o);
-else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
-else if(o.status==='PREPARING')pr+=card(d.id,o);
-else if(o.status==='READY')re+=card(d.id,o);
-else if(['COMPLETED','CANCELLED','DECLINED'].includes(o.status))h+=card(d.id,o);
-});
-pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;ready.innerHTML=re;historyList.innerHTML=h||'No history';
-});
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
+let hist=[];window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
+window.move=(id,s)=>updateDoc(doc(db,'orders',id),{status:s});
+window.decline=async(id)=>{let r=prompt('Reason');if(r) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
+window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click();};
+function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
+function itemsHtml(items=[]){return items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>');}
+function card(id,o){return `<div class='card'><b>${o.orderNumber||id}</b><br>Customer: ${o.customerName||''}<br>${o.status==='PENDING'?`Pending: ${remain(o.createdAt)}`:''}<div class='items'>${itemsHtml(o.items||[])}</div>Subtotal: ₱${o.subtotal||0}<br>Boba: ₱${o.bobaTotal||0}<br>Discount: ${o.discountType||'None'}<br>Discount Amt: ₱${o.discountAmount||0}<br><b>Total: ₱${o.total||0}</b>${o.notes?`<div class='note'>📝 ${o.notes}</div>`:''}${o.declineReason?`<div>Decline: ${o.declineReason}</div>`:''}<br><button onclick="move('${id}','ORDER_RECEIVED')">Receive</button><button onclick="move('${id}','PREPARING')">Preparing</button><button onclick="move('${id}','READY')">Ready</button><button onclick="move('${id}','COMPLETED')">Complete</button><button onclick="move('${id}','CANCELLED')">Cancel</button><button onclick="decline('${id}')">Decline</button></div>`}
+onSnapshot(collection(db,'orders'),snap=>{let p='',r='',pr='',re='',h='';let revenue=0,c=0;hist=[];snap.forEach(d=>{const o={id:d.id,...d.data()};hist.push(o);if(o.status==='COMPLETED'){revenue+=Number(o.total||0);c++;}if(o.status==='PENDING')p+=card(d.id,o);else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);else if(o.status==='PREPARING')pr+=card(d.id,o);else if(o.status==='READY')re+=card(d.id,o);else h+=card(d.id,o);});pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;ready.innerHTML=re;historyList.innerHTML=h;rev.textContent=revenue;cnt.textContent=c;avg.textContent=c?Math.round(revenue/c):0;});
 </script></body></html>
