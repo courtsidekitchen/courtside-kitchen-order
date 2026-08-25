@@ -1,44 +1,37 @@
 <!DOCTYPE html>
 <html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen Admin v6</title>
+<title>Courtside Kitchen Admin v7</title>
 <style>
-body{font-family:Arial;background:#f4f6f9;max-width:1200px;margin:auto;padding:20px}
-.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:12px}.hidden{display:none}
-input{width:100%;padding:10px;margin:4px 0;box-sizing:border-box}.btn{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;background:#163a70;color:#fff}.danger{background:#c62828}.product{background:#fff;border-radius:10px;padding:12px;margin:10px 0}.label{font-size:12px;font-weight:bold;color:#555}.preview{max-width:120px;max-height:120px;border:1px solid #ddd;margin:8px 0}
+body{font-family:Arial;background:#f4f6f9;margin:0;padding:20px;max-width:1300px;margin:auto}.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:12px}.hidden{display:none}.tab{padding:10px 15px;border:none;margin-right:5px;border-radius:8px;cursor:pointer}.active{background:#163a70;color:#fff}.btn{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;background:#163a70;color:#fff;margin:2px}.order{background:#fff;padding:12px;border-radius:10px;margin:10px 0}.green{color:green}.orange{color:orange}.red{color:red}
 </style></head><body>
-<div id='loginView' class='card'><h2>Courtside Kitchen Admin</h2><input id='email' placeholder='Email'><input id='password' type='password' placeholder='Password'><button class='btn' onclick='login()'>Login</button></div>
-<div id='appView' class='hidden'>
-<div class='card'><button class='btn' onclick='logout()'>Logout</button> <button class='btn' onclick='toggleAdd()'>➕ Add Product</button></div>
-<div id='addBox' class='card hidden'>
-<h3>Add Product</h3>
-<div class='label'>Category</div><input id='cat'>
-<div class='label'>Product Name</div><input id='pname'>
-<div class='label'>Description</div><input id='desc'>
-<div class='label'>Price (₱)</div><input id='price' type='number'>
-<div class='label'>Quantity Available</div><input id='qty' type='number'>
-<div class='label'>Product Photo</div><input id='photo' type='file' accept='image/*' onchange='previewNew()'>
-<img id='newPreview' class='preview hidden'>
-<button class='btn' onclick='addProduct()'>Save Product</button>
+<div id='loginView' class='card'>
+<h2>Courtside Kitchen Admin</h2>
+<input id='email' placeholder='Email' style='width:100%;padding:8px'><br><br>
+<input id='password' type='password' placeholder='Password' style='width:100%;padding:8px'><br><br>
+<button class='btn' onclick='login()'>Login</button>
 </div>
-<div id='products'></div>
+<div id='appView' class='hidden'>
+<div class='card'>
+<button class='tab active' id='productsTabBtn' onclick='showTab("products")'>📦 Products</button>
+<button class='tab' id='ordersTabBtn' onclick='showTab("orders")'>🛒 Orders</button>
+<button class='tab' id='settingsTabBtn' onclick='showTab("settings")'>⚙ Settings</button>
+<button class='btn' style='float:right' onclick='logout()'>Logout</button>
+</div>
+<div id='productsTab' class='card'>Products management remains in Seller v6. Use Seller v6 for product editing.</div>
+<div id='ordersTab' class='card hidden'><h2>Orders</h2><div id='ordersList'>Loading orders...</div></div>
+<div id='settingsTab' class='card hidden'><h2>Settings</h2><p>Phase 2A placeholder.</p></div>
 </div>
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,collection,onSnapshot,doc,setDoc,deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore,collection,onSnapshot,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});
-const auth=getAuth(app),db=getFirestore(app); let data=[];
-const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const auth=getAuth(app),db=getFirestore(app);
 window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value).catch(e=>alert(e.message));
 window.logout=()=>signOut(auth);
-onAuthStateChanged(auth,u=>{loginView.classList.toggle('hidden',!!u);appView.classList.toggle('hidden',!u)});
-window.toggleAdd=()=>addBox.classList.toggle('hidden');
-window.previewNew=()=>{const f=photo.files[0]; if(!f)return; newPreview.src=URL.createObjectURL(f); newPreview.classList.remove('hidden');}
-window.addProduct=async()=>{const file=photo.files[0]; const img=file?('images/'+file.name):''; await setDoc(doc(db,'products',slug(pname.value)),{category:cat.value,name:pname.value,description:desc.value,price:Number(price.value||0),qty:Number(qty.value||0),image:img}); alert('Saved. Upload '+(file?file.name:'image manually')+' to /images in GitHub.');}
-window.toggleEdit=id=>document.getElementById('e_'+id).classList.toggle('hidden');
-window.saveEdit=async(id)=>{await setDoc(doc(db,'products',id),{category:document.getElementById('c_'+id).value,name:document.getElementById('n_'+id).value,description:document.getElementById('d_'+id).value,price:Number(document.getElementById('p_'+id).value),qty:Number(document.getElementById('q_'+id).value),image:document.getElementById('i_'+id).value},{merge:true});alert('Updated');}
-window.removePhoto=async(id)=>{document.getElementById('i_'+id).value=''; await saveEdit(id);}
-window.del=async(id)=>{if(confirm('Delete product?')) await deleteDoc(doc(db,'products',id));}
-function render(){let h='';data.forEach(p=>{h+=`<div class='product'><b>${p.name}</b> ₱${p.price} Qty:${p.qty} ${(p.qty||0)<=0?'<span style="color:red">❌ OUT OF STOCK</span>':''}<br><button class='btn' onclick="toggleEdit('${p.id}')">Edit</button> <button class='btn danger' onclick="del('${p.id}')">Delete</button><div id='e_${p.id}' class='hidden'><div class='label'>Category</div><input id='c_${p.id}' value='${p.category||''}'><div class='label'>Product Name</div><input id='n_${p.id}' value='${p.name||''}'><div class='label'>Description</div><input id='d_${p.id}' value='${p.description||''}'><div class='label'>Price (₱)</div><input id='p_${p.id}' value='${p.price||0}'><div class='label'>Quantity Available</div><input id='q_${p.id}' value='${p.qty||0}'><div class='label'>Product Image Path</div><input id='i_${p.id}' value='${p.image||''}'>${p.image?`<img class='preview' src='${p.image}'>`:''}<br><button class='btn' onclick="saveEdit('${p.id}')">Save Changes</button> <button class='btn danger' onclick="removePhoto('${p.id}')">Remove Photo</button></div></div>`}); products.innerHTML=h;}
-onSnapshot(collection(db,'products'),s=>{data=[];s.forEach(d=>data.push({id:d.id,...d.data()}));render();});
+onAuthStateChanged(auth,u=>{loginView.classList.toggle('hidden',!!u);appView.classList.toggle('hidden',!u);});
+window.showTab=(t)=>{['products','orders','settings'].forEach(x=>{document.getElementById(x+'Tab').classList.add('hidden');document.getElementById(x+'TabBtn').classList.remove('active')});document.getElementById(t+'Tab').classList.remove('hidden');document.getElementById(t+'TabBtn').classList.add('active');}
+window.setStatus=async(id,status)=>{await updateDoc(doc(db,'orders',id),{status});}
+function timer(createdAt){if(!createdAt)return '00:00';let start=new Date(createdAt);let mins=Math.floor((Date.now()-start.getTime())/60000);return mins+' mins';}
+onSnapshot(collection(db,'orders'),snap=>{let h='';snap.forEach(d=>{let o=d.data();h+=`<div class='order'><b>${o.orderNumber||d.id}</b><br>Customer: ${o.customerName||''}<br>Total: ₱${o.total||0}<br>Status: <b>${o.status||'ORDER_RECEIVED'}</b><br>Timer: ${timer(o.createdAt)}<br><button class='btn' onclick="setStatus('${d.id}','ORDER_RECEIVED')">Order Received</button><button class='btn' onclick="setStatus('${d.id}','PREPARING')">Preparing</button><button class='btn' onclick="setStatus('${d.id}','READY')">Ready</button><button class='btn' onclick="setStatus('${d.id}','COMPLETED')">Completed</button><button class='btn' style='background:#c62828' onclick="setStatus('${d.id}','CANCELLED')">Cancelled</button></div>`});ordersList.innerHTML=h||'No orders yet';});
 </script></body></html>
