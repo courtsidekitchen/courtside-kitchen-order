@@ -114,7 +114,56 @@ function buildItems(){const items=[];products.forEach(p=>{const q=cart[p.id]||0;
 function calc(){let s=0,b=0,t='';products.forEach(p=>{let q=cart[p.id]||0;if(q){s+=q*(p.price||0);if(bobaMap[p.id])b+=q*5;t+=`${p.name} x${q}${bobaMap[p.id]?' + Boba':''}\n`;}});let d=(s+b)*(Number(discount.value)/100);sub.textContent=s;boba.textContent=b;disc.textContent=Math.round(d);total.textContent=Math.round(s+b-d);summary.innerText=t||'No items selected';}
 function render(){let g={},h='';products.forEach(p=>(g[p.category||'Other']??=[]).push(p));for(const c in g){let id=c.toLowerCase().replace(/[^a-z0-9]+/g,'-');h+=`<div class='card'><div class='category' onclick="toggleCat('${id}')"><span>${c}</span><span>${g[c].length}</span></div><div id='${id}' class='content ${openCats.has(id)?'open':''}'>`;g[c].forEach(p=>{let milk=(p.category||'').toLowerCase().includes('milk');h+=`<div class='item'><div>${p.image?`<img class='img' src='${p.image}'>`:''}</div><div style='flex:1;padding-left:10px'><b>${p.name}</b><br>${p.description||''}<br>₱${p.price||0}${milk?`<br><label><input type='checkbox' ${bobaMap[p.id]?'checked':''} onchange="tb('${p.id}')"> Add Boba (+₱5)</label>`:''}</div><div><button class='qtybtn minus' onclick="q('${p.id}',-1)">-</button>${cart[p.id]||0}<button class='qtybtn plus' onclick="q('${p.id}',1)">+</button></div></div>`});h+='</div></div>';}menu.innerHTML=h;}
 async function nextOrder(){const ref=doc(db,'counters','orders');let n=0;await runTransaction(db,async tx=>{const s=await tx.get(ref);n=(s.data()?.lastOrderNumber||0)+1;tx.update(ref,{lastOrderNumber:n});});return 'CK-'+String(n).padStart(4,'0');}
-window.placeOrder=async()=>{if(!customerName.value)return alert('Enter name');const items=buildItems();const orderNo=await nextOrder();const track=`track_rc1.html?order=${orderNo}`;const order={orderNumber:orderNo,paymentMethod:paymentMethod.value,customerName:customerName.value,status:'PENDING',notes:notes.value,items,discountType:discount.options[discount.selectedIndex].text,discountAmount:Number(disc.textContent),subtotal:Number(sub.textContent),bobaTotal:Number(boba.textContent),total:Number(total.textContent),createdAt:new Date().toISOString()};await setDoc(doc(db,'orders',orderNo),order);const wa=`Order Number:${orderNo}\nPayment Method:${order.paymentMethod}\nItems:\n${summary.innerText}\nSubtotal: ₱${sub.textContent}\nBoba: ₱${boba.textContent}\nDiscount:${order.discountType}\nTotal: ₱${order.total}\nNotes:${notes.value}`;window.open(track,'_blank');success.innerHTML=`<div class='card'><h3>✅ ${orderNo}</h3><p>Status:<span id='orderStatus'>PENDING</span></p><p>Cancel window:<span id='timer'>30</span>s</p><button id='cancelBtn' onclick="cancelOrder('${orderNo}')">Cancel Order</button><div id='msg'></div><br><a href='${track}'><button class='btn'>🔎 TRACK MY ORDER</button></a><br><br><a target='_blank' href='https://wa.me/639178512376?text=${encodeURIComponent(wa)}'><button class='btn'>📱 OPEN WHATSAPP & SEND PAYMENT</button></a></div>`;let t=30;let i=setInterval(async()=>{t--;const e=document.getElementById('timer');if(e)e.textContent=t;if(t<=0){clearInterval(i);await updateDoc(doc(db,'orders',orderNo),{status:'ORDER_RECEIVED'});document.getElementById('orderStatus').textContent='ORDER_RECEIVED';document.getElementById('cancelBtn')?.remove();document.getElementById('msg').innerHTML='✅ Order Sent To Kitchen';}},1000)};
+window.placeOrder=async()=>{if(!customerName.value)return alert('Enter name');const items=buildItems();const orderNo=await nextOrder();const track=`track_rc1.html?order=${orderNo}`;const order={orderNumber:orderNo,paymentMethod:paymentMethod.value,customerName:customerName.value,status:'PENDING',notes:notes.value,items,discountType:discount.options[discount.selectedIndex].text,discountAmount:Number(disc.textContent),subtotal:Number(sub.textContent),bobaTotal:Number(boba.textContent),total:Number(total.textContent),createdAt:new Date().toISOString()};await setDoc(doc(db,'orders',orderNo),order);const paymentInfo =
+order.paymentMethod === 'BPI'
+?
+`Account Name:
+PA****K NI**O LA***O.
+ 
+Account Number:
+0846454643`
+:
+`Account Name:
+PA****K NI**O L.
+ 
+Mobile Number:
+09178512376`;
+ 
+const wa = `
+Order Number:
+${orderNo}
+ 
+Payment Method:
+${order.paymentMethod}
+ 
+${paymentInfo}
+ 
+Items:
+${summary.innerText}
+ 
+Subtotal:
+₱${sub.textContent}
+ 
+Boba:
+₱${boba.textContent}
+ 
+Discount:
+${order.discountType}
+ 
+Discount Amount:
+₱${order.discountAmount}
+ 
+Total:
+₱${order.total}
+ 
+Notes:
+${notes.value}
+ 
+Track:
+${location.origin+'/'+track}
+`;
+ 
+window.open(track,'_blank');success.innerHTML=`<div class='card'><h3>✅ ${orderNo}</h3><p>Status:<span id='orderStatus'>PENDING</span></p><p>Cancel window:<span id='timer'>30</span>s</p><button id='cancelBtn' onclick="cancelOrder('${orderNo}')">Cancel Order</button><div id='msg'></div><br><a href='${track}'><button class='btn'>🔎 TRACK MY ORDER</button></a><br><br><a target='_blank' href='https://wa.me/639178512376?text=${encodeURIComponent(wa)}'><button class='btn'>📱 OPEN WHATSAPP & SEND PAYMENT</button></a></div>`;let t=30;let i=setInterval(async()=>{t--;const e=document.getElementById('timer');if(e)e.textContent=t;if(t<=0){clearInterval(i);await updateDoc(doc(db,'orders',orderNo),{status:'ORDER_RECEIVED'});document.getElementById('orderStatus').textContent='ORDER_RECEIVED';document.getElementById('cancelBtn')?.remove();document.getElementById('msg').innerHTML='✅ Order Sent To Kitchen';}},1000)};
 window.cancelOrder=async(id)=>{await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});alert('Cancelled');};
 onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();calc();});
 </script></body></html>
