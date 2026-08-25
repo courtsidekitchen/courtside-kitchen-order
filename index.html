@@ -10,10 +10,42 @@ body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;m
 <select id='discount' onchange='calc()' style='width:100%;padding:10px'>
 <option value='0'>No Discount</option><option value='20'>Senior Citizen (20%)</option><option value='20'>PWD (20%)</option></select>
 <br><br>
-<select id='paymentMethod' onchange='updatePaymentImage()' style='width:100%;padding:10px'>
-<option value='GCash'>GCash</option><option value='BPI'>BPI</option></select>
+<select id='paymentMethod'
+onchange='updatePaymentImage()'
+style='width:100%;padding:10px'>
+ 
+<option value='GCash'>GCash</option>
+<option value='BPI'>BPI</option>
+ 
+</select>
+ 
 <br><br>
-<img id='paymentImage' src='GCASH.jpg' style='max-width:250px;width:100%;border-radius:12px'>
+ 
+<a id="qrDownload"
+href="GCASH.jpg"
+download>
+ 
+<img id="paymentImage"
+src="GCASH.jpg"
+style="
+max-width:250px;
+width:100%;
+border-radius:12px;
+cursor:pointer">
+ 
+</a>
+ 
+<div id="paymentDetails">
+ 
+<b>GCash</b><br>
+ 
+Account Name:<br>
+PA****K NI**O L.<br><br>
+ 
+Mobile Number:<br>
+09178512376
+ 
+</div>
 <p>Attach payment screenshot and valid ID if claiming discount.</p>
 </div><div id='success'></div></div>
 <div class='cart'><div id='summary'>No items selected</div><div>Subtotal ₱<span id='sub'>0</span></div><div>Boba ₱<span id='boba'>0</span></div><div>Discount ₱<span id='disc'>0</span></div><h2>Total ₱<span id='total'>0</span></h2><button class='btn' onclick='placeOrder()'>🍽️ PLACE ORDER</button></div>
