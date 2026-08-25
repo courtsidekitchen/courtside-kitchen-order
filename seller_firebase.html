@@ -224,6 +224,10 @@ h += `
 Qty:
 ${p.qty||0}
  
+${(p.qty||0)<=0
+? "<div style='color:red;font-weight:bold'>❌ OUT OF STOCK</div>"
+: ""}
+ 
 <br><br>
  
 <button onclick="editProduct('${p.id}')">
