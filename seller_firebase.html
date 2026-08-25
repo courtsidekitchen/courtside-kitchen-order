@@ -1,37 +1,40 @@
-<!DOCTYPE html>
-<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen Admin v7</title>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Seller v8</title>
 <style>
-body{font-family:Arial;background:#f4f6f9;margin:0;padding:20px;max-width:1300px;margin:auto}.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:12px}.hidden{display:none}.tab{padding:10px 15px;border:none;margin-right:5px;border-radius:8px;cursor:pointer}.active{background:#163a70;color:#fff}.btn{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;background:#163a70;color:#fff;margin:2px}.order{background:#fff;padding:12px;border-radius:10px;margin:10px 0}.green{color:green}.orange{color:orange}.red{color:red}
+body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f8f8f8;padding:10px;border-radius:10px}.card{background:white;padding:10px;margin:8px 0;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 </style></head><body>
-<div id='loginView' class='card'>
-<h2>Courtside Kitchen Admin</h2>
-<input id='email' placeholder='Email' style='width:100%;padding:8px'><br><br>
-<input id='password' type='password' placeholder='Password' style='width:100%;padding:8px'><br><br>
-<button class='btn' onclick='login()'>Login</button>
+<h1>Courtside Kitchen Admin v8</h1>
+<div class='tabs'>
+<button onclick="show('products')">📦 Products</button>
+<button onclick="show('orders')">🛒 Orders</button>
+<button onclick="show('history')">📜 History</button>
+<button onclick="show('settings')">⚙ Settings</button>
 </div>
-<div id='appView' class='hidden'>
-<div class='card'>
-<button class='tab active' id='productsTabBtn' onclick='showTab("products")'>📦 Products</button>
-<button class='tab' id='ordersTabBtn' onclick='showTab("orders")'>🛒 Orders</button>
-<button class='tab' id='settingsTabBtn' onclick='showTab("settings")'>⚙ Settings</button>
-<button class='btn' style='float:right' onclick='logout()'>Logout</button>
-</div>
-<div id='productsTab' class='card'>Products management remains in Seller v6. Use Seller v6 for product editing.</div>
-<div id='ordersTab' class='card hidden'><h2>Orders</h2><div id='ordersList'>Loading orders...</div></div>
-<div id='settingsTab' class='card hidden'><h2>Settings</h2><p>Phase 2A placeholder.</p></div>
-</div>
+<div id='products' class='tab active'><h2>Products</h2><p>Use Seller v6 product management for now.</p></div>
+<div id='orders' class='tab'>
+<h2>Orders Kanban</h2>
+<div class='board'>
+<div class='col'><h3>PENDING</h3><div id='pending'></div></div>
+<div class='col'><h3>ORDER RECEIVED</h3><div id='received'></div></div>
+<div class='col'><h3>PREPARING</h3><div id='preparing'></div></div>
+<div class='col'><h3>READY</h3><div id='ready'></div></div>
+</div></div>
+<div id='history' class='tab'><h2>History</h2><input id='search' placeholder='Search'><button onclick='exportCsv()'>Export CSV</button><div id='historyList'></div></div>
+<div id='settings' class='tab'><h2>Settings</h2><label>Default Preparation Time <input value='10'> mins</label></div>
 <script type='module'>
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,collection,onSnapshot,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});
-const auth=getAuth(app),db=getFirestore(app);
-window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value).catch(e=>alert(e.message));
-window.logout=()=>signOut(auth);
-onAuthStateChanged(auth,u=>{loginView.classList.toggle('hidden',!!u);appView.classList.toggle('hidden',!u);});
-window.showTab=(t)=>{['products','orders','settings'].forEach(x=>{document.getElementById(x+'Tab').classList.add('hidden');document.getElementById(x+'TabBtn').classList.remove('active')});document.getElementById(t+'Tab').classList.remove('hidden');document.getElementById(t+'TabBtn').classList.add('active');}
-window.setStatus=async(id,status)=>{await updateDoc(doc(db,'orders',id),{status});}
-function timer(createdAt){if(!createdAt)return '00:00';let start=new Date(createdAt);let mins=Math.floor((Date.now()-start.getTime())/60000);return mins+' mins';}
-onSnapshot(collection(db,'orders'),snap=>{let h='';snap.forEach(d=>{let o=d.data();h+=`<div class='order'><b>${o.orderNumber||d.id}</b><br>Customer: ${o.customerName||''}<br>Total: ₱${o.total||0}<br>Status: <b>${o.status||'ORDER_RECEIVED'}</b><br>Timer: ${timer(o.createdAt)}<br><button class='btn' onclick="setStatus('${d.id}','ORDER_RECEIVED')">Order Received</button><button class='btn' onclick="setStatus('${d.id}','PREPARING')">Preparing</button><button class='btn' onclick="setStatus('${d.id}','READY')">Ready</button><button class='btn' onclick="setStatus('${d.id}','COMPLETED')">Completed</button><button class='btn' style='background:#c62828' onclick="setStatus('${d.id}','CANCELLED')">Cancelled</button></div>`});ordersList.innerHTML=h||'No orders yet';});
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});
+const db=getFirestore(app);
+window.show=(n)=>document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))||document.getElementById(n).classList.add('active');
+window.move=async(id,s)=>await updateDoc(doc(db,'orders',id),{status:s});
+window.decline=async(id)=>{let r=prompt('Reason: No Payment Received, Invalid Payment Proof, Incorrect Amount Received, Unable to Verify Payment, Item No Longer Available, Customer Unresponsive, Other'); if(!r)return; await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
+window.exportCsv=()=>alert('CSV export placeholder for v8');
+onSnapshot(collection(db,'orders'),snap=>{
+let p='',r='',pr='',re='',h='';
+snap.forEach(d=>{const o=d.data();let card=`<div class='card'><b>${o.orderNumber||d.id}</b><br>${o.customerName||''}<br>Total: ₱${o.total||0}<br>Notes: ${o.notes||'-'}<br>Status:${o.status||'PENDING'}<br><button onclick="move('${d.id}','PREPARING')">Preparing</button><button onclick="move('${d.id}','READY')">Ready</button><button onclick="move('${d.id}','COMPLETED')">Complete</button><button onclick="move('${d.id}','CANCELLED')">Cancel</button><button onclick="decline('${d.id}')">Decline</button>${o.declineReason?'<br><b>Reason:</b> '+o.declineReason:''}</div>`;
+if(o.status==='PENDING')p+=card; else if(o.status==='ORDER_RECEIVED')r+=card; else if(o.status==='PREPARING')pr+=card; else if(o.status==='READY')re+=card; else if(['COMPLETED','CANCELLED','DECLINED'].includes(o.status)) h+=card;
+});
+document.getElementById('pending').innerHTML=p;document.getElementById('received').innerHTML=r;document.getElementById('preparing').innerHTML=pr;document.getElementById('ready').innerHTML=re;document.getElementById('historyList').innerHTML=h||'No history';
+});
 </script></body></html>
