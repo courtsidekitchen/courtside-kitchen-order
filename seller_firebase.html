@@ -1,47 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset='utf-8'>
-<meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen Seller Firebase</title>
-<style>
-body{font-family:Arial;background:#f4f6f9;max-width:1100px;margin:auto;padding:20px}
-.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px}
-input{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}
-button{padding:10px 15px;margin:5px}.hidden{display:none}
-.item{border-bottom:1px solid #ddd;padding:10px 0}
-</style>
-</head>
-<body>
-<div id='loginBox' class='card'>
-<h2>Seller Login</h2>
-<input id='pwd' type='password' placeholder='Password'>
-<button onclick='login()'>Login</button>
-</div>
-<div id='app' class='hidden'>
-<div class='card'>
-<h2>Add / Edit Product</h2>
-<input id='docId' placeholder='Document ID (e.g. mango-smash)'>
-<input id='category' placeholder='Category'>
-<input id='name' placeholder='Product Name'>
-<input id='description' placeholder='Description'>
-<input id='price' type='number' placeholder='Price'>
-<input id='qty' type='number' placeholder='Quantity'>
-<input id='image' placeholder='images/product.jpg'>
-<label><input id='outOfStock' type='checkbox'> Out Of Stock</label><br>
-<button onclick='saveProduct()'>Save Product</button>
-</div>
-<div class='card'><h2>Products</h2><div id='products'></div></div>
-</div>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Seller v5</title><style>body{font-family:Arial;background:#f4f6f9;max-width:1200px;margin:auto;padding:20px}.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:12px}input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}.btn{padding:10px 14px;border:none;background:#163a70;color:#fff;border-radius:8px;cursor:pointer}.danger{background:#c62828}.hidden{display:none}.product{background:#fff;padding:12px;border-radius:10px;margin:8px 0}.out{color:red;font-weight:bold}</style></head><body>
+<div id='loginView' class='card'><h2>Courtside Kitchen Admin</h2><input id='email' placeholder='Email'><input id='password' type='password' placeholder='Password'><button class='btn' onclick='login()'>Login</button><div id='loginMsg'></div></div>
+<div id='appView' class='hidden'><div class='card'><h2>Inventory Dashboard</h2><button class='btn' onclick='logout()'>Logout</button></div><div class='card'><input id='search' placeholder='Search...' oninput='render()'><button class='btn' onclick='toggleAdd()'>➕ Add Product</button></div><div id='addBox' class='card hidden'><input id='cat' placeholder='Category'><input id='pname' placeholder='Product Name'><input id='desc' placeholder='Description'><input id='price' type='number' placeholder='Price'><input id='qty' type='number' placeholder='Quantity'><input id='image' placeholder='images/product.jpg'><button class='btn' onclick='addProduct()'>Save Product</button></div><div id='products'></div></div>
 <script type='module'>
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const firebaseConfig={apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'};
-const app=initializeApp(firebaseConfig); const db=getFirestore(app);
-window.login=function(){if(document.getElementById('pwd').value!=='pickleball123'){alert('Invalid password');return;}document.getElementById('loginBox').style.display='none';document.getElementById('app').classList.remove('hidden');};
-window.saveProduct=async function(){const id=document.getElementById('docId').value.trim();const name=document.getElementById('name').value.trim();if(!id||!name){alert('Document ID and Product Name required');return;}await setDoc(doc(db,'products',id),{category:category.value,name:name,description:description.value,price:Number(price.value||0),qty:Number(qty.value||0),image:image.value,outOfStock:outOfStock.checked});alert('Saved to Firebase');}
-window.editProduct=function(id,p){docId.value=id;category.value=p.category||'';name.value=p.name||'';description.value=p.description||'';price.value=p.price||0;qty.value=p.qty||0;image.value=p.image||'';outOfStock.checked=!!p.outOfStock;}
-window.deleteProduct=async function(id){if(confirm('Delete product?')) await deleteDoc(doc(db,'products',id));}
-onSnapshot(collection(db,'products'),snap=>{let html='';snap.forEach(d=>{const p=d.data();html+=`<div class="item"><b>${p.name||d.id}</b> (${p.category||''}) - ₱${p.price||0} Qty:${p.qty||0} ${p.outOfStock?'❌':''}<br><button onclick='editProduct(${JSON.stringify(d.id)},${JSON.stringify(p)})'>Edit</button><button onclick='deleteProduct(${JSON.stringify(d.id)})'>Delete</button></div>`});document.getElementById('products').innerHTML=html||'No products';});
-</script>
-</body></html>
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,collection,onSnapshot,doc,setDoc,deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});
+const auth=getAuth(app),db=getFirestore(app); let products=[];
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+window.login=async()=>{try{await signInWithEmailAndPassword(auth,email.value,password.value)}catch(e){loginMsg.textContent=e.message}};
+window.logout=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{loginView.classList.toggle('hidden',!!u);appView.classList.toggle('hidden',!u);});
+window.toggleAdd=()=>addBox.classList.toggle('hidden');
+window.addProduct=async()=>{if(!pname.value.trim())return alert('Name required');await setDoc(doc(db,'products',slug(pname.value)),{category:cat.value,name:pname.value,description:desc.value,price:Number(price.value||0),qty:Number(qty.value||0),image:image.value});};
+window.editToggle=id=>document.getElementById('e_'+id).classList.toggle('hidden');
+window.saveEdit=async(id)=>{await setDoc(doc(db,'products',id),{category:document.getElementById('c_'+id).value,name:document.getElementById('n_'+id).value,description:document.getElementById('d_'+id).value,price:Number(document.getElementById('p_'+id).value),qty:Number(document.getElementById('q_'+id).value),image:document.getElementById('i_'+id).value},{merge:true});};
+window.del=async(id)=>{if(confirm('Delete?'))await deleteDoc(doc(db,'products',id));};
+window.render=()=>{const q=(search.value||'').toLowerCase();products.innerHTML='';let h='';productsData.filter(x=>(x.name||'').toLowerCase().includes(q)).forEach(p=>{h+=`<div class="product"><b>${p.name}</b> ₱${p.price} Qty:${p.qty} ${(p.qty||0)<=0?'<span class="out">❌ OUT OF STOCK</span>':''}<br><button class='btn' onclick="editToggle('${p.id}')">Edit</button><button class='btn danger' onclick="del('${p.id}')">Delete</button><div id='e_${p.id}' class='hidden'><input id='c_${p.id}' value='${p.category||''}'><input id='n_${p.id}' value='${p.name||''}'><input id='d_${p.id}' value='${p.description||''}'><input id='p_${p.id}' value='${p.price||0}'><input id='q_${p.id}' value='${p.qty||0}'><input id='i_${p.id}' value='${p.image||''}'><button class='btn' onclick="saveEdit('${p.id}')">Save</button></div></div>`});document.getElementById('products').innerHTML=h;};
+let productsData=[];onSnapshot(collection(db,'products'),s=>{productsData=[];s.forEach(d=>productsData.push({id:d.id,...d.data()}));render();});
+</script></body></html>
