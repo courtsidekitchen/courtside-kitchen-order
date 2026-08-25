@@ -1,28 +1,34 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Seller Portal v3</title><style>body{font-family:Arial;max-width:1100px;margin:auto;padding:20px;background:#f4f6f9}.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px}input{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}button{padding:10px 15px;margin:5px}.hidden{display:none}</style></head><body>
-<div id='loginWrap' class='card'><h2>Seller Login</h2><input id='passwordInput' type='password'><button onclick='login()'>Login</button></div>
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Courtside Kitchen Admin</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;max-width:1200px;margin:auto;padding:20px}
+.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.stat{flex:1;min-width:150px}.btn{padding:10px 14px;border:none;background:#163a70;color:#fff;border-radius:8px;cursor:pointer}.danger{background:#c62828}.hidden{display:none}.product{background:#fff;border-radius:10px;padding:12px;margin:10px 0}.edit{background:#f9f9f9;padding:10px;border-radius:8px;margin-top:10px}.out{color:red;font-weight:bold} input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}
+</style></head><body>
+<div id='login'><div class='card'><h2>Login</h2><input id='pwd' type='password'><button class='btn' onclick='login()'>Login</button></div></div>
 <div id='app' class='hidden'>
-<div class='card'><h2>Add / Edit Product</h2>
-<input id='fldCategory' placeholder='Category'>
-<input id='fldProductName' placeholder='Product Name'>
-<input id='fldDescription' placeholder='Description'>
-<input id='fldPrice' type='number' placeholder='Price'>
-<input id='fldQty' type='number' placeholder='Quantity'>
-<input id='fldImage' placeholder='images/product.jpg'>
-<label><input id='fldOut' type='checkbox'> Out of Stock</label><br>
-<button onclick='saveProduct()'>Save Product</button>
-<button onclick='resetForm()'>Clear</button></div>
-<div class='card'><h2>Products</h2><div id='productList'></div></div>
-<div class='card'><input type='file' id='jsonFile'><button onclick='importJSON()'>Import</button><button onclick='exportJSON()'>Export products.json</button></div>
+<h1>Courtside Kitchen Admin</h1>
+<div class='row'><div class='card stat'>Products: <span id='prodCount'>0</span></div><div class='card stat'>Out of Stock: <span id='outCount'>0</span></div><div class='card stat'>Categories: <span id='catCount'>0</span></div></div>
+<div class='card'><input id='search' placeholder='Search products...' oninput='render()'><br><br><button class='btn' onclick='toggleAdd()'>➕ Add Product</button></div>
+<div id='addBox' class='card hidden'>
+<h3>Add Product</h3>
+<input id='aCategory' placeholder='Category'><input id='aName' placeholder='Product Name'><input id='aDescription' placeholder='Description'><input id='aPrice' type='number' placeholder='Price'><input id='aQty' type='number' placeholder='Quantity'><input id='aImage' placeholder='images/product.jpg'>
+<button class='btn' onclick='addProduct()'>Save</button>
 </div>
-<script>
-const PASS='pickleball123';let products=JSON.parse(localStorage.getItem('ck_products_v3')||'[]');let editIndex=-1;
-function saveStore(){localStorage.setItem('ck_products_v3',JSON.stringify(products));}
-function login(){if(document.getElementById('passwordInput').value!==PASS){alert('Invalid password');return;}document.getElementById('loginWrap').style.display='none';document.getElementById('app').classList.remove('hidden');render();}
-function saveProduct(){const product={category:document.getElementById('fldCategory').value.trim(),name:document.getElementById('fldProductName').value.trim(),description:document.getElementById('fldDescription').value.trim(),price:Number(document.getElementById('fldPrice').value||0),qty:Number(document.getElementById('fldQty').value||0),image:document.getElementById('fldImage').value.trim(),outOfStock:document.getElementById('fldOut').checked};if(product.name.length===0){alert('Product name required');return;}if(editIndex>=0){products[editIndex]=product;}else{products.push(product);}editIndex=-1;saveStore();resetForm();render();alert('Saved');}
-function render(){document.getElementById('productList').innerHTML=products.map((p,i)=>`<div><b>${p.name}</b> (${p.category}) - ₱${p.price} - Qty ${p.qty} ${p.outOfStock?'❌ OUT OF STOCK':''}<br><button onclick="editProduct(${i})">Edit</button><button onclick="deleteProduct(${i})">Delete</button><hr></div>`).join('')||'No products';}
-function editProduct(i){const p=products[i];editIndex=i;fldCategory.value=p.category||'';fldProductName.value=p.name||'';fldDescription.value=p.description||'';fldPrice.value=p.price||0;fldQty.value=p.qty||0;fldImage.value=p.image||'';fldOut.checked=!!p.outOfStock;}
-function deleteProduct(i){if(confirm('Delete product?')){products.splice(i,1);saveStore();render();}}
-function resetForm(){['fldCategory','fldProductName','fldDescription','fldPrice','fldQty','fldImage'].forEach(id=>document.getElementById(id).value='');fldOut.checked=false;}
-function exportJSON(){const blob=new Blob([JSON.stringify(products,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='products.json';a.click();}
-function importJSON(){const f=document.getElementById('jsonFile').files[0];if(!f){alert('Choose file');return;}const r=new FileReader();r.onload=e=>{products=JSON.parse(e.target.result);saveStore();render();alert('Imported');};r.readAsText(f);}
+<div id='products'></div>
+</div>
+<script type='module'>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});const db=getFirestore(app);
+let products=[];
+window.login=()=>{if(pwd.value!=='pickleball123')return alert('Invalid password');login.style.display='none';appDiv.classList.remove('hidden')}; const appDiv=document.getElementById('app');
+window.toggleAdd=()=>addBox.classList.toggle('hidden');
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+window.addProduct=async()=>{if(!aName.value.trim()) return alert('Product name required');await setDoc(doc(db,'products',slug(aName.value)),{category:aCategory.value,name:aName.value,description:aDescription.value,price:Number(aPrice.value||0),qty:Number(aQty.value||0),image:aImage.value});alert('Saved');};
+window.saveEdit=async(id)=>{await setDoc(doc(db,'products',id),{category:document.getElementById('c_'+id).value,name:document.getElementById('n_'+id).value,description:document.getElementById('d_'+id).value,price:Number(document.getElementById('p_'+id).value),qty:Number(document.getElementById('q_'+id).value),image:document.getElementById('i_'+id).value},{merge:true});alert('Updated');}
+window.del=async(id)=>{if(confirm('Delete?')) await deleteDoc(doc(db,'products',id));}
+window.editToggle=(id)=>document.getElementById('e_'+id).classList.toggle('hidden');
+window.render=()=>{const q=search.value.toLowerCase();let cats=new Set(),out=0;let h='';products.filter(p=>(p.name||'').toLowerCase().includes(q)).forEach(p=>{cats.add(p.category||'Other');if((p.qty||0)<=0) out++;h+=`<div class='product'><b>${p.name}</b> - ₱${p.price||0} | Qty: ${p.qty||0} ${((p.qty||0)<=0)?'<span class="out">❌ OUT OF STOCK</span>':''}<br><button class='btn' onclick="editToggle('${p.id}')">Edit</button><button class='btn danger' onclick="del('${p.id}')">Delete</button><div id='e_${p.id}' class='edit hidden'><input id='c_${p.id}' value='${p.category||''}'><input id='n_${p.id}' value='${p.name||''}'><input id='d_${p.id}' value='${p.description||''}'><input id='p_${p.id}' value='${p.price||0}'><input id='q_${p.id}' value='${p.qty||0}'><input id='i_${p.id}' value='${p.image||''}'><button class='btn' onclick="saveEdit('${p.id}')">Save</button></div></div>`});productsDiv.innerHTML=h;prodCount.textContent=products.length;outCount.textContent=out;catCount.textContent=cats.size;}
+const productsDiv=document.getElementById('products');onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();});
 </script></body></html>
