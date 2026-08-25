@@ -1,40 +1,69 @@
 <!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Seller v8</title>
+<title>Courtside Kitchen Seller v9</title>
 <style>
-body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f8f8f8;padding:10px;border-radius:10px}.card{background:white;padding:10px;margin:8px 0;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px 14px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#f7f7f7;border-radius:12px;padding:10px}.card{background:#fff;border-radius:10px;padding:10px;margin:8px 0;box-shadow:0 1px 4px rgba(0,0,0,.1)}.note{background:#fff8c4;padding:6px;border-radius:6px}.declined{color:#b71c1c}.toolbar input,.toolbar select{padding:8px;margin-right:6px}
 </style></head><body>
-<h1>Courtside Kitchen Admin v8</h1>
+<h1>Seller Dashboard v9</h1>
 <div class='tabs'>
-<button onclick="show('products')">📦 Products</button>
-<button onclick="show('orders')">🛒 Orders</button>
-<button onclick="show('history')">📜 History</button>
-<button onclick="show('settings')">⚙ Settings</button>
+<button onclick="showTab('orders')">🛒 Orders</button>
+<button onclick="showTab('history')">📜 History</button>
+<button onclick="showTab('settings')">⚙ Settings</button>
 </div>
-<div id='products' class='tab active'><h2>Products</h2><p>Use Seller v6 product management for now.</p></div>
-<div id='orders' class='tab'>
-<h2>Orders Kanban</h2>
+<div id='orders' class='tab active'>
 <div class='board'>
 <div class='col'><h3>PENDING</h3><div id='pending'></div></div>
 <div class='col'><h3>ORDER RECEIVED</h3><div id='received'></div></div>
 <div class='col'><h3>PREPARING</h3><div id='preparing'></div></div>
 <div class='col'><h3>READY</h3><div id='ready'></div></div>
-</div></div>
-<div id='history' class='tab'><h2>History</h2><input id='search' placeholder='Search'><button onclick='exportCsv()'>Export CSV</button><div id='historyList'></div></div>
-<div id='settings' class='tab'><h2>Settings</h2><label>Default Preparation Time <input value='10'> mins</label></div>
+</div>
+</div>
+<div id='history' class='tab'>
+<h2>History</h2>
+<div class='toolbar'>
+<input id='searchBox' placeholder='Order / Customer'>
+<select id='statusFilter'><option value=''>All</option><option>COMPLETED</option><option>CANCELLED</option><option>DECLINED</option></select>
+<button onclick='exportCsv()'>Export CSV</button>
+</div>
+<div id='historyList'></div>
+</div>
+<div id='settings' class='tab'>
+<h2>Settings</h2>
+<label>Default Preparation Time <input value='10'> mins</label>
+</div>
 <script type='module'>
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getFirestore,collection,onSnapshot,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});
 const db=getFirestore(app);
-window.show=(n)=>document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))||document.getElementById(n).classList.add('active');
-window.move=async(id,s)=>await updateDoc(doc(db,'orders',id),{status:s});
-window.decline=async(id)=>{let r=prompt('Reason: No Payment Received, Invalid Payment Proof, Incorrect Amount Received, Unable to Verify Payment, Item No Longer Available, Customer Unresponsive, Other'); if(!r)return; await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
-window.exportCsv=()=>alert('CSV export placeholder for v8');
+window.showTab=id=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active')}
+window.move=async(id,status)=>updateDoc(doc(db,'orders',id),{status});
+window.decline=async(id)=>{const reason=prompt('Decline reason');if(reason) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:reason});}
+window.exportCsv=()=>alert('CSV export placeholder');
+function card(id,o){
+return `<div class='card'><b>${o.orderNumber||id}</b><br>
+Customer: ${o.customerName||''}<br>
+Payment: ${o.paymentMethod||'-'}<br>
+Discount: ${o.discountType||'None'}<br>
+Boba: ${o.bobaSummary||'No'}<br>
+Total: ₱${o.total||0}<br>
+${o.notes?`<div class='note'>📝 ${o.notes}</div>`:''}
+${o.declineReason?`<div class='declined'>Reason: ${o.declineReason}</div>`:''}
+<button onclick="move('${id}','ORDER_RECEIVED')">Receive</button>
+<button onclick="move('${id}','PREPARING')">Preparing</button>
+<button onclick="move('${id}','READY')">Ready</button>
+<button onclick="move('${id}','COMPLETED')">Complete</button>
+<button onclick="move('${id}','CANCELLED')">Cancel</button>
+<button onclick="decline('${id}')">Decline</button>
+</div>`}
 onSnapshot(collection(db,'orders'),snap=>{
 let p='',r='',pr='',re='',h='';
-snap.forEach(d=>{const o=d.data();let card=`<div class='card'><b>${o.orderNumber||d.id}</b><br>${o.customerName||''}<br>Total: ₱${o.total||0}<br>Notes: ${o.notes||'-'}<br>Status:${o.status||'PENDING'}<br><button onclick="move('${d.id}','PREPARING')">Preparing</button><button onclick="move('${d.id}','READY')">Ready</button><button onclick="move('${d.id}','COMPLETED')">Complete</button><button onclick="move('${d.id}','CANCELLED')">Cancel</button><button onclick="decline('${d.id}')">Decline</button>${o.declineReason?'<br><b>Reason:</b> '+o.declineReason:''}</div>`;
-if(o.status==='PENDING')p+=card; else if(o.status==='ORDER_RECEIVED')r+=card; else if(o.status==='PREPARING')pr+=card; else if(o.status==='READY')re+=card; else if(['COMPLETED','CANCELLED','DECLINED'].includes(o.status)) h+=card;
+snap.forEach(d=>{const o=d.data();
+if(o.status==='PENDING')p+=card(d.id,o);
+else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
+else if(o.status==='PREPARING')pr+=card(d.id,o);
+else if(o.status==='READY')re+=card(d.id,o);
+else if(['COMPLETED','CANCELLED','DECLINED'].includes(o.status))h+=card(d.id,o);
 });
-document.getElementById('pending').innerHTML=p;document.getElementById('received').innerHTML=r;document.getElementById('preparing').innerHTML=pr;document.getElementById('ready').innerHTML=re;document.getElementById('historyList').innerHTML=h||'No history';
+pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;ready.innerHTML=re;historyList.innerHTML=h||'No history';
 });
 </script></body></html>
