@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Courtside Kitchen Ordering</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9}.container{max-width:1000px;margin:auto;padding:12px}.card{background:#fff;padding:12px;border-radius:12px;margin-bottom:12px}.item{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:10px 0}.cat{font-weight:bold;color:#163a70}.img{width:80px;height:80px;object-fit:cover;border-radius:8px}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.out{color:red;font-weight:bold}
+</style>
+</head>
+<body>
+<div class='container'>
+<h1>Courtside Kitchen</h1>
+<div id='menu'></div>
+<div class='card'>
+<input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br>
+<select id='payment' style='width:100%;padding:10px'><option>GCash</option><option>BPI</option></select>
+</div>
+</div>
+<div class='cart'><div id='summary'>No items selected</div><h2>Total ₱<span id='total'>0</span></h2><button onclick='placeOrder()'>📱 PLACE ORDER VIA WHATSAPP</button></div>
+<script type='module'>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const firebaseConfig={apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'};
+const app=initializeApp(firebaseConfig);const db=getFirestore(app);
+let products=[],cart={};
+window.qty=(id,v)=>{cart[id]=Math.max(0,(cart[id]||0)+v);render();};
+function render(){let grouped={},h='',t=0,s='';products.forEach(p=>{let c=p.category||'Other';(grouped[c]??=[]).push(p)});for(let c in grouped){h+=`<div class='card'><div class='cat'>${c}</div>`;grouped[c].forEach(p=>{let q=cart[p.id]||0;let disabled=p.outOfStock||Number(p.qty)<=0;h+=`<div class='item'><div>${p.image?`<img class='img' src='${p.image}'>`:''}</div><div style='flex:1;padding-left:10px'><b>${p.name||p.id}</b><br>${p.description||''}<br>₱${p.price||0}<br>${disabled?'<span class="out">❌ OUT OF STOCK</span>':'Qty: '+(p.qty||0)}</div><div>${disabled?'':`<button onclick="qty('${p.id}',-1)">-</button>${q}<button onclick="qty('${p.id}',1)">+</button>`}</div></div>`;if(q){t+=q*Number(p.price||0);s+=`${p.name} x${q}\n`;}});h+='</div>';}menu.innerHTML=h;summary.innerText=s||'No items selected';total.innerText=t;}
+window.placeOrder=()=>{const n=document.getElementById('customerName').value.trim();if(!n)return alert('Enter your name');if(Number(total.innerText)<=0)return alert('Select items');const msg=`🍽️ COURTSIDE KITCHEN ORDER\n\nName: ${n}\n\nItems:\n${summary.innerText}\nTotal: ₱${total.innerText}\nPayment: ${payment.value}`;location.href=`https://wa.me/639178512376?text=${encodeURIComponent(msg)}`;};
+onSnapshot(collection(db,'products'),snap=>{products=[];snap.forEach(d=>products.push({id:d.id,...d.data()}));render();});
+</script>
+</body></html>
