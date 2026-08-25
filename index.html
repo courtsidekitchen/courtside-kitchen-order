@@ -1,20 +1,43 @@
-<!DOCTYPE html>
-<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen Ordering v3</title>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Courtside Kitchen v4</title>
 <style>
-body{font-family:Arial;margin:0;background:#ececec}.logo{text-align:center;padding:25px 0}.logo img{max-width:420px;width:100%;filter:drop-shadow(0 4px 8px rgba(0,0,0,.12))}.container{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.06)}.cat{font-size:22px;font-weight:700;color:#163a70}.item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}.img{width:90px;height:90px;border-radius:10px;object-fit:cover}.qty-controls{display:flex;align-items:center;gap:14px}.qty-btn{width:46px;height:46px;border:none;border-radius:10px;color:#fff;font-size:22px;font-weight:bold;cursor:pointer;transition:all .2s ease}.minus-btn{background:#dc3545}.plus-btn{background:#28a745}.minus-btn:hover{background:#c82333;transform:translateY(-2px);box-shadow:0 5px 12px rgba(220,53,69,.35)}.plus-btn:hover{background:#218838;transform:translateY(-2px);box-shadow:0 5px 12px rgba(40,167,69,.35)}.qty-btn:active{transform:scale(.93)}.qty-number{font-size:18px;font-weight:bold;min-width:24px;text-align:center}.qty-pop{animation:qtyPop .25s ease}.plus-bounce{animation:plusBounce .35s ease}.minus-shake{animation:minusShake .3s ease}@keyframes qtyPop{50%{transform:scale(1.35)}}@keyframes plusBounce{40%{transform:scale(1.25)}70%{transform:scale(.92)}}@keyframes minusShake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}.cart{position:sticky;bottom:0;background:#fff;padding:12px;border-top:4px solid #163a70}.btn{background:#163a70;color:#fff;border:none;padding:12px;border-radius:8px;width:100%}.out{color:red;font-weight:bold}
+body{font-family:Arial;background:#ececec;margin:0}.wrap{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;padding:15px;border-radius:14px;margin-bottom:12px}.btn{background:#163a70;color:#fff;border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:bold;width:100%}.plus{background:#28a745;color:#fff}.minus{background:#dc3545;color:#fff}.qbtn{width:44px;height:44px;border:none;border-radius:8px;font-weight:bold}.qty{font-size:18px;font-weight:bold;padding:0 12px}.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.success{background:#e8f5e9}
 </style></head><body>
-<div class='logo'><img src='logo.png'></div>
-<div class='container'><div id='menu'></div><div class='card'><input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br><select id='payment' style='width:100%;padding:10px'><option>GCash</option><option>BPI</option></select><br><br><img src='GCASH.jpg' style='max-width:220px;width:100%'></div><div id='successBox' class='card' style='display:none'></div></div>
-<div class='cart'><div id='summary'>No items selected</div><h2>Total ₱<span id='total'>0</span></h2><button class='btn' onclick='placeOrder()'>PLACE ORDER</button></div>
+<div class='wrap'>
+<div class='card'><h1>Courtside Kitchen</h1></div>
+<div id='menu'></div>
+<div class='card'>
+<input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br>
+<textarea id='notes' placeholder='Special Requests / Notes' style='width:100%;height:80px'></textarea><br><br>
+<select id='discount' onchange='recalc()' style='width:100%;padding:10px'>
+<option value='0'>No Discount</option>
+<option value='20'>Senior Citizen (20%)</option>
+<option value='20'>PWD (20%)</option>
+</select>
+<p>ℹ️ Valid Senior Citizen/PWD ID must be attached with payment screenshot via WhatsApp.</p>
+</div>
+<div class='card'>
+<div>Subtotal: ₱<span id='subtotal'>0</span></div>
+<div style='color:green'>Discount: ₱<span id='discountAmt'>0</span></div>
+<hr>
+<div><b>Total: ₱<span id='grandTotal'>0</span></b></div>
+<button class='btn' onclick='placeOrder()'>🍽️ PLACE ORDER</button>
+</div>
+<div id='result'></div>
+</div>
 <script type='module'>
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getFirestore,collection,onSnapshot,doc,runTransaction,setDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'});const db=getFirestore(app);
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, onSnapshot, doc, setDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
 let products=[],cart={};
-window.qty=(id,v)=>{if(navigator.vibrate)navigator.vibrate(20);cart[id]=Math.max(0,(cart[id]||0)+v);render(id,v);};
-function render(animId=null,dir=0){let html='',groups={},totalAmt=0,sum='';products.forEach(p=>(groups[p.category||'Other']??=[]).push(p));for(const c in groups){html+=`<div class='card'><div class='cat'>${c}</div>`;groups[c].forEach(p=>{let q=cart[p.id]||0;let cls=(animId===p.id?'qty-pop':'');html+=`<div class='item'><div>${p.image?`<img class='img' src='${p.image}'>`:''}</div><div style='flex:1;padding-left:10px'><b>${p.name}</b><br>${p.description||''}<br>₱${p.price||0}<br>${(p.qty||0)<=0?'<span class="out">❌ OUT OF STOCK</span>':''}</div><div class='qty-controls'>${(p.qty||0)<=0?'':`<button class='qty-btn minus-btn ${animId===p.id&&dir<0?'minus-shake':''}' onclick="qty('${p.id}',-1)">−</button><span class='qty-number ${cls}'>${q}</span><button class='qty-btn plus-btn ${animId===p.id&&dir>0?'plus-bounce':''}' onclick="qty('${p.id}',1)">+</button>`}</div></div>`;if(q){totalAmt+=q*(p.price||0);sum+=`${p.name} x${q}\n`;}});html+='</div>';}menu.innerHTML=html;summary.innerText=sum||'No items selected';total.innerText=totalAmt;}
+window.changeQty=(id,n)=>{cart[id]=Math.max(0,(cart[id]||0)+n);recalc();render();};
+function render(){let h='';products.forEach(p=>{let q=cart[p.id]||0;h+=`<div class='card item'><div><b>${p.name}</b><br>₱${p.price||0}</div><div><button class='qbtn minus' onclick="changeQty('${p.id}',-1)">-</button><span class='qty'>${q}</span><button class='qbtn plus' onclick="changeQty('${p.id}',1)">+</button></div></div>`});menu.innerHTML=h;}
+window.recalc=()=>{let sub=0;products.forEach(p=>sub+=(cart[p.id]||0)*(p.price||0));let disc=sub*(Number(discount.value||0)/100);subtotal.textContent=sub.toFixed(2);discountAmt.textContent=disc.toFixed(2);grandTotal.textContent=(sub-disc).toFixed(2);};
 async function nextOrder(){const ref=doc(db,'counters','orders');let num=0;await runTransaction(db,async tx=>{const s=await tx.get(ref);num=(s.data()?.lastOrderNumber||0)+1;tx.update(ref,{lastOrderNumber:num});});return 'CK-'+String(num).padStart(4,'0');}
-window.placeOrder=async()=>{const name=customerName.value.trim();if(!name)return alert('Enter name');const totalAmt=Number(total.innerText);if(totalAmt<=0)return alert('Select items');let items=[];products.forEach(p=>{const q=cart[p.id]||0;if(q)items.push({name:p.name,qty:q,price:p.price});});const orderNo=await nextOrder();await setDoc(doc(db,'orders',orderNo),{orderNumber:orderNo,customerName:name,status:'ORDER_RECEIVED',paymentMethod:payment.value,total:totalAmt,items,createdAt:new Date().toISOString()});const txt=`Hello Courtside Kitchen,%0A%0AOrder Number: ${orderNo}%0AName: ${name}%0ATotal: ₱${totalAmt}%0A%0APayment screenshot attached below.`;successBox.style.display='block';successBox.innerHTML=`<h3>✅ Order Created</h3><p><b>${orderNo}</b></p><a href='https://wa.me/639178512376?text=${txt}' target='_blank'><button class='btn'>OPEN WHATSAPP</button></a>`;};
-onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();});
+window.placeOrder=async()=>{let total=Number(grandTotal.textContent);if(!customerName.value||total<=0)return alert('Complete order first');const orderNo=await nextOrder();let items=[];products.forEach(p=>{let q=cart[p.id]||0;if(q)items.push({name:p.name,qty:q,price:p.price});});await setDoc(doc(db,'orders',orderNo),{orderNumber:orderNo,customerName:customerName.value,status:'PENDING',notes:notes.value,discountType:discount.options[discount.selectedIndex].text,total,items,createdAt:new Date().toISOString()});
+result.innerHTML=`<div class='card success'><h3>✅ Order Created</h3><p>${orderNo}</p><div id='count'>30</div><button onclick="cancelOrder('${orderNo}')">Cancel Order</button><br><br><a target='_blank' href="https://wa.me/639178512376?text=${encodeURIComponent('Order '+orderNo+'\nPlease attach payment screenshot and ID if discount claimed.')} ">Open WhatsApp & Send Payment</a></div>`;
+let x=30;let t=setInterval(async()=>{x--; let c=document.getElementById('count'); if(c)c.textContent='Cancellation Window: '+x+'s'; if(x<=0){clearInterval(t); await setDoc(doc(db,'orders',orderNo),{status:'ORDER_RECEIVED'},{merge:true}); if(c)c.parentElement.innerHTML+='<p>✅ Order sent to kitchen.</p>'; }},1000);
+};
+window.cancelOrder=async(id)=>{await setDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'},{merge:true}); alert('Order cancelled');};
+onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();recalc();});
 </script></body></html>
