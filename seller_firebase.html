@@ -213,6 +213,10 @@ p =>
 h += `
 <div class='card'>
  
+${p.image
+? `${p.image}<br>`
+: ''}
+ 
 <b>${p.name}</b>
  
 <br>
