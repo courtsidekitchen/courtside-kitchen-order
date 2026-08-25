@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Courtside Kitchen Seller Firebase</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;max-width:1100px;margin:auto;padding:20px}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px}
+input{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}
+button{padding:10px 15px;margin:5px}.hidden{display:none}
+.item{border-bottom:1px solid #ddd;padding:10px 0}
+</style>
+</head>
+<body>
+<div id='loginBox' class='card'>
+<h2>Seller Login</h2>
+<input id='pwd' type='password' placeholder='Password'>
+<button onclick='login()'>Login</button>
+</div>
+<div id='app' class='hidden'>
+<div class='card'>
+<h2>Add / Edit Product</h2>
+<input id='docId' placeholder='Document ID (e.g. mango-smash)'>
+<input id='category' placeholder='Category'>
+<input id='name' placeholder='Product Name'>
+<input id='description' placeholder='Description'>
+<input id='price' type='number' placeholder='Price'>
+<input id='qty' type='number' placeholder='Quantity'>
+<input id='image' placeholder='images/product.jpg'>
+<label><input id='outOfStock' type='checkbox'> Out Of Stock</label><br>
+<button onclick='saveProduct()'>Save Product</button>
+</div>
+<div class='card'><h2>Products</h2><div id='products'></div></div>
+</div>
+<script type='module'>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const firebaseConfig={apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen',storageBucket:'courtside-kitchen.firebasestorage.app',messagingSenderId:'1062967764463',appId:'1:1062967764463:web:e13d6723c3a8fd150e821a'};
+const app=initializeApp(firebaseConfig); const db=getFirestore(app);
+window.login=function(){if(document.getElementById('pwd').value!=='pickleball123'){alert('Invalid password');return;}document.getElementById('loginBox').style.display='none';document.getElementById('app').classList.remove('hidden');};
+window.saveProduct=async function(){const id=document.getElementById('docId').value.trim();const name=document.getElementById('name').value.trim();if(!id||!name){alert('Document ID and Product Name required');return;}await setDoc(doc(db,'products',id),{category:category.value,name:name,description:description.value,price:Number(price.value||0),qty:Number(qty.value||0),image:image.value,outOfStock:outOfStock.checked});alert('Saved to Firebase');}
+window.editProduct=function(id,p){docId.value=id;category.value=p.category||'';name.value=p.name||'';description.value=p.description||'';price.value=p.price||0;qty.value=p.qty||0;image.value=p.image||'';outOfStock.checked=!!p.outOfStock;}
+window.deleteProduct=async function(id){if(confirm('Delete product?')) await deleteDoc(doc(db,'products',id));}
+onSnapshot(collection(db,'products'),snap=>{let html='';snap.forEach(d=>{const p=d.data();html+=`<div class="item"><b>${p.name||d.id}</b> (${p.category||''}) - ₱${p.price||0} Qty:${p.qty||0} ${p.outOfStock?'❌':''}<br><button onclick='editProduct(${JSON.stringify(d.id)},${JSON.stringify(p)})'>Edit</button><button onclick='deleteProduct(${JSON.stringify(d.id)})'>Delete</button></div>`});document.getElementById('products').innerHTML=html||'No products';});
+</script>
+</body></html>
