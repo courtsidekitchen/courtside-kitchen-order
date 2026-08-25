@@ -54,7 +54,59 @@ import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 import {getFirestore,collection,onSnapshot,doc,runTransaction,setDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
 let products=[],cart={},bobaMap={},openCats=new Set();
-window.updatePaymentImage=()=>{document.getElementById('paymentImage').src=document.getElementById('paymentMethod').value==='BPI'?'BPI.jpg':'GCASH.jpg'};
+window.updatePaymentImage = () => {
+ 
+const method =
+document.getElementById(
+'paymentMethod'
+).value;
+ 
+const img =
+document.getElementById(
+'paymentImage'
+);
+ 
+const link =
+document.getElementById(
+'qrDownload'
+);
+ 
+const details =
+document.getElementById(
+'paymentDetails'
+);
+ 
+if(method === 'BPI'){
+ 
+img.src = 'BPI.jpg';
+link.href = 'BPI.jpg';
+ 
+details.innerHTML = `
+<b>BPI</b><br>
+ 
+Account Name:<br>
+PA****K NI**O LA***O.<br><br>
+ 
+Account Number:<br>
+0846454643
+`;
+ 
+} else {
+ 
+img.src = 'GCASH.jpg';
+link.href = 'GCASH.jpg';
+ 
+details.innerHTML = `
+<b>GCash</b><br>
+ 
+Account Name:<br>
+PA****K NI**O L.<br><br>
+ 
+Mobile Number:<br>
+09178512376
+`;
+}
+};
 window.toggleCat=id=>{openCats.has(id)?openCats.delete(id):openCats.add(id);document.getElementById(id)?.classList.toggle('open');};
 window.q=(id,n)=>{cart[id]=Math.max(0,(cart[id]||0)+n);calc();render();};
 window.tb=id=>{bobaMap[id]=!bobaMap[id];calc();render();};
