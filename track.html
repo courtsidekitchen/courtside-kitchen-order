@@ -1,0 +1,46 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Track Order v2</title>
+<style>
+body{font-family:Arial;background:#ececec;max-width:900px;margin:auto;padding:20px}.card{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px}.step{padding:8px 0}.done{color:green;font-weight:bold}.active{color:#d97706;font-weight:bold}.bad{color:#b71c1c}.pill{display:inline-block;background:#163a70;color:#fff;padding:6px 12px;border-radius:20px}
+</style></head><body>
+<div class='card'><h1>🔎 Track Order</h1><input id='orderNo' placeholder='CK-0001' style='padding:10px;width:250px'><button onclick='track()'>Track</button></div>
+<div id='out'></div>
+<script type='module'>
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getFirestore,doc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});
+const db=getFirestore(app); let unsub=null;
+const flow=['PENDING','ORDER_RECEIVED','PREPARING','READY','COMPLETED'];
+window.track=()=>{
+ const id=orderNo.value.trim().toUpperCase();
+ if(!id) return;
+ if(unsub) unsub();
+ unsub=onSnapshot(doc(db,'orders',id),snap=>{
+  if(!snap.exists()){out.innerHTML='<div class="card">Order not found.</div>';return;}
+  const o=snap.data();
+  const idx=flow.indexOf(o.status);
+  let timeline='';
+  flow.forEach((s,i)=>timeline+=`<div class='step ${i<idx?'done':i===idx?'active':''}'>${i<=idx?'✅':'⚪'} ${s.replace('_',' ')}</div>`);
+  let eta='10 mins';
+  if(o.status==='READY') eta='Ready for Pickup';
+  if(o.status==='COMPLETED') eta='Completed';
+  out.innerHTML=`<div class='card'>
+  <span class='pill'>${o.status}</span>
+  <h2>${o.orderNumber||id}</h2>
+  <p><b>Customer:</b> ${o.customerName||'-'}</p>
+  <p><b>Subtotal:</b> ₱${o.subtotal||0}</p>
+  <p><b>Boba:</b> ₱${o.bobaTotal||0}</p>
+  <p><b>Discount:</b> ${o.discountType||'None'} (₱${o.discountAmount||0})</p>
+  <p><b>Total:</b> ₱${o.total||0}</p>
+  <p><b>Boba Selection:</b> ${o.bobaSummary||'None'}</p>
+  <p><b>Notes:</b> ${o.notes||'-'}</p>
+  <p><b>Estimated Ready:</b> ${eta}</p>
+  ${o.declineReason?`<p class='bad'><b>Decline Reason:</b> ${o.declineReason}</p>`:''}
+  ${o.cancelledBy?`<p class='bad'><b>Cancelled By:</b> ${o.cancelledBy}</p>`:''}
+  <h3>Timeline</h3>${timeline}
+  </div>`;
+ });
+}
+const q=new URLSearchParams(location.search).get('order');
+if(q){orderNo.value=q;track();}
+</script></body></html>
