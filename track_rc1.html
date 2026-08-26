@@ -1,14 +1,21 @@
 <!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>Track RC1</title>
 <style>
-body{font-family:Arial;background:#ececec;max-width:900px;margin:auto;padding:20px}.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px}.pill{display:inline-block;background:#163a70;color:#fff;padding:6px 12px;border-radius:20px}.done{color:green;font-weight:bold}.active{color:#d97706;font-weight:bold}.items{background:#f4f4f4;padding:8px;border-radius:8px}.bad{color:#b71c1c}
+body{font-family:Arial;background:#ececec;max-width:900px;margin:auto;padding:20px;box-sizing:border-box}.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-sizing:border-box}.track-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.track-input{flex:1;min-width:220px;padding:14px 16px;font-size:18px;font-weight:bold;border:2px solid #ccc;border-radius:8px;box-sizing:border-box}.track-btn{padding:14px 28px;font-size:18px;font-weight:bold;background:#0066cc;color:#fff;border:none;border-radius:8px;cursor:pointer;transition:background 0.2s}.track-btn:hover{background:#0052a3}.pill{display:inline-block;background:#163a70;color:#fff;padding:6px 12px;border-radius:20px}.done{color:green;font-weight:bold}.active{color:#d97706;font-weight:bold}.items{background:#f4f4f4;padding:8px;border-radius:8px}.bad{color:#b71c1c}
 </style></head><body>
-<div class='card'><h1>🔎 Track Order RC1</h1><input id='orderNo' placeholder='CK-0001' style='padding:10px;width:250px'><button onclick='track()'>Track</button></div><div id='out'></div>
+<div class='card'>
+  <h1 style='margin-top:0;'>🔎 Track Order</h1>
+  <div class='track-form'>
+    <input id='orderNo' class='track-input' placeholder='e.g. CK-0001'>
+    <button class='track-btn' onclick='track()'>Track Order</button>
+  </div>
+</div>
+<div id='out'></div>
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getFirestore,doc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let unsub=null;const flow=['PENDING','ORDER_RECEIVED','PREPARING','READY','COMPLETED'];
-window.track=()=>{const id=orderNo.value.trim().toUpperCase();if(!id)return;if(unsub)unsub();unsub=onSnapshot(doc(db,'orders',id),s=>{if(!s.exists()){out.innerHTML='<div class="card">Order not found.</div>';return;}const o=s.data();const idx=Math.max(0,flow.indexOf(o.status));let tl='';flow.forEach((x,i)=>tl+=`<div class='${i<idx?'done':i===idx?'active':''}'>${i<=idx?'✅':'⚪'} ${x}</div>`);const items=(o.items||[]).map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>')||'No items';let eta=o.status==='READY'?'Ready For Pickup':o.status==='COMPLETED'?'Completed':'In Progress';out.innerHTML=`<div class='card'><span class='pill'>${o.status||''}</span><h2>${o.orderNumber||id}</h2><p><b>Customer:</b> ${o.customerName||''}</p><div class='items'><b>Items Ordered</b><br>${items}</div><p><b>Subtotal:</b> ₱${o.subtotal||0}</p><p><b>Boba:</b> ₱${o.bobaTotal||0}</p><p><b>Discount:</b> ${o.discountType||'None'}</p><p><b>Discount Amount:</b> ₱${o.discountAmount||0}</p><p><b>Total:</b> ₱${o.total||0}</p><p><b>Notes:</b> ${o.notes||'-'}</p><p><b>ETA:</b> ${eta}</p>${o.cancelledBy?`<p class='bad'><b>Cancelled By:</b> ${o.cancelledBy}</p>`:''}${o.declineReason?`<p class='bad'><b>Decline Reason:</b> ${o.declineReason}</p>`:''}<h3>Timeline</h3>${tl}</div>`;});};
+let unsub=null;const flow=['PENDING','ORDER_RECEIVED','PREPARING','COMPLETED'];
+window.track=()=>{const id=orderNo.value.trim().toUpperCase();if(!id)return;if(unsub)unsub();unsub=onSnapshot(doc(db,'orders',id),s=>{if(!s.exists()){out.innerHTML='<div class="card">Order not found.</div>';return;}const o=s.data();const idx=Math.max(0,flow.indexOf(o.status));let tl='';flow.forEach((x,i)=>tl+=`<div class='${i<idx?'done':i===idx?'active':''}'>${i<=idx?'✅':'⚪'} ${x}</div>`);const items=(o.items||[]).map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>')||'No items';let eta=o.status==='COMPLETED'?'Completed':'In Progress';out.innerHTML=`<div class='card'><span class='pill'>${o.status||''}</span><h2>${o.orderNumber||id}</h2><p><b>Customer:</b> ${o.customerName||''}</p><div class='items'><b>Items Ordered</b><br>${items}</div><p><b>Discount:</b> ${o.discountType||'None'}</p><p><b>Discount Amount:</b> ₱${o.discountAmount||0}</p><p><b>Total:</b> ₱${o.total||0}</p><p><b>Notes:</b> ${o.notes||'-'}</p><p><b>ETA:</b> ${eta}</p>${o.cancelledBy?`<p class='bad'><b>Cancelled By:</b> ${o.cancelledBy}</p>`:''}${o.declineReason?`<p class='bad'><b>Decline Reason:</b> ${o.declineReason}</p>`:''}<h3>Timeline</h3>${tl}</div>`;});};
 const q=new URLSearchParams(location.search).get('order');if(q){orderNo.value=q;track();}
 </script></body></html>
