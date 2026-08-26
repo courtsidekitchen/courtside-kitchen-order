@@ -3,11 +3,12 @@
 <style>
 body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;padding:14px;border-radius:14px;margin-bottom:12px}.category{background:#f5f5f5;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;display:flex;justify-content:space-between}.content{display:none;padding-top:10px}.content.open{display:block}.item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee}.item-info{flex:1}.item-name{font-weight:bold}.item-boba{font-size:12px;color:#666;display:block;margin-top:4px}.item-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.item-price{color:#0066cc;font-weight:bold}.item-qty{display:flex;gap:6px;align-items:center}.item-qty button{padding:4px 8px;background:#0066cc;color:#fff;border:none;border-radius:4px;cursor:pointer}.item-qty input{width:40px;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px}.cart{background:#0066cc;color:#fff;padding:12px;border-radius:12px;margin:12px 0}.cart>div{padding:4px;display:flex;justify-content:space-between}.cart-total{font-size:24px;font-weight:bold;padding:8px 0;border-top:2px solid #fff}.btn{width:100%;padding:12px;background:#4caf50;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}.btn:disabled{background:#ccc;cursor:not-allowed}.payment-details{background:#f0f0f0;padding:12px;border-radius:8px;margin-top:12px;border-left:4px solid #0066cc}.payment-details-title{font-weight:bold;margin-bottom:8px}.payment-details-item{padding:6px 0;font-size:14px}.payment-details-item label{font-weight:bold;color:#333}.payment-details-item span{color:#666}.payment-toggle{margin-top:12px;padding:12px;background:#fff3cd;border-radius:8px;border-left:4px solid #ff9800}.payment-toggle-label{font-weight:bold;margin-bottom:8px;display:block}.toggle-container{display:flex;gap:10px;align-items:center}.toggle-btn{padding:8px 16px;background:#ddd;border:none;border-radius:4px;cursor:pointer;font-weight:bold;transition:all 0.3s}.toggle-btn.active{background:#4caf50;color:#fff}.toggle-status{font-size:14px;margin-left:10px}
 .header{text-align:center;padding:12px 0;display:flex;justify-content:center;align-items:center}
-.header img{max-width:220px;width:80%;height:auto;object-fit:contain;mix-blend-mode:multiply}
+.header img{max-width:100%;width:98%;height:auto;object-fit:contain;mix-blend-mode:multiply}
 .qr-download-link{display:inline-block;text-decoration:none;margin-top:8px}
 .qr-download-link small{color:#0066cc;font-weight:bold;display:block;margin-top:4px}
+.track-btn{display:inline-block;width:100%;padding:12px;background:#0066cc;color:#fff;text-align:center;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:12px;box-sizing:border-box}
 </style></head><body>
-<div class='container'>
+<div class='container' id='mainContainer'>
 <div class="header">
   <img src="Courtside Kitchen - Colored.png" alt="Courtside Kitchen Logo" onerror="this.src='logo.png'">
 </div>
@@ -86,7 +87,7 @@ const placeOrderBtn=document.getElementById('placeOrderBtn');
 if(status){
 btnYes.classList.add('active');
 btnNo.classList.remove('active');
-statusText.textContent='Payment received ✓';
+statusText.textContent='Payment sent ✓';
 placeOrderBtn.disabled=false;
 }else{
 btnNo.classList.add('active');
@@ -105,15 +106,20 @@ function render(){
 let g={},h='';
  
 products.forEach(
-p => (g[p.category || 'Other'] ??= []).push(p)
+p => {
+  let cat = p.category || 'Other';
+  if(cat === 'Quick Points') cat = 'Quick Points (Snacks)';
+  if(cat === 'Power Plays') cat = 'Power Plays (Rice Bowls)';
+  (g[cat] ??= []).push(p);
+}
 );
  
 const categoryOrder = [
 'Fruit Shakes',
 'Fruit Sodas',
 'Milk Tea',
-'Power Plays',
-'Quick Points'
+'Quick Points (Snacks)',
+'Power Plays (Rice Bowls)'
 ];
  
 const orderedCategories = [
@@ -145,10 +151,41 @@ return;
 document.getElementById('placeOrderBtn').style.display='none';
  
 if(!customerName.value)
-return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const track=`track_rc1.html?order=${orderNo}`;const order={orderNumber:orderNo,customerName:customerName.value,notes:notes.value,items:items,paymentMethod:document.getElementById('paymentMethod').value,total:Number(document.getElementById('tot').textContent),status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',orderNo.toString()),order);const wa=`Order #${orderNo}\n${items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('\n')}\nTotal: ₱${order.total}\n\n${track}`;const whatsappUrl=
+return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const formattedOrderNo=`CK-${String(orderNo).padStart(4,'0')}`;const track=`track_rc1.html?order=${orderNo}`;
+const paymentMethodVal = document.getElementById('paymentMethod').value;
+const notesVal = notes.value || '';
+
+let totalVal = 0;
+items.forEach(i => {
+  totalVal += (i.price * i.qty);
+  if(i.boba) totalVal += (5 * i.qty);
+});
+
+const itemsListStr = items.map(i => `${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('\n');
+
+const summaryFormatted = `Order Number:${formattedOrderNo}
+Payment Method:${paymentMethodVal}
+Items:
+${itemsListStr}
+
+Discount:No Discount
+Total: ₱${totalVal}
+Notes:${notesVal}`;
+
+const order={orderNumber:formattedOrderNo,customerName:customerName.value,notes:notesVal,items:items,paymentMethod:paymentMethodVal,total:totalVal,status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',orderNo.toString()),order);
+
+const wa=`${summaryFormatted}\n\nPayment confirmation will be attached below.`;const whatsappUrl=
 `https://wa.me/639178512376?text=${encodeURIComponent(wa)}`;
  
-window.location.href = whatsappUrl;success.innerHTML=`<div class='card'><h3>✅ ${orderNo}</h3><p>Status:<span id='orderStatus'>PENDING</span></p><p>Cancel window:<span id='timer'>30</span>s</p><b>Tracking: ${track}</b></div>`;let seconds=30;const timer=setInterval(()=>{document.getElementById('timer').textContent=--seconds;if(seconds<0)clearInterval(timer);},1000);
+window.location.href = whatsappUrl;
+
+document.getElementById('mainContainer').innerHTML = `
+<div class="header">
+  <img src="Courtside Kitchen - Colored.png" alt="Courtside Kitchen Logo" onerror="this.src='logo.png'">
+</div>
+<div class='card' style='white-space:pre-wrap;font-family:monospace;font-size:14px;line-height:1.5'>${summaryFormatted}</div>
+<a href='${track}' class='track-btn'>📍 Track Order</a>
+`;
 };
 window.cancelOrder=async(id)=>{await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});alert('Cancelled');};
 onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();calc();});
