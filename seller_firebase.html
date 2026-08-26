@@ -31,11 +31,9 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 .button-group{display:flex;flex-direction:column;gap:8px}
 .card .button-group button{margin:0}
 
-/* Tablet Layout */
 @media(max-width:1024px){
   .board{grid-template-columns:repeat(2,1fr)}
 }
-/* Mobile Layout */
 @media(max-width:600px){
   body{padding:8px}
   .board{grid-template-columns:1fr}
@@ -47,7 +45,6 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 }
 </style></head><body>
 
-<!-- LOGIN CONTAINER -->
 <div id='loginBox' class='login-container'>
   <h2>Courtside Kitchen</h2>
   <p style='color:#666;font-size:14px;'>Seller Portal Login</p>
@@ -57,13 +54,12 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
   <div id='loginError' class='error-msg'></div>
 </div>
 
-<!-- MAIN DASHBOARD -->
 <div id='dashboard'>
 <audio id='notifSound' src='sms_jackpot.mp3' preload='auto'></audio>
 <div class='header-bar'>
   <h1>Courtside Kitchen</h1>
   <div class='header-actions'>
-    <button id='enableAudioBtn' onclick='enableAudio()' style='background:#ff9800;'>🔔 Enable Sound Notifications</button>
+    <button id='enableAudioBtn' onclick='enableAudio()' style='background:#ff9800;'>🔔 Enable Audio & Lock-Screen Notifications</button>
     <button onclick='logout()' style='background:#f44336;'>🚪 Logout</button>
   </div>
 </div>
@@ -115,20 +111,58 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getMessaging, getToken, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 const app = initializeApp({
   apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
   authDomain:'courtside-kitchen.firebaseapp.com',
-  projectId:'courtside-kitchen'
+  projectId:'courtside-kitchen',
+  messagingSenderId:'1062967764463'
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
+const messaging = getMessaging(app);
 
-let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true; let audioEnabled=false;
+let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
 let unsubscribeOrders = null;
 let unsubscribeProducts = null;
 
-// AUTH FUNCTIONS
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+    .then(reg => console.log('SW Registered:', reg.scope))
+    .catch(err => console.error('SW Fail:', err));
+}
+
+window.enableAudio = async () => {
+  const audio = document.getElementById('notifSound');
+  try {
+    await audio.play();
+    audio.pause();
+    audio.currentTime = 0;
+  } catch(e){ console.log(e); }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const token = await getToken(messaging, { 
+        vapidKey: 'BJG9Bk5PYa94XJRE4qx69eQ9T74jMuoBCH-SrBYUJdThJU41BG0SRhoZJ8HwDmuoR1LmaEFlW12TvscH9qqzjWI' 
+      });
+      await setDoc(doc(db, 'seller_tokens', 'android_device'), { token: token, updatedAt: new Date().toISOString() });
+      const btn = document.getElementById('enableAudioBtn');
+      btn.textContent = '🔔 Notifications Enabled ✓';
+      btn.style.background = '#4caf50';
+    } else {
+      alert('Notification permissions were blocked in your browser settings.');
+    }
+  } catch (err) {
+    console.error('Push error:', err);
+  }
+};
+
+onMessage(messaging, (payload) => {
+  playSound();
+});
+
 window.login = async () => {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
@@ -162,7 +196,6 @@ window.logout = async () => {
   }
 };
 
-// LISTEN TO AUTH STATE
 onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
@@ -176,19 +209,6 @@ onAuthStateChanged(auth, user => {
     isFirstLoad = true;
   }
 });
-
-// SOUND & TAB CONTROL
-window.enableAudio=()=>{
-  const audio=document.getElementById('notifSound');
-  audio.play().then(()=>{
-    audio.pause();
-    audio.currentTime=0;
-    audioEnabled=true;
-    const btn=document.getElementById('enableAudioBtn');
-    btn.textContent='🔔 Sound Enabled ✓';
-    btn.style.background='#4caf50';
-  }).catch(e=>console.log(e));
-};
 
 function playSound(){
   const audio=document.getElementById('notifSound');
@@ -305,7 +325,6 @@ window.renderProducts = () => {
   productsList.innerHTML = h;
 };
 
-// INITIALIZE REALTIME DATABASE LISTENERS ONLY WHEN LOGGED IN
 function startRealtimeListeners() {
   unsubscribeProducts = onSnapshot(collection(db,'products'),snap => {
     products=[];
