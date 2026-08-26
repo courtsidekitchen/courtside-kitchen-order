@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Seller Portal - Courtside Kitchen</title>
+<title>Seller Portal & POS - Courtside Kitchen</title>
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;color:#333}
@@ -37,13 +37,35 @@ h1{margin:0;font-size:24px}
 .items{background:#f8f8f8;padding:10px;border-radius:6px;margin:10px 0;font-size:14px}
 button{padding:10px 16px;background:#0066cc;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px}
 button:hover{background:#0052a3}
-input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
+input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
 .card button{width:100%;padding:10px;margin:4px 0;font-size:13px;font-weight:bold}
 .button-group{display:flex;flex-direction:column;gap:4px}
 .card .button-group button{margin:0}
 
+/* POS Screen Styles */
+.pos-layout{display:grid;grid-template-columns:1.6fr 1.2fr;gap:14px}
+.category-filter{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px}
+.category-filter button{padding:6px 12px;background:#e0e0e0;border:none;border-radius:20px;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;color:#333}
+.category-filter button.active{background:#0066cc;color:#fff}
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:65vh;overflow-y:auto;padding-right:4px}
+.pos-item{background:#fdfdfd;border:1px solid #e0e0e0;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;user-select:none;transition:transform 0.1s}
+.pos-item:active{transform:scale(0.97)}
+.pos-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;line-height:1.2}
+.pos-item-price{color:#0066cc;font-weight:bold;font-size:13px}
+.cart-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.qty-ctrl{display:flex;gap:4px;align-items:center}
+.qty-ctrl button{padding:4px 8px;font-size:12px}
+.pos-summary-line{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+.pos-total-line{font-size:20px;font-weight:bold;border-top:2px solid #333;margin-top:6px;padding-top:6px}
+
+/* POS History & Ticket Management */
+.history-ticket-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px}
+.history-ticket-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.history-ticket-actions button{flex:1;min-width:90px;padding:8px;font-size:12px}
+
 @media(max-width:1024px){
   .board{grid-template-columns:repeat(2,1fr)}
+  .pos-layout{grid-template-columns:1fr}
 }
 @media(max-width:600px){
   body{padding:8px}
@@ -96,17 +118,18 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
   </div>
 </div>
 
-<div class="search-card">
-  <input id="searchOrdersInput" placeholder="🔎 Search orders by Order Number, Customer, Item, or Notes..." oninput="renderOrdersBoard()" style="margin:0;">
-</div>
-
 <div class="tabs">
 <button onclick="tab('orders')">Orders</button>
+<button onclick="tab('pos')" style="background:#e65100;">🛒 POS (Cashier)</button>
 <button onclick="tab('history')">History</button>
 <button onclick="tab('products')">Products</button>
 </div>
 
+<!-- ORDERS BOARD TAB -->
 <div id="orders" class="tab active">
+  <div class="search-card">
+    <input id="searchOrdersInput" placeholder="🔎 Search orders by Order Number, Customer, Item, or Notes..." oninput="renderOrdersBoard()" style="margin:0;">
+  </div>
   <div class="board">
     <div class="col">
       <h3>PENDING</h3>
@@ -127,11 +150,71 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
   </div>
 </div>
 
+<!-- POS (CASHIER & TICKET MANAGEMENT) TAB -->
+<div id="pos" class="tab">
+  <div class="tabs" style="margin-bottom:12px;">
+    <button id="posRegisterBtn" onclick="togglePosSubTab('register')" style="background:#0066cc;">Register</button>
+    <button id="posHistoryBtn" onclick="togglePosSubTab('history')" style="background:#777;">Ticket History & Actions</button>
+  </div>
+
+  <!-- Register Sub-view -->
+  <div id="posRegisterView" class="pos-layout">
+    <div class="card">
+      <input id="posSearch" placeholder="🔍 Search menu item..." oninput="filterPosCatalog()">
+      <div id="posCatFilter" class="category-filter"></div>
+      <div id="posCatalog" class="pos-grid"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">🛒 Walk-in Ticket</h3>
+      <input id="posCustomer" placeholder="Customer Name (e.g. Table 1 / Walk-in)" value="Walk-in">
+      <textarea id="posNotes" placeholder="Order notes / requests" style="height:45px;"></textarea>
+      
+      <label><b>Payment Method:</b></label>
+      <select id="posPayment">
+        <option value="Cash">Cash</option>
+        <option value="GCash">GCash</option>
+        <option value="BPI">BPI</option>
+      </select>
+
+      <label><b>Discount:</b></label>
+      <select id="posDiscountType" onchange="renderPosCart()">
+        <option value="NONE">No Discount (0%)</option>
+        <option value="SENIOR">Senior Citizen (20%)</option>
+        <option value="PWD">PWD (20%)</option>
+      </select>
+
+      <div id="posCartList" style="max-height:200px;overflow-y:auto;margin:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">
+        <div style="text-align:center;color:#888;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>
+      </div>
+
+      <div class="pos-summary-line"><span>Subtotal:</span><span>₱<span id="posSub">0</span></span></div>
+      <div class="pos-summary-line" style="color:green;"><span>Discount (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
+      <div class="pos-summary-line pos-total-line"><span>Total:</span><span>₱<span id="posTot">0</span></span></div>
+
+      <button id="posSubmitBtn" onclick="submitPosOrder()" style="background:#4caf50;width:100%;padding:14px;font-size:16px;margin-top:10px;">
+        🚀 Charge & Send to Kitchen
+      </button>
+    </div>
+  </div>
+
+  <!-- Ticket History, Void, Cancel, Refund Sub-view -->
+  <div id="posHistoryView" style="display:none;">
+    <div class="card">
+      <h3 style="margin-top:0;">🎫 Ticket Management & Audit Log</h3>
+      <input id="posHistorySearch" placeholder="🔍 Search ticket by # (e.g. CK-0001), customer, or status..." oninput="renderPosHistory()">
+      <div id="posHistoryList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY TAB -->
 <div id="history" class="tab">
 <button onclick="exportCsv()">Export CSV</button>
 <div id="historyList"></div>
 </div>
 
+<!-- PRODUCTS TAB -->
 <div id="products" class="tab">
 <div class="metrics">
 <div class="metric">Products: <span id="prodCount">0</span></div>
@@ -163,7 +246,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore, collection, onSnapshot, doc, runTransaction, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -177,12 +260,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let hist=[]; let products=[]; 
+let posCart={}; let posBobaMap={}; let posSelectedCategory='ALL';
 let knownOrderIds = new Set(); 
 let isInitialLoad = true;
 let draggedOrderId = null;
 let swRegistration = null;
 
-// Register existing firebase-messaging-sw.js
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg => {
     swRegistration = reg;
@@ -196,20 +279,18 @@ window.requestNotificationPermission = async () => {
       alert('Lock-screen notifications enabled!');
       document.getElementById('enableNotifBtn').style.display = 'none';
     } else {
-      alert('Notifications were blocked. Please enable them in browser settings.');
+      alert('Notifications blocked. Please enable them in browser settings.');
     }
   }
 };
 
 function triggerOrderAlert(orderId = '', customer = '') {
-  // Web Audio playback
   try {
     const snd = new Audio('sms_jackpot.mp3?t=' + Date.now());
     snd.volume = 1.0;
     snd.play().catch(() => {});
   } catch (e) {}
 
-  // System Hardware / Lock-Screen notification
   if ('Notification' in window && Notification.permission === 'granted') {
     const title = '🚨 New Order Received!';
     const options = {
@@ -386,6 +467,8 @@ function initLiveListeners() {
     products = [];
     snap.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
+    renderPosCategoryPills();
+    filterPosCatalog();
   });
 
   onSnapshot(collection(db, 'orders'), snap => {
@@ -414,6 +497,7 @@ function initLiveListeners() {
 
     isInitialLoad = false;
     renderOrdersBoard();
+    renderPosHistory();
     calculateRevenue();
   });
 }
@@ -424,8 +508,8 @@ window.tab=id=>{
 };
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
-window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
-window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
+window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
@@ -453,7 +537,8 @@ function card(id, o = {}) {
       ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total}<br>
-      ${rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : `
+      ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:green;">Discount: ${o.discountType} (-₱${o.discountAmount||0})</small><br>` : ''}
+      ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : `
         <div class='button-group'>
           ${rawStatus !== 'PENDING' ? `<button onclick="move('${id}','PENDING')" style="background:#777">⏳ Back to Pending</button>` : ''}
           ${rawStatus !== 'ORDER_RECEIVED' ? `<button onclick="move('${id}','ORDER_RECEIVED')">✅ Received</button>` : ''}
@@ -527,6 +612,315 @@ function initDragDrop() {
     });
   });
 }
+
+// POS Features (Register, Discount, Boba, Actions)
+window.togglePosSubTab = (sub) => {
+  const regView = document.getElementById('posRegisterView');
+  const histView = document.getElementById('posHistoryView');
+  const regBtn = document.getElementById('posRegisterBtn');
+  const histBtn = document.getElementById('posHistoryBtn');
+
+  if (sub === 'register') {
+    regView.style.display = 'grid';
+    histView.style.display = 'none';
+    regBtn.style.background = '#0066cc';
+    histBtn.style.background = '#777';
+  } else {
+    regView.style.display = 'none';
+    histView.style.display = 'block';
+    histBtn.style.background = '#0066cc';
+    regBtn.style.background = '#777';
+    renderPosHistory();
+  }
+};
+
+function renderPosCategoryPills() {
+  const cats = ['ALL', ...new Set(products.map(p => p.category || 'Other'))];
+  const container = document.getElementById('posCatFilter');
+  if(!container) return;
+  container.innerHTML = cats.map(c => `
+    <button class="${c === posSelectedCategory ? 'active' : ''}" onclick="selectPosCat('${c}')">${c}</button>
+  `).join('');
+}
+
+window.selectPosCat = (c) => {
+  posSelectedCategory = c;
+  renderPosCategoryPills();
+  filterPosCatalog();
+};
+
+window.filterPosCatalog = () => {
+  const q = (document.getElementById('posSearch')?.value || '').toLowerCase();
+  const catalogEl = document.getElementById('posCatalog');
+  if(!catalogEl) return;
+  
+  let filtered = products;
+  if (posSelectedCategory !== 'ALL') {
+    filtered = filtered.filter(p => (p.category || 'Other') === posSelectedCategory);
+  }
+  if (q) {
+    filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(q));
+  }
+
+  let h = '';
+  filtered.forEach(p => {
+    const isOut = (p.qty || 0) <= 0;
+    h += `
+      <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${p.id}')">
+        <div class="pos-item-name">${p.name}</div>
+        <div class="pos-item-price">₱${p.price || 0}</div>
+        ${isOut ? '<small style="color:red;font-weight:bold;">Out of stock</small>' : ''}
+      </div>
+    `;
+  });
+  catalogEl.innerHTML = h || '<div style="grid-column:1/-1;text-align:center;color:#888;padding:20px;">No items match</div>';
+};
+
+window.posAddToCart = (id) => {
+  posCart[id] = (posCart[id] || 0) + 1;
+  renderPosCart();
+};
+
+window.posChangeQty = (id, delta) => {
+  posCart[id] = Math.max(0, (posCart[id] || 0) + delta);
+  if (posCart[id] === 0) {
+    delete posCart[id];
+    delete posBobaMap[id];
+  }
+  renderPosCart();
+};
+
+window.posToggleBoba = (id) => {
+  posBobaMap[id] = !posBobaMap[id];
+  renderPosCart();
+};
+
+function renderPosCart() {
+  const list = document.getElementById('posCartList');
+  const entries = Object.entries(posCart);
+  let subtotal = 0;
+
+  if (!entries.length) {
+    list.innerHTML = '<div style="text-align:center;color:#888;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>';
+    document.getElementById('posSub').textContent = '0';
+    document.getElementById('posDiscVal').textContent = '0';
+    document.getElementById('posTot').textContent = '0';
+    document.getElementById('posDiscLabel').textContent = '0%';
+    return;
+  }
+
+  let h = '';
+  entries.forEach(([id, qty]) => {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    const isMilkTea = (p.category || '').toLowerCase() === 'milk tea';
+    const bobaActive = !!posBobaMap[id];
+    const itemTotal = (p.price * qty) + (bobaActive ? (5 * qty) : 0);
+    subtotal += itemTotal;
+
+    h += `
+      <div class="cart-row">
+        <div>
+          <b>${p.name}</b> (₱${p.price})
+          ${isMilkTea ? `<br><label style="font-size:12px;cursor:pointer;"><input type="checkbox" ${bobaActive ? 'checked' : ''} onchange="posToggleBoba('${id}')"> +Boba ₱5</label>` : ''}
+        </div>
+        <div class="qty-ctrl">
+          <button onclick="posChangeQty('${id}', -1)">-</button>
+          <span><b>${qty}</b></span>
+          <button onclick="posChangeQty('${id}', 1)">+</button>
+          <span style="min-width:50px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  const discType = document.getElementById('posDiscountType').value;
+  let discountRate = 0;
+  if (discType === 'SENIOR' || discType === 'PWD') {
+    discountRate = 0.20;
+    document.getElementById('posDiscLabel').textContent = '20%';
+  } else {
+    document.getElementById('posDiscLabel').textContent = '0%';
+  }
+
+  const discountAmount = Math.round(subtotal * discountRate);
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+
+  list.innerHTML = h;
+  document.getElementById('posSub').textContent = subtotal.toLocaleString();
+  document.getElementById('posDiscVal').textContent = discountAmount.toLocaleString();
+  document.getElementById('posTot').textContent = finalTotal.toLocaleString();
+}
+
+async function getNextPosOrderNumber() {
+  const ref = doc(db, 'counters', 'orders');
+  let n = 0;
+  await runTransaction(db, async tx => {
+    const s = await tx.get(ref);
+    n = (s.data()?.lastOrderNumber || 0) + 1;
+    tx.update(ref, { lastOrderNumber: n });
+  });
+  return n;
+}
+
+window.submitPosOrder = async () => {
+  const items = [];
+  let subtotal = 0;
+
+  Object.entries(posCart).forEach(([id, qty]) => {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    const boba = !!posBobaMap[id];
+    const itemTotal = (p.price * qty) + (boba ? (5 * qty) : 0);
+    subtotal += itemTotal;
+    items.push({
+      name: p.name,
+      qty: qty,
+      price: p.price || 0,
+      boba: boba
+    });
+  });
+
+  if (!items.length) {
+    return alert('Please select items before submitting.');
+  }
+
+  const discType = document.getElementById('posDiscountType').value;
+  const discountRate = (discType === 'SENIOR' || discType === 'PWD') ? 0.20 : 0;
+  const discountAmount = Math.round(subtotal * discountRate);
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+
+  const btn = document.getElementById('posSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  try {
+    const n = await getNextPosOrderNumber();
+    const formattedOrderNo = `CK-${String(n).padStart(4, '0')}`;
+    const customer = document.getElementById('posCustomer').value.trim() || 'Walk-in';
+    const notes = document.getElementById('posNotes').value.trim();
+    const paymentMethod = document.getElementById('posPayment').value;
+    const track = `track_rc1.html?order=${formattedOrderNo}`;
+
+    const orderData = {
+      orderNumber: formattedOrderNo,
+      customerName: customer,
+      notes: notes,
+      items: items,
+      paymentMethod: paymentMethod,
+      subtotal: subtotal,
+      discountType: discType,
+      discountAmount: discountAmount,
+      total: finalTotal,
+      status: 'ORDER_RECEIVED',
+      createdAt: new Date().toISOString(),
+      trackingLink: track
+    };
+
+    await setDoc(doc(db, 'orders', formattedOrderNo), orderData);
+    alert(`Order ${formattedOrderNo} charged and sent to kitchen!`);
+
+    posCart = {};
+    posBobaMap = {};
+    document.getElementById('posCustomer').value = 'Walk-in';
+    document.getElementById('posNotes').value = '';
+    document.getElementById('posDiscountType').value = 'NONE';
+    renderPosCart();
+  } catch (err) {
+    alert('Failed to submit order: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Charge & Send to Kitchen';
+  }
+};
+
+// POS Ticket Void / Cancel / Refund Actions
+window.posVoidTicket = async (id) => {
+  const r = prompt('Reason for VOIDING ticket:');
+  if (r) {
+    await updateDoc(doc(db, 'orders', id), {
+      status: 'VOIDED',
+      voidReason: r,
+      voidedAt: new Date().toISOString()
+    });
+    alert(`Ticket ${id} has been VOIDED.`);
+  }
+};
+
+window.posCancelTicket = async (id) => {
+  const r = prompt('Reason for CANCELLING order:');
+  if (r) {
+    await updateDoc(doc(db, 'orders', id), {
+      status: 'CANCELLED',
+      cancelReason: r,
+      cancelledBy: 'CASHIER',
+      cancelledAt: new Date().toISOString()
+    });
+    alert(`Order ${id} has been CANCELLED.`);
+  }
+};
+
+window.posRefundTicket = async (id) => {
+  const r = prompt('Reason for REFUNDING ticket:');
+  if (r) {
+    await updateDoc(doc(db, 'orders', id), {
+      status: 'REFUNDED',
+      refundReason: r,
+      refundedAt: new Date().toISOString()
+    });
+    alert(`Ticket ${id} marked as REFUNDED.`);
+  }
+};
+
+window.renderPosHistory = () => {
+  const q = (document.getElementById('posHistorySearch')?.value || '').trim().toLowerCase();
+  const listEl = document.getElementById('posHistoryList');
+  if (!listEl) return;
+
+  const filtered = hist.filter(o => {
+    if (!q) return true;
+    const num = (o.orderNumber || o.id || '').toString().toLowerCase();
+    const name = (o.customerName || '').toLowerCase();
+    const status = (o.status || '').toLowerCase();
+    return num.includes(q) || name.includes(q) || status.includes(q);
+  });
+
+  let h = '';
+  filtered.forEach(o => {
+    const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
+    const isInactive = ['VOIDED', 'CANCELLED', 'REFUNDED', 'DECLINED'].includes(rawStatus);
+
+    h += `
+      <div class="history-ticket-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <b>${o.orderNumber || o.id}</b>
+          <span style="font-weight:bold;color:${isInactive ? 'red' : '#0066cc'};">${rawStatus}</span>
+        </div>
+        <div style="font-size:13px;color:#555;margin:4px 0;">
+          Customer: <b>${o.customerName || 'Walk-in'}</b> | Payment: <b>${o.paymentMethod || 'N/A'}</b>
+        </div>
+        <div class="items" style="margin:6px 0;font-size:13px;">${itemsHtml(o.items)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;">
+          <span>Subtotal: ₱${o.subtotal || o.total || 0}</span>
+          <span>Discount: ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
+          <b>Total: ₱${o.total || 0}</b>
+        </div>
+        ${o.voidReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Void Reason: ${o.voidReason}</div>` : ''}
+        ${o.cancelReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
+        ${o.refundReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Refund Reason: ${o.refundReason}</div>` : ''}
+        ${!isInactive ? `
+          <div class="history-ticket-actions">
+            <button onclick="posVoidTicket('${o.id}')" style="background:#555;">🚫 Void Ticket</button>
+            <button onclick="posCancelTicket('${o.id}')" style="background:#f44336;">❌ Cancel Order</button>
+            <button onclick="posRefundTicket('${o.id}')" style="background:#e65100;">💸 Refund</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = h || '<div style="text-align:center;color:#888;padding:20px;">No tickets found.</div>';
+};
 
 // Product Manager
 window.toggleAdd = () => {
