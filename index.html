@@ -7,6 +7,7 @@ body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;m
 .qr-download-link{display:inline-block;text-decoration:none;margin-top:8px}
 .qr-download-link small{color:#0066cc;font-weight:bold;display:block;margin-top:4px}
 .track-btn{display:inline-block;width:100%;padding:12px;background:#0066cc;color:#fff;text-align:center;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:12px;box-sizing:border-box}
+.cancel-btn{display:inline-block;width:100%;padding:12px;background:#f44336;color:#fff;text-align:center;border:none;border-radius:8px;font-weight:bold;margin-top:8px;cursor:pointer;font-size:14px}
 </style></head><body>
 <div class='container' id='mainContainer'>
 <div class="header">
@@ -151,7 +152,7 @@ return;
 document.getElementById('placeOrderBtn').style.display='none';
  
 if(!customerName.value)
-return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const formattedOrderNo=`CK-${String(orderNo).padStart(4,'0')}`;const track=`track_rc1.html?order=${orderNo}`;
+return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const formattedOrderNo=`CK-${String(orderNo).padStart(4,'0')}`;const track=`track_rc1.html?order=${formattedOrderNo}`;
 const paymentMethodVal = document.getElementById('paymentMethod').value;
 const notesVal = notes.value || '';
 
@@ -172,7 +173,7 @@ Discount:No Discount
 Total: ₱${totalVal}
 Notes:${notesVal}`;
 
-const order={orderNumber:formattedOrderNo,customerName:customerName.value,notes:notesVal,items:items,paymentMethod:paymentMethodVal,total:totalVal,status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',orderNo.toString()),order);
+const order={orderNumber:formattedOrderNo,customerName:customerName.value,notes:notesVal,items:items,paymentMethod:paymentMethodVal,total:totalVal,status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',formattedOrderNo),order);
 
 const wa=`${summaryFormatted}\n\nPayment confirmation will be attached below.`;const whatsappUrl=
 `https://wa.me/639178512376?text=${encodeURIComponent(wa)}`;
@@ -184,9 +185,33 @@ document.getElementById('mainContainer').innerHTML = `
   <img src="Courtside Kitchen - Colored.png" alt="Courtside Kitchen Logo" onerror="this.src='logo.png'">
 </div>
 <div class='card' style='white-space:pre-wrap;font-family:monospace;font-size:14px;line-height:1.5'>${summaryFormatted}</div>
+<div id='cancelSection' class='card' style='text-align:center;'>
+  <p style='margin:4px 0;'>Cancel window: <b id='timer'>30</b>s</p>
+  <button id='cancelOrderBtn' class='cancel-btn' onclick="cancelOrder('${formattedOrderNo}')">Cancel Order</button>
+</div>
 <a href='${track}' class='track-btn'>📍 Track Order</a>
 `;
+
+let seconds = 30;
+const timerInterval = setInterval(() => {
+  seconds--;
+  const timerEl = document.getElementById('timer');
+  if (timerEl) timerEl.textContent = seconds;
+  if (seconds <= 0) {
+    clearInterval(timerInterval);
+    const cancelSec = document.getElementById('cancelSection');
+    if (cancelSec) cancelSec.style.display = 'none';
+  }
+}, 1000);
 };
-window.cancelOrder=async(id)=>{await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});alert('Cancelled');};
+
+window.cancelOrder=async(id)=>{
+  await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});
+  alert('Order Cancelled');
+  const cancelSec = document.getElementById('cancelSection');
+  if (cancelSec) {
+    cancelSec.innerHTML = "<b style='color:red;'>Order has been cancelled.</b>";
+  }
+};
 onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();calc();});
 </script></body></html>
