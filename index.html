@@ -6,67 +6,84 @@
 <title>Courtside Kitchen Menu</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;color:#333}
+body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;padding-bottom:40px;color:#333}
 .container{max-width:600px;margin:0 auto}
 
-/* Header & Cart Bar */
-.cart-bar{position:sticky;top:0;z-index:100;background:#0066cc;color:#fff;padding:12px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-.cart-bar h2{margin:0;font-size:18px}
-.cart-bar button{background:#fff;color:#0066cc;border:none;padding:8px 14px;border-radius:6px;font-weight:bold;cursor:pointer}
+/* Header */
+.header{text-align:center;padding:10px 0 20px 0}
+.header h1{margin:0;color:#0066cc;font-size:24px}
 
 /* Category Headers */
 .category-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
 .category-header{display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:18px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
 
-/* Item Row Layout (Flexbox Row Fix) */
+/* Item Row Layout (Right Aligned Quantity Controls) */
 .item-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
 .item-row:last-child{border-bottom:none}
 
-/* Item Left Details */
+/* Item Details */
 .item-details{display:flex;flex-direction:column;gap:4px;flex:1;padding-right:12px}
 .item-name{font-weight:bold;font-size:16px;color:#222}
 .item-desc{font-size:12px;color:#777}
 .item-price{color:#0066cc;font-weight:bold;font-size:15px}
 .item-opt{font-size:12px;color:#555;display:flex;align-items:center;gap:4px;margin-top:2px;cursor:pointer}
 
-/* Item Right Controls */
+/* Item Controls */
 .item-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .btn-qty{width:32px;height:32px;background:#0066cc;color:#fff;border:none;border-radius:6px;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .btn-qty:active{background:#004c99}
 .qty-display{width:36px;height:32px;text-align:center;border:1px solid #ccc;border-radius:6px;font-size:14px;font-weight:bold;line-height:30px;background:#fff}
 
-/* Modal Overlay */
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center}
-.modal-content{background:#fff;padding:20px;border-radius:12px;width:90%;max-width:400px;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
-.modal-content h3{margin-top:0}
-.modal-content input{width:100%;padding:10px;margin:8px 0 16px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
-.modal-actions{display:flex;gap:10px}
-.modal-actions button{flex:1;padding:12px;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
-.btn-checkout{background:#4caf50;color:#fff}
-.btn-cancel{background:#f44336;color:#fff}
+/* Inline Summary Card (Matching your Screenshot) */
+.checkout-card{background:#fff;border-radius:12px;padding:20px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:none}
+.summary-items{font-size:15px;line-height:1.6;margin-bottom:10px}
+.summary-line{font-size:15px;margin:4px 0;color:#333}
+.grand-total{font-size:22px;font-weight:bold;margin:16px 0;color:#000}
+
+.customer-input{width:100%;padding:12px;margin:10px 0 16px 0;border:1px solid #ccc;border-radius:8px;font-size:15px}
+
+.btn-place-order{
+  width:100%;
+  background:#004080;
+  color:#fff;
+  border:none;
+  padding:14px;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn-place-order:hover{background:#003366}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="cart-bar">
-    <h2>Courtside Kitchen</h2>
-    <button onclick="openCheckout()">Checkout (<span id="cartCount">0</span>)</button>
+  <div class="header">
+    <h1>Courtside Kitchen</h1>
   </div>
 
   <div id="menuContainer">Loading menu...</div>
-</div>
 
-<div id="checkoutModal" class="modal">
-  <div class="modal-content">
-    <h3>Complete Your Order</h3>
-    <p>Total: <b>₱<span id="modalTotal">0</span></b></p>
-    <label>Your Name:</label>
-    <input id="customerName" type="text" placeholder="Enter your full name">
-    <div class="modal-actions">
-      <button class="btn-checkout" id="submitBtn" onclick="submitOrder()">Submit Order</button>
-      <button class="btn-cancel" onclick="closeCheckout()">Cancel</button>
-    </div>
+  <!-- Inline Checkout Summary Box -->
+  <div id="checkoutBox" class="checkout-card">
+    <div id="summaryItems" class="summary-items"></div>
+    
+    <div class="summary-line">Subtotal ₱<span id="subtotalVal">0</span></div>
+    <div class="summary-line">Boba ₱<span id="bobaVal">0</span></div>
+    <div class="summary-line">Discount ₱0</div>
+    
+    <div class="grand-total">Total ₱<span id="totalVal">0</span></div>
+
+    <input id="customerName" class="customer-input" type="text" placeholder="Enter Customer Name">
+
+    <button id="placeOrderBtn" class="btn-place-order" onclick="submitOrder()">
+      🍽️ PLACE ORDER
+    </button>
   </div>
 </div>
 
@@ -88,7 +105,6 @@ const db = getFirestore(app);
 let products = [];
 let cart = {};
 
-// Listen for products from Firestore database
 onSnapshot(collection(db, 'products'), (snap) => {
   products = [];
   snap.forEach(doc => {
@@ -104,7 +120,6 @@ function renderMenu() {
     return;
   }
 
-  // Group products by category
   const categories = {};
   products.forEach(p => {
     const cat = p.category || 'General';
@@ -123,9 +138,8 @@ function renderMenu() {
     `;
 
     items.forEach(item => {
-      const cartKey = item.id;
-      const currentQty = cart[cartKey] ? cart[cartKey].qty : 0;
-      const hasBoba = cart[cartKey] ? cart[cartKey].boba : false;
+      const currentQty = cart[item.id] ? cart[item.id].qty : 0;
+      const hasBoba = cart[item.id] ? cart[item.id].boba : false;
       const isMilkTea = catName.toLowerCase().includes('tea') || (item.name && item.name.toLowerCase().includes('matcha'));
 
       html += `
@@ -153,7 +167,7 @@ function renderMenu() {
   }
 
   container.innerHTML = html;
-  updateCartBar();
+  updateSummaryCard();
 }
 
 window.updateQty = (id, change) => {
@@ -161,7 +175,14 @@ window.updateQty = (id, change) => {
   if (!prod) return;
 
   if (!cart[id]) {
-    cart[id] = { id: prod.id, name: prod.name, price: Number(prod.price || 0), qty: 0, boba: false };
+    cart[id] = { 
+      id: prod.id, 
+      name: prod.name, 
+      price: Number(prod.price || 0), 
+      qty: 0, 
+      boba: false,
+      category: prod.category || ''
+    };
   }
 
   cart[id].qty += change;
@@ -179,51 +200,64 @@ window.toggleBoba = (id, isChecked) => {
   } else {
     const prod = products.find(p => p.id === id);
     if (prod) {
-      cart[id] = { id: prod.id, name: prod.name, price: Number(prod.price || 0), qty: 1, boba: isChecked };
+      cart[id] = { 
+        id: prod.id, 
+        name: prod.name, 
+        price: Number(prod.price || 0), 
+        qty: 1, 
+        boba: isChecked,
+        category: prod.category || ''
+      };
     }
   }
   renderMenu();
 };
 
-function calculateTotal() {
-  let total = 0;
-  Object.values(cart).forEach(item => {
-    const unitPrice = item.price + (item.boba ? 5 : 0);
-    total += unitPrice * item.qty;
-  });
-  return total;
-}
+function updateSummaryCard() {
+  const checkoutBox = document.getElementById('checkoutBox');
+  const cartItems = Object.values(cart);
 
-function updateCartBar() {
-  let count = 0;
-  Object.values(cart).forEach(item => count += item.qty);
-  document.getElementById('cartCount').textContent = count;
-}
-
-window.openCheckout = () => {
-  const total = calculateTotal();
-  if (total <= 0) {
-    alert('Please select at least one item.');
+  if (cartItems.length === 0) {
+    checkoutBox.style.display = 'none';
     return;
   }
-  document.getElementById('modalTotal').textContent = total;
-  document.getElementById('checkoutModal').style.display = 'flex';
-};
 
-window.closeCheckout = () => {
-  document.getElementById('checkoutModal').style.display = 'none';
-};
+  let itemsHtml = '';
+  let baseSubtotal = 0;
+  let totalBoba = 0;
+
+  cartItems.forEach(item => {
+    baseSubtotal += item.price * item.qty;
+    
+    // Strict Boba Rule: Boba +₱5 is only added if boba is checked AND item is Milk Tea/Matcha
+    const isMilkTea = item.category.toLowerCase().includes('tea') || item.name.toLowerCase().includes('matcha');
+    if (item.boba && isMilkTea) {
+      totalBoba += 5 * item.qty;
+    }
+
+    itemsHtml += `<div>${item.name} x${item.qty}${item.boba && isMilkTea ? ' + Boba' : ''}</div>`;
+  });
+
+  const grandTotal = baseSubtotal + totalBoba;
+
+  document.getElementById('summaryItems').innerHTML = itemsHtml;
+  document.getElementById('subtotalVal').textContent = baseSubtotal;
+  document.getElementById('bobaVal').textContent = totalBoba;
+  document.getElementById('totalVal').textContent = grandTotal;
+
+  checkoutBox.style.display = 'block';
+}
 
 window.submitOrder = async () => {
   const nameInput = document.getElementById('customerName').value.trim();
   if (!nameInput) {
-    alert('Please enter your name.');
+    alert('Please enter a customer name.');
     return;
   }
 
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Sending...';
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'PLACING ORDER...';
 
   const orderItems = Object.values(cart).map(i => ({
     id: i.id,
@@ -233,26 +267,34 @@ window.submitOrder = async () => {
     boba: i.boba || false
   }));
 
+  let subtotal = 0;
+  let bobaCost = 0;
+  orderItems.forEach(i => {
+    subtotal += i.price * i.qty;
+    if(i.boba) bobaCost += (5 * i.qty);
+  });
+
   try {
     await addDoc(collection(db, 'orders'), {
       customerName: nameInput,
       items: orderItems,
-      total: calculateTotal(),
+      subtotal: subtotal,
+      bobaFee: bobaCost,
+      total: subtotal + bobaCost,
       status: 'PENDING',
       createdAt: new Date().toISOString(),
       orderNumber: 'ORD-' + Math.floor(1000 + Math.random() * 9000)
     });
 
-    alert('Order sent successfully!');
+    alert('Order placed successfully!');
     cart = {};
     document.getElementById('customerName').value = '';
-    closeCheckout();
     renderMenu();
   } catch (err) {
-    alert('Failed to send order: ' + err.message);
+    alert('Error placing order: ' + err.message);
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit Order';
+    btn.disabled = false;
+    btn.innerHTML = '🍽️ PLACE ORDER';
   }
 };
 </script>
