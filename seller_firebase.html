@@ -65,7 +65,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="toggleAudioBtn" onclick="toggleAudio()" style="background:#4caf50;">🔔 Notifications Enabled (Tap to Mute)</button>
+    <button id="toggleAudioBtn" onclick="toggleAudio()" style="background:#4caf50;">🔔 Sound Enabled (Tap to Test)</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -116,8 +116,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import {getMessaging, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
+import {getFirestore, collection, getDocsFromCache, getDocsFromServer, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -130,72 +129,26 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let messaging = null;
-try { messaging = getMessaging(app); } catch (e) {}
+let hist=[]; let products=[]; let existingOrderIds = new Set(); let isFirstLoad = true;
+let pollTimer = null;
 
-let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
-let notificationsEnabled = true;
-let unsubscribeOrders = null;
-let unsubscribeProducts = null;
-
-const unlockAudio = () => {
+// Sound fix for Android Chrome / Samsung Internet
+function playAudio() {
   const audio = document.getElementById('notifSound');
   if (audio) {
-    audio.play().then(() => {
-      audio.pause();
-      audio.currentTime = 0;
-    }).catch(() => {});
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
-  document.removeEventListener('click', unlockAudio);
-  document.removeEventListener('touchstart', unlockAudio);
-};
-document.addEventListener('click', unlockAudio);
-document.addEventListener('touchstart', unlockAudio);
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
-}
-
-if ("Notification" in window && Notification.permission === "default") {
-  Notification.requestPermission();
 }
 
 window.toggleAudio = () => {
-  notificationsEnabled = !notificationsEnabled;
-  const btn = document.getElementById('toggleAudioBtn');
-  if (notificationsEnabled) {
-    btn.textContent = '🔔 Notifications Enabled (Tap to Mute)';
-    btn.style.background = '#4caf50';
-    unlockAudio();
-  } else {
-    btn.textContent = '🔕 Notifications Muted (Tap to Enable)';
-    btn.style.background = '#757575';
-  }
+  playAudio();
+  alert("Sound test triggered! If you heard the sound, audio is fully unlocked.");
 };
 
-function showSystemNotification(title, body) {
-  if (!notificationsEnabled) return;
-  if ("Notification" in window && Notification.permission === 'granted') {
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, { body: body, icon: '/logo.png', vibrate: [200, 100, 200], tag: 'new-order' });
-      });
-    } else {
-      new Notification(title, { body: body, icon: '/logo.png' });
-    }
-  }
-}
-
-function playSound(){
-  if (!notificationsEnabled) return;
-  const audio = document.getElementById('notifSound');
-  audio.currentTime = 0;
-  audio.play().catch(e => console.log('Autoplay prevented:', e));
-}
-
-if (messaging) {
-  onMessage(messaging, () => playSound());
-}
+// Unlock browser audio restriction on first screen touch
+document.addEventListener('touchstart', playAudio, { once: true });
+document.addEventListener('click', playAudio, { once: true });
 
 window.login = async () => {
   const email = document.getElementById('loginEmail').value.trim();
@@ -226,8 +179,7 @@ window.login = async () => {
 
 window.logout = async () => {
   if(confirm('Are you sure you want to log out?')){
-    if(unsubscribeOrders) unsubscribeOrders();
-    if(unsubscribeProducts) unsubscribeProducts();
+    if(pollTimer) clearInterval(pollTimer);
     await signOut(auth);
   }
 };
@@ -236,66 +188,67 @@ onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    startRealtimeListeners();
+    startPolling();
   } else {
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
-    if(unsubscribeOrders) unsubscribeOrders();
-    if(unsubscribeProducts) unsubscribeProducts();
+    if(pollTimer) clearInterval(pollTimer);
     isFirstLoad = true;
   }
 });
 
-function startRealtimeListeners() {
-  if(unsubscribeProducts) unsubscribeProducts();
-  unsubscribeProducts = onSnapshot(collection(db, 'products'), snapshot => {
+async function loadProducts() {
+  try {
+    const snap = await getDocsFromServer(collection(db, 'products'));
     products = [];
-    snapshot.forEach(d => products.push({ id: d.id, ...d.data() }));
+    snap.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
-  }, error => {
-    alert("Products Read Error: " + error.message);
-  });
+  } catch (e) {
+    // Fallback to cache if network drops
+    try {
+      const cacheSnap = await getDocsFromCache(collection(db, 'products'));
+      products = [];
+      cacheSnap.forEach(d => products.push({ id: d.id, ...d.data() }));
+      renderProducts();
+    } catch(err) {}
+  }
+}
 
-  if(unsubscribeOrders) unsubscribeOrders();
-  // Listen directly with error alert triggers
-  unsubscribeOrders = onSnapshot(collection(db, 'orders'), snapshot => {
+async function loadOrders() {
+  try {
+    // FORCE fetch from Firebase servers directly to beat browser caching
+    const snapshot = await getDocsFromServer(collection(db, 'orders'));
+    
     let p='', r='', pr='', re='', h='';
     let revenue=0, c=0;
-    let hasNewOrder=false;
-    let newOrderTitle = '🚨 New Order Received!';
-    let newOrderBody = 'Check dashboard for new orders.';
-    hist=[];
-
+    let hasNewOrder = false;
+    hist = [];
     const currentDocIds = new Set();
 
     snapshot.forEach(d => {
-      const o={id:d.id, ...d.data()};
+      const o = {id: d.id, ...d.data()};
       hist.push(o);
       currentDocIds.add(d.id);
 
       const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
 
-      if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
-        hasNewOrder=true;
-        if (o.customerName || o.name) {
-          newOrderBody = `Order from ${o.customerName || o.name} (₱${o.total || o.totalPrice || 0})`;
-        }
+      if (!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper === 'PENDING' || statusUpper === 'ORDER_RECEIVED')) {
+        hasNewOrder = true;
       }
 
-      if(statusUpper==='COMPLETED'){ revenue += (o.total || o.totalPrice || 0); c++; }
+      if (statusUpper === 'COMPLETED') { revenue += (o.total || o.totalPrice || 0); c++; }
       
       const orderCardHtml = card(d.id, o);
       h += orderCardHtml;
 
-      if(statusUpper==='PENDING') p += orderCardHtml;
-      else if(statusUpper==='ORDER_RECEIVED') r += orderCardHtml;
-      else if(statusUpper==='PREPARING') pr += orderCardHtml;
-      else if(statusUpper==='COMPLETED') re += orderCardHtml;
+      if (statusUpper === 'PENDING') p += orderCardHtml;
+      else if (statusUpper === 'ORDER_RECEIVED') r += orderCardHtml;
+      else if (statusUpper === 'PREPARING') pr += orderCardHtml;
+      else if (statusUpper === 'COMPLETED') re += orderCardHtml;
     });
 
-    if(hasNewOrder){
-      playSound();
-      showSystemNotification(newOrderTitle, newOrderBody);
+    if (hasNewOrder) {
+      playAudio();
     }
 
     existingOrderIds = currentDocIds;
@@ -309,14 +262,25 @@ function startRealtimeListeners() {
     document.getElementById('rev').textContent = revenue;
     document.getElementById('cnt').textContent = c;
     document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
-  }, error => {
-    alert("CRITICAL FIRESTORE ERROR: " + error.message);
-  });
+
+  } catch (e) {
+    console.error("Server fetch failed:", e);
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  loadProducts();
+  loadOrders();
+  // Poll every 3 seconds explicitly from the server
+  pollTimer = setInterval(() => {
+    loadOrders();
+  }, 3000);
 }
 
 window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
-window.move=(id,s)=>{ updateDoc(doc(db,'orders',id),{status:s}); };
-window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
+window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); loadOrders(); };
+window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); loadOrders(); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
@@ -389,6 +353,7 @@ window.addProduct = async() => {
   document.getElementById('aQty').value = '';
   document.getElementById('aImage').value = '';
   toggleAdd();
+  loadProducts();
 };
 
 window.saveProduct = async(id) => {
@@ -400,11 +365,13 @@ window.saveProduct = async(id) => {
     qty: Number(document.getElementById('q_'+id).value),
     image: document.getElementById('i_'+id).value
   },{merge:true});
+  loadProducts();
 };
 
 window.deleteProduct = async(id) => {
   if(confirm('Delete Product?')){
     await deleteDoc(doc(db,'products',id));
+    loadProducts();
   }
 };
 
