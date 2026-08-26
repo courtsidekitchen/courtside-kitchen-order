@@ -317,6 +317,16 @@ function itemsHtml(items = []) {
   }).join('<br>');
 }
 
+function normalizeStatus(st) {
+  if (!st) return 'PENDING';
+  const clean = st.toString().toUpperCase().replace(/[\s_]+/g, '');
+  if (clean === 'ORDERRECEIVED' || clean === 'RECEIVED') return 'ORDER_RECEIVED';
+  if (clean === 'PREPARING') return 'PREPARING';
+  if (clean === 'COMPLETED' || clean === 'COMPLETE') return 'COMPLETED';
+  if (clean === 'DECLINED' || clean === 'CANCELLED') return 'DECLINED';
+  return 'PENDING';
+}
+
 function card(id, o = {}) {
   const orderNum = o.orderNumber || id || 'N/A';
   const customer = o.customerName || o.name || 'Guest Customer';
@@ -339,16 +349,6 @@ function card(id, o = {}) {
         </div>` : rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : ''}
     </div>
   `;
-}
-
-function normalizeStatus(st) {
-  if (!st) return 'PENDING';
-  const clean = st.toString().toUpperCase().replace(/[\s_]+/g, '');
-  if (clean === 'ORDERRECEIVED' || clean === 'RECEIVED') return 'ORDER_RECEIVED';
-  if (clean === 'PREPARING') return 'PREPARING';
-  if (clean === 'COMPLETED' || clean === 'COMPLETE') return 'COMPLETED';
-  if (clean === 'DECLINED' || clean === 'CANCELLED') return 'DECLINED';
-  return 'PENDING';
 }
 
 window.toggleAdd = () => {
@@ -454,6 +454,9 @@ window.renderProducts = () => {
 };
 
 function startRealtimeListeners() {
+  if (unsubscribeProducts) unsubscribeProducts();
+  if (unsubscribeOrders) unsubscribeOrders();
+
   unsubscribeProducts = onSnapshot(collection(db,'products'),snap => {
     products=[];
     snap.forEach(d => products.push({id:d.id,...d.data()}));
@@ -510,6 +513,20 @@ function startRealtimeListeners() {
     document.getElementById('avg').textContent=c?Math.round(revenue/c):0;
   });
 }
+
+// Auto-reconnect when screen turns back on or tab is active
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && auth.currentUser) {
+    startRealtimeListeners();
+  }
+});
+
+// Fallback background refresh every 15 seconds
+setInterval(() => {
+  if (auth.currentUser && document.visibilityState === 'visible') {
+    startRealtimeListeners();
+  }
+}, 15000);
 </script>
 </body>
 </html>
