@@ -150,31 +150,42 @@ let knownOrderIds = new Set();
 let isInitialLoad = true;
 let pollTimer = null;
 
-const notifAudio = new Audio('sms_jackpot.mp3');
-notifAudio.preload = 'auto';
-
-function unlockAudio() {
-  notifAudio.play().then(() => {
-    notifAudio.pause();
-    notifAudio.currentTime = 0;
-  }).catch(() => {});
+// Robust Audio Player function that bypasses browser freezes
+function triggerOrderSound() {
+  try {
+    const snd = new Audio('sms_jackpot.mp3?t=' + Date.now());
+    snd.volume = 1.0;
+    const playPromise = snd.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn("Autoplay deferred or blocked:", err);
+      });
+    }
+  } catch (e) {
+    console.error("Audio trigger failed:", e);
+  }
 }
 
-document.addEventListener('touchstart', unlockAudio, { once: true });
-document.addEventListener('click', unlockAudio, { once: true });
+// Keep unlocking sound context on every click or touch across the app
+function keepAudioUnlocked() {
+  try {
+    const silentAudio = new Audio('sms_jackpot.mp3');
+    silentAudio.volume = 0.01;
+    silentAudio.play().then(() => {
+      silentAudio.pause();
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+document.addEventListener('touchstart', keepAudioUnlocked, { passive: true });
+document.addEventListener('click', keepAudioUnlocked, { passive: true });
 
 window.testSound = () => {
-  notifAudio.currentTime = 0;
-  notifAudio.play().catch(e => console.error("Audio blocked:", e));
+  triggerOrderSound();
 };
 
-function triggerOrderSound() {
-  notifAudio.currentTime = 0;
-  notifAudio.play().catch(e => console.error("Sound play blocked:", e));
-}
-
 window.login = async () => {
-  unlockAudio();
+  keepAudioUnlocked();
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errorEl = document.getElementById('loginError');
@@ -306,7 +317,6 @@ async function loadOrders() {
       knownOrderIds.add(d.id);
     });
 
-    // Sort most recent to oldest
     rawOrders.sort((a, b) => parseOrderDate(b.createdAt) - parseOrderDate(a.createdAt));
     hist = rawOrders;
 
