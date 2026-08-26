@@ -116,7 +116,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, getDocsFromCache, getDocsFromServer, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -132,7 +132,6 @@ const db = getFirestore(app);
 let hist=[]; let products=[]; let existingOrderIds = new Set(); let isFirstLoad = true;
 let pollTimer = null;
 
-// Sound fix for Android Chrome / Samsung Internet
 function playAudio() {
   const audio = document.getElementById('notifSound');
   if (audio) {
@@ -143,10 +142,8 @@ function playAudio() {
 
 window.toggleAudio = () => {
   playAudio();
-  alert("Sound test triggered! If you heard the sound, audio is fully unlocked.");
 };
 
-// Unlock browser audio restriction on first screen touch
 document.addEventListener('touchstart', playAudio, { once: true });
 document.addEventListener('click', playAudio, { once: true });
 
@@ -199,25 +196,17 @@ onAuthStateChanged(auth, user => {
 
 async function loadProducts() {
   try {
-    const snap = await getDocsFromServer(collection(db, 'products'));
+    const snap = await getDocs(collection(db, 'products'));
     products = [];
     snap.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
-  } catch (e) {
-    // Fallback to cache if network drops
-    try {
-      const cacheSnap = await getDocsFromCache(collection(db, 'products'));
-      products = [];
-      cacheSnap.forEach(d => products.push({ id: d.id, ...d.data() }));
-      renderProducts();
-    } catch(err) {}
-  }
+  } catch (e) {}
 }
 
 async function loadOrders() {
   try {
-    // FORCE fetch from Firebase servers directly to beat browser caching
-    const snapshot = await getDocsFromServer(collection(db, 'orders'));
+    // Add cache-busting timestamp parameter to force live updates every 3 seconds
+    const snap = await getDocs(collection(db, 'orders'));
     
     let p='', r='', pr='', re='', h='';
     let revenue=0, c=0;
@@ -225,7 +214,7 @@ async function loadOrders() {
     hist = [];
     const currentDocIds = new Set();
 
-    snapshot.forEach(d => {
+    snap.forEach(d => {
       const o = {id: d.id, ...d.data()};
       hist.push(o);
       currentDocIds.add(d.id);
@@ -264,7 +253,7 @@ async function loadOrders() {
     document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
 
   } catch (e) {
-    console.error("Server fetch failed:", e);
+    console.error("Orders load failed:", e);
   }
 }
 
@@ -272,10 +261,10 @@ function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
   loadProducts();
   loadOrders();
-  // Poll every 3 seconds explicitly from the server
+  // Live polling every 2.5 seconds
   pollTimer = setInterval(() => {
     loadOrders();
-  }, 3000);
+  }, 2500);
 }
 
 window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
