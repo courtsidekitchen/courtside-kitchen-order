@@ -116,8 +116,8 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import {getMessaging, getToken, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
+import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getMessaging, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -131,17 +131,14 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let messaging = null;
-try {
-  messaging = getMessaging(app);
-} catch (e) {
-  console.log("FCM fallback mode");
-}
+try { messaging = getMessaging(app); } catch (e) {}
 
 let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
-let refreshInterval = null;
-let notificationsEnabled = true; // Enabled by default
+let notificationsEnabled = true;
+let unsubscribeOrders = null;
+let unsubscribeProducts = null;
 
-// Unlocks browser audio policy automatically on the first user screen tap
+// Unlock audio context on screen tap
 const unlockAudio = () => {
   const audio = document.getElementById('notifSound');
   if (audio) {
@@ -157,20 +154,16 @@ document.addEventListener('click', unlockAudio);
 document.addEventListener('touchstart', unlockAudio);
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
-    .then(reg => console.log('SW Registered:', reg.scope))
-    .catch(err => console.error('SW Fail:', err));
+  navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
 }
 
-// Automatically request native notification permissions on boot
 if ("Notification" in window && Notification.permission === "default") {
   Notification.requestPermission();
 }
 
-window.toggleAudio = async () => {
+window.toggleAudio = () => {
   notificationsEnabled = !notificationsEnabled;
   const btn = document.getElementById('toggleAudioBtn');
-
   if (notificationsEnabled) {
     btn.textContent = '🔔 Notifications Enabled (Tap to Mute)';
     btn.style.background = '#4caf50';
@@ -186,12 +179,7 @@ function showSystemNotification(title, body) {
   if ("Notification" in window && Notification.permission === 'granted') {
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, {
-          body: body,
-          icon: '/logo.png',
-          vibrate: [200, 100, 200],
-          tag: 'new-order'
-        });
+        reg.showNotification(title, { body: body, icon: '/logo.png', vibrate: [200, 100, 200], tag: 'new-order' });
       });
     } else {
       new Notification(title, { body: body, icon: '/logo.png' });
@@ -207,9 +195,7 @@ function playSound(){
 }
 
 if (messaging) {
-  onMessage(messaging, () => {
-    playSound();
-  });
+  onMessage(messaging, () => playSound());
 }
 
 window.login = async () => {
@@ -233,7 +219,6 @@ window.login = async () => {
   } catch (error) {
     errorEl.textContent = error.message.replace('Firebase: ', '');
     errorEl.style.display = 'block';
-    alert("Login Error: " + error.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '🔒 Log In';
@@ -242,7 +227,8 @@ window.login = async () => {
 
 window.logout = async () => {
   if(confirm('Are you sure you want to log out?')){
-    if(refreshInterval) clearInterval(refreshInterval);
+    if(unsubscribeOrders) unsubscribeOrders();
+    if(unsubscribeProducts) unsubscribeProducts();
     await signOut(auth);
   }
 };
@@ -251,22 +237,84 @@ onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    
-    fetchData();
-    
-    if(refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(fetchData, 1000);
+    startRealtimeListeners();
   } else {
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
-    if(refreshInterval) clearInterval(refreshInterval);
+    if(unsubscribeOrders) unsubscribeOrders();
+    if(unsubscribeProducts) unsubscribeProducts();
     isFirstLoad = true;
   }
 });
 
+function startRealtimeListeners() {
+  // 1. Real-time Products Listener
+  if(unsubscribeProducts) unsubscribeProducts();
+  unsubscribeProducts = onSnapshot(collection(db, 'products'), snapshot => {
+    products = [];
+    snapshot.forEach(d => products.push({ id: d.id, ...d.data() }));
+    renderProducts();
+  });
+
+  // 2. Real-time Orders Listener (Live Push Updates)
+  if(unsubscribeOrders) unsubscribeOrders();
+  unsubscribeOrders = onSnapshot(collection(db, 'orders'), snapshot => {
+    let p='', r='', pr='', re='', h='';
+    let revenue=0, c=0;
+    let hasNewOrder=false;
+    let newOrderTitle = '🚨 New Order Received!';
+    let newOrderBody = 'Check dashboard for new orders.';
+    hist=[];
+
+    const currentDocIds = new Set();
+
+    snapshot.forEach(d => {
+      const o={id:d.id, ...d.data()};
+      hist.push(o);
+      currentDocIds.add(d.id);
+
+      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
+
+      if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
+        hasNewOrder=true;
+        if (o.customerName || o.name) {
+          newOrderBody = `Order from ${o.customerName || o.name} (₱${o.total || o.totalPrice || 0})`;
+        }
+      }
+
+      if(statusUpper==='COMPLETED'){ revenue += (o.total || o.totalPrice || 0); c++; }
+      
+      const orderCardHtml = card(d.id, o);
+      h += orderCardHtml;
+
+      if(statusUpper==='PENDING') p += orderCardHtml;
+      else if(statusUpper==='ORDER_RECEIVED') r += orderCardHtml;
+      else if(statusUpper==='PREPARING') pr += orderCardHtml;
+      else if(statusUpper==='COMPLETED') re += orderCardHtml;
+    });
+
+    if(hasNewOrder){
+      playSound();
+      showSystemNotification(newOrderTitle, newOrderBody);
+    }
+
+    existingOrderIds = currentDocIds;
+    isFirstLoad = false;
+
+    document.getElementById('pending').innerHTML = p;
+    document.getElementById('received').innerHTML = r;
+    document.getElementById('preparing').innerHTML = pr;
+    document.getElementById('completed').innerHTML = re;
+    document.getElementById('historyList').innerHTML = h;
+    document.getElementById('rev').textContent = revenue;
+    document.getElementById('cnt').textContent = c;
+    document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
+  });
+}
+
 window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
-window.move=(id,s)=>{ updateDoc(doc(db,'orders',id),{status:s}); fetchData(); };
-window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); fetchData(); }};
+window.move=(id,s)=>{ updateDoc(doc(db,'orders',id),{status:s}); };
+window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
@@ -311,9 +359,7 @@ window.toggleAdd = () => {
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
 };
 
-function slug(s){
-  return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-}
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 
 window.addProduct = async() => {
   const category = document.getElementById('aCategory').value.trim();
@@ -341,9 +387,6 @@ window.addProduct = async() => {
   document.getElementById('aQty').value = '';
   document.getElementById('aImage').value = '';
   toggleAdd();
-
-  fetchData();
-  alert('Product saved!');
 };
 
 window.saveProduct = async(id) => {
@@ -355,14 +398,11 @@ window.saveProduct = async(id) => {
     qty: Number(document.getElementById('q_'+id).value),
     image: document.getElementById('i_'+id).value
   },{merge:true});
-  fetchData();
-  alert('Updated');
 };
 
 window.deleteProduct = async(id) => {
   if(confirm('Delete Product?')){
     await deleteDoc(doc(db,'products',id));
-    fetchData();
   }
 };
 
@@ -410,69 +450,6 @@ window.renderProducts = () => {
   document.getElementById('catCount').textContent = cats.size;
   document.getElementById('productsList').innerHTML = h;
 };
-
-async function fetchData() {
-  try {
-    const prodSnap = await getDocs(collection(db, 'products'));
-    products = [];
-    prodSnap.forEach(d => products.push({ id: d.id, ...d.data() }));
-    renderProducts();
-
-    const orderSnap = await getDocs(collection(db, 'orders'));
-    let p='', r='', pr='', re='', h='';
-    let revenue=0, c=0;
-    let hasNewOrder=false;
-    let newOrderTitle = '🚨 New Order Received!';
-    let newOrderBody = 'Check dashboard for new orders.';
-    hist=[];
-
-    const currentDocIds = new Set();
-
-    orderSnap.forEach(d => {
-      const o={id:d.id, ...d.data()};
-      hist.push(o);
-      currentDocIds.add(d.id);
-
-      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
-
-      if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
-        hasNewOrder=true;
-        if (o.customerName || o.name) {
-          newOrderBody = `Order from ${o.customerName || o.name} (₱${o.total || o.totalPrice || 0})`;
-        }
-      }
-
-      if(statusUpper==='COMPLETED'){ revenue += (o.total || o.totalPrice || 0); c++; }
-      
-      const orderCardHtml = card(d.id, o);
-      h += orderCardHtml;
-
-      if(statusUpper==='PENDING') p += orderCardHtml;
-      else if(statusUpper==='ORDER_RECEIVED') r += orderCardHtml;
-      else if(statusUpper==='PREPARING') pr += orderCardHtml;
-      else if(statusUpper==='COMPLETED') re += orderCardHtml;
-    });
-
-    if(hasNewOrder){
-      playSound();
-      showSystemNotification(newOrderTitle, newOrderBody);
-    }
-
-    existingOrderIds = currentDocIds;
-    isFirstLoad = false;
-
-    document.getElementById('pending').innerHTML = p;
-    document.getElementById('received').innerHTML = r;
-    document.getElementById('preparing').innerHTML = pr;
-    document.getElementById('completed').innerHTML = re;
-    document.getElementById('historyList').innerHTML = h;
-    document.getElementById('rev').textContent = revenue;
-    document.getElementById('cnt').textContent = c;
-    document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
-}
 </script>
 </body>
 </html>
