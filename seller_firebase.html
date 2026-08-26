@@ -1,14 +1,77 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Seller RC1</title>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no'>
+<title>Seller Portal - Courtside Kitchen</title>
 <style>
-body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.col{background:#fff;padding:10px;border-radius:5px}.card{background:#fff;padding:15px;border-radius:5px;margin:10px 0}.metric{display:inline-block;margin:10px 20px 10px 0;padding:10px 20px;background:#fff;border-radius:5px}.items{background:#f0f0f0;padding:10px;border-radius:3px;margin:10px 0}button{padding:8px 15px;background:#0066cc;color:#fff;border:none;border-radius:3px;cursor:pointer}button:hover{background:#0052a3}input{width:100%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:3px;box-sizing:border-box}.card button{width:100%;padding:12px;margin:8px 0;font-size:16px;font-weight:bold}.button-group{display:flex;flex-direction:column;gap:8px}.card .button-group button{margin:0}@media(max-width:768px){.board{grid-template-columns:1fr}.card button{padding:15px;font-size:18px}.card{padding:12px}}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px}
+.login-container{max-width:400px;margin:50px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);text-align:center}
+.login-container h2{margin-top:0;color:#0066cc}
+.login-container input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:6px;font-size:15px}
+.login-container button{width:100%;padding:12px;background:#0066cc;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
+.login-container button:hover{background:#0052a3}
+.error-msg{color:red;font-size:14px;margin-top:10px;display:none}
+
+#dashboard{display:none}
+.header-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+h1{margin:0;font-size:24px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{padding:10px 16px;margin:4px 4px 4px 0;font-size:14px;font-weight:bold}
+.tab{display:none}
+.active{display:block}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.col{background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.col h3{margin-top:0;font-size:16px;border-bottom:2px solid #eee;padding-bottom:8px}
+.card{background:#fff;padding:14px;border-radius:8px;margin:10px 0;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.metric{flex:1;min-width:120px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:14px;font-weight:bold}
+.items{background:#f8f8f8;padding:10px;border-radius:6px;margin:10px 0;font-size:14px}
+button{padding:10px 16px;background:#0066cc;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px}
+button:hover{background:#0052a3}
+input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
+.card button{width:100%;padding:12px;margin:6px 0;font-size:15px;font-weight:bold}
+.button-group{display:flex;flex-direction:column;gap:8px}
+.card .button-group button{margin:0}
+
+/* Tablet Layout */
+@media(max-width:1024px){
+  .board{grid-template-columns:repeat(2,1fr)}
+}
+/* Mobile Layout */
+@media(max-width:600px){
+  body{padding:8px}
+  .board{grid-template-columns:1fr}
+  .header-bar{flex-direction:column;align-items:flex-start}
+  .header-actions{width:100%}
+  .header-actions button{flex:1}
+  .metric{min-width:45%}
+  .card button{padding:14px;font-size:16px}
+}
 </style></head><body>
-<audio id='notifSound' src='sms_jackpot.mp3' preload='auto'></audio>
-<div style='display:flex;justify-content:space-between;align-items:center;'>
-  <h1>Courtside Kitchen</h1>
-  <button id='enableAudioBtn' onclick='enableAudio()' style='background:#ff9800;'>🔔 Enable Sound Notifications</button>
+
+<!-- LOGIN CONTAINER -->
+<div id='loginBox' class='login-container'>
+  <h2>Courtside Kitchen</h2>
+  <p style='color:#666;font-size:14px;'>Seller Portal Login</p>
+  <input id='loginEmail' type='email' placeholder='Email Address'>
+  <input id='loginPassword' type='password' placeholder='Password'>
+  <button id='loginBtn' onclick='login()'>🔒 Log In</button>
+  <div id='loginError' class='error-msg'></div>
 </div>
-<div class='metrics'><div class='metric'>Revenue: ₱<span id='rev'>0</span></div><div class='metric'>Completed: <span id='cnt'>0</span></div><div class='metric'>Avg: ₱<span id='avg'>0</span></div></div>
+
+<!-- MAIN DASHBOARD -->
+<div id='dashboard'>
+<audio id='notifSound' src='sms_jackpot.mp3' preload='auto'></audio>
+<div class='header-bar'>
+  <h1>Courtside Kitchen</h1>
+  <div class='header-actions'>
+    <button id='enableAudioBtn' onclick='enableAudio()' style='background:#ff9800;'>🔔 Enable Sound Notifications</button>
+    <button onclick='logout()' style='background:#f44336;'>🚪 Logout</button>
+  </div>
+</div>
+<div class='metrics'>
+  <div class='metric'>Revenue: ₱<span id='rev'>0</span></div>
+  <div class='metric'>Completed: <span id='cnt'>0</span></div>
+  <div class='metric'>Avg: ₱<span id='avg'>0</span></div>
+</div>
 <div class='tabs'>
 <button onclick="tab('orders')">Orders</button>
 <button onclick="tab('history')">History</button>
@@ -22,100 +85,115 @@ body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{pad
 
 <div id='products' class='tab'>
 <div class='metrics'>
-<div class='metric'>
-Products:
-<span id='prodCount'>0</span>
-</div>
-
-<div class='metric'>
-Out Of Stock:
-<span id='outCount'>0</span>
-</div>
-
-<div class='metric'>
-Categories:
-<span id='catCount'>0</span>
-</div>
+<div class='metric'>Products: <span id='prodCount'>0</span></div>
+<div class='metric'>Out Of Stock: <span id='outCount'>0</span></div>
+<div class='metric'>Categories: <span id='catCount'>0</span></div>
 </div>
 
 <div class='card'>
-<input id='searchProducts'
-placeholder='Search products...'
-oninput='renderProducts()'>
-
+<input id='searchProducts' placeholder='Search products...' oninput='renderProducts()'>
 <br><br>
-
-<button onclick='toggleAdd()'>
-➕ Add Product
-</button>
+<button onclick='toggleAdd()'>➕ Add Product</button>
 </div>
 
-<div id='addBox'
-class='card'
-style='display:none'>
-
+<div id='addBox' class='card' style='display:none'>
 <h3>Add Product</h3>
-
-<input id='aCategory'
-placeholder='Category'>
-
-<input id='aName'
-placeholder='Product Name'>
-
-<input id='aDescription'
-placeholder='Description'>
-
-<input id='aPrice'
-type='number'
-placeholder='Price'>
-
-<input id='aQty'
-type='number'
-placeholder='Quantity'>
-
-<input id='aImage'
-placeholder='Image URL'>
-
-<button onclick='addProduct()'>
-Save Product
-</button>
-
+<input id='aCategory' placeholder='Category'>
+<input id='aName' placeholder='Product Name'>
+<input id='aDescription' placeholder='Description'>
+<input id='aPrice' type='number' placeholder='Price'>
+<input id='aQty' type='number' placeholder='Quantity'>
+<input id='aImage' placeholder='Image URL'>
+<button onclick='addProduct()'>Save Product</button>
 </div>
 
 <div id='productsList'></div>
-
+</div>
 </div>
 
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {
-getFirestore,
-collection,
-onSnapshot,
-doc,
-updateDoc,
-setDoc,
-deleteDoc
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let hist=[];let products=[];let existingOrderIds=new Set();let isFirstLoad=true;let audioEnabled=false;
+import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+const app = initializeApp({
+  apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
+  authDomain:'courtside-kitchen.firebaseapp.com',
+  projectId:'courtside-kitchen'
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true; let audioEnabled=false;
+let unsubscribeOrders = null;
+let unsubscribeProducts = null;
+
+// AUTH FUNCTIONS
+window.login = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if(!email || !password){
+    errorEl.textContent = 'Please enter both email and password';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Logging in...';
+  errorEl.style.display = 'none';
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    errorEl.textContent = error.message.replace('Firebase: ', '');
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔒 Log In';
+  }
+};
+
+window.logout = async () => {
+  if(confirm('Are you sure you want to log out?')){
+    await signOut(auth);
+  }
+};
+
+// LISTEN TO AUTH STATE
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    startRealtimeListeners();
+  } else {
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+    if(unsubscribeOrders) unsubscribeOrders();
+    if(unsubscribeProducts) unsubscribeProducts();
+    isFirstLoad = true;
+  }
+});
+
+// SOUND & TAB CONTROL
 window.enableAudio=()=>{
-const audio=document.getElementById('notifSound');
-audio.play().then(()=>{
-audio.pause();
-audio.currentTime=0;
-audioEnabled=true;
-const btn=document.getElementById('enableAudioBtn');
-btn.textContent='🔔 Sound Enabled ✓';
-btn.style.background='#4caf50';
-}).catch(e=>console.log(e));
+  const audio=document.getElementById('notifSound');
+  audio.play().then(()=>{
+    audio.pause();
+    audio.currentTime=0;
+    audioEnabled=true;
+    const btn=document.getElementById('enableAudioBtn');
+    btn.textContent='🔔 Sound Enabled ✓';
+    btn.style.background='#4caf50';
+  }).catch(e=>console.log(e));
 };
 
 function playSound(){
-const audio=document.getElementById('notifSound');
-audio.currentTime=0;
-audio.play().catch(e=>console.log('Autoplay prevented:',e));
+  const audio=document.getElementById('notifSound');
+  audio.currentTime=0;
+  audio.play().catch(e=>console.log('Autoplay prevented:',e));
 }
 
 window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
@@ -125,277 +203,153 @@ window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>r
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
 function itemsHtml(items=[]){return items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>');}
 function card(id,o){return `<div class='card'><b>${o.orderNumber||id}</b><br>Customer: ${o.customerName||''}<br>${o.status==='PENDING'?`Pending: ${remain(o.createdAt)}`:''}<div class='items'>${itemsHtml(o.items)}</div>Total: ₱${o.total}<br>${o.status!=='COMPLETED'&&o.status!=='DECLINED'?`<div class='button-group'><button onclick="move('${id}','ORDER_RECEIVED')">✅ Receive Order</button><button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button><button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button><button onclick="decline('${id}')" style="background:#f44336">❌ Decline</button></div>`:o.status==='DECLINED'?`<b style='color:red'>DECLINED: ${o.declineReason}</b>`:''}</div>`;}
+
 window.toggleAdd = () => {
-
-const box =
-document.getElementById('addBox');
-
-box.style.display =
-box.style.display === 'none'
-? 'block'
-: 'none';
+  const box = document.getElementById('addBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
 };
 
 function slug(s){
-
-return s
-.toLowerCase()
-.replace(/[^a-z0-9]+/g,'-')
-.replace(/^-|-$/g,'');
-
+  return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 }
 
 window.addProduct = async() => {
+  const category = document.getElementById('aCategory').value.trim();
+  const name = document.getElementById('aName').value.trim();
+  const description = document.getElementById('aDescription').value.trim();
+  const price = document.getElementById('aPrice').value.trim();
+  const qty = document.getElementById('aQty').value.trim();
+  const image = document.getElementById('aImage').value.trim();
 
-const category = document.getElementById('aCategory').value.trim();
-const name = document.getElementById('aName').value.trim();
-const description = document.getElementById('aDescription').value.trim();
-const price = document.getElementById('aPrice').value.trim();
-const qty = document.getElementById('aQty').value.trim();
-const image = document.getElementById('aImage').value.trim();
+  if(!name) return alert('Product name required');
 
-if(!name)
-return alert('Product name required');
+  await setDoc(doc(db,'products',slug(name)),{
+    category: category,
+    name: name,
+    description: description,
+    price: Number(price || 0),
+    qty: Number(qty || 0),
+    image: image
+  });
 
-await setDoc(
-doc(
-db,
-'products',
-slug(name)
-),
-{
-category: category,
-name: name,
-description: description,
-price: Number(price || 0),
-qty: Number(qty || 0),
-image: image
-}
-);
+  document.getElementById('aCategory').value = '';
+  document.getElementById('aName').value = '';
+  document.getElementById('aDescription').value = '';
+  document.getElementById('aPrice').value = '';
+  document.getElementById('aQty').value = '';
+  document.getElementById('aImage').value = '';
+  toggleAdd();
 
-// Clear form after saving
-document.getElementById('aCategory').value = '';
-document.getElementById('aName').value = '';
-document.getElementById('aDescription').value = '';
-document.getElementById('aPrice').value = '';
-document.getElementById('aQty').value = '';
-document.getElementById('aImage').value = '';
-toggleAdd();
-
-alert('Product saved!');
+  alert('Product saved!');
 };
 
 window.saveProduct = async(id) => {
-
-await setDoc(
-doc(db,'products',id),
-{
-category:
-document.getElementById('c_'+id).value,
-
-name:
-document.getElementById('n_'+id).value,
-
-description:
-document.getElementById('d_'+id).value,
-
-price:Number(
-document.getElementById('p_'+id).value
-),
-
-qty:Number(
-document.getElementById('q_'+id).value
-),
-
-image:
-document.getElementById('i_'+id).value
-},
-{merge:true}
-);
-
-alert('Updated');
+  await setDoc(doc(db,'products',id),{
+    category: document.getElementById('c_'+id).value,
+    name: document.getElementById('n_'+id).value,
+    description: document.getElementById('d_'+id).value,
+    price: Number(document.getElementById('p_'+id).value),
+    qty: Number(document.getElementById('q_'+id).value),
+    image: document.getElementById('i_'+id).value
+  },{merge:true});
+  alert('Updated');
 };
 
 window.deleteProduct = async(id) => {
-
-if(confirm('Delete Product?')){
-
-await deleteDoc(
-doc(db,'products',id)
-);
-}
+  if(confirm('Delete Product?')){
+    await deleteDoc(doc(db,'products',id));
+  }
 };
 
 window.editProduct = id => {
-
-document
-.getElementById('e_'+id)
-.classList
-.toggle('active');
+  document.getElementById('e_'+id).classList.toggle('active');
 };
 
 window.renderProducts = () => {
+  const q = (searchProducts?.value || '').toLowerCase();
+  let h='';
+  products.filter(p => (p.name||'').toLowerCase().includes(q)).forEach(p => {
+    h += `
+    <div class='card'>
+    ${p.image ? `<img src='${p.image}' style='max-width:100%;border-radius:4px'><br>` : ''}
+    <b>${p.name}</b><br>
+    ₱${p.price||0}<br>
+    Qty: ${p.qty||0}
+    ${(p.qty||0)<=0 ? "<div style='color:red;font-weight:bold'>❌ OUT OF STOCK</div>" : ""}
+    <br><br>
+    <button onclick="editProduct('${p.id}')">Edit</button>
+    <button onclick="deleteProduct('${p.id}')">Delete</button>
+    <div id="e_${p.id}" class="tab">
+    <input id="c_${p.id}" value="${p.category||''}">
+    <input id="n_${p.id}" value="${p.name||''}">
+    <input id="d_${p.id}" value="${p.description||''}">
+    <input id="p_${p.id}" value="${p.price||0}">
+    <input id="q_${p.id}" value="${p.qty||0}">
+    <input id="i_${p.id}" value="${p.image||''}">
+    <button onclick="saveProduct('${p.id}')">Save</button>
+    </div>
+    </div>
+    `;
+  });
 
-const q =
-(searchProducts?.value || '')
-.toLowerCase();
+  let cats = new Set();
+  let out = 0;
+  products.forEach(p => {
+    cats.add(p.category || 'Other');
+    if((p.qty || 0) <= 0){ out++; }
+  });
 
-let h='';
-
-products
-.filter(
-p =>
-(p.name||'')
-.toLowerCase()
-.includes(q)
-)
-.forEach(p => {
-
-h += `
-<div class='card'>
-
-${p.image
-? `<img src='${p.image}' style='max-width:100%;border-radius:3px'><br>`
-: ''}
-
-<b>${p.name}</b>
-
-<br>
-
-₱${p.price||0}
-
-<br>
-
-Qty:
-${p.qty||0}
-
-${(p.qty||0)<=0
-? "<div style='color:red;font-weight:bold'>❌ OUT OF STOCK</div>"
-: ""}
-
-<br><br>
-
-<button onclick="editProduct('${p.id}')">
-Edit
-</button>
-
-<button onclick="deleteProduct('${p.id}')">
-Delete
-</button>
-
-<div
-id="e_${p.id}"
-class="tab">
-
-<input
-id="c_${p.id}"
-value="${p.category||''}">
-
-<input
-id="n_${p.id}"
-value="${p.name||''}">
-
-<input
-id="d_${p.id}"
-value="${p.description||''}">
-
-<input
-id="p_${p.id}"
-value="${p.price||0}">
-
-<input
-id="q_${p.id}"
-value="${p.qty||0}">
-
-<input
-id="i_${p.id}"
-value="${p.image||''}">
-
-<button
-onclick="saveProduct('${p.id}')">
-
-Save
-
-</button>
-
-</div>
-
-</div>
-`;
-});
-
-let cats = new Set();
-let out = 0;
-
-products.forEach(p => {
-
-cats.add(p.category || 'Other');
-
-if((p.qty || 0) <= 0){
-out++;
-}
-
-});
-
-prodCount.textContent = products.length;
-outCount.textContent = out;
-catCount.textContent = cats.size;productsList.innerHTML = h;
+  prodCount.textContent = products.length;
+  outCount.textContent = out;
+  catCount.textContent = cats.size;
+  productsList.innerHTML = h;
 };
 
-onSnapshot(
-collection(db,'products'),
-snap => {
+// INITIALIZE REALTIME DATABASE LISTENERS ONLY WHEN LOGGED IN
+function startRealtimeListeners() {
+  unsubscribeProducts = onSnapshot(collection(db,'products'),snap => {
+    products=[];
+    snap.forEach(d => products.push({id:d.id,...d.data()}));
+    renderProducts();
+  });
 
-products=[];
+  unsubscribeOrders = onSnapshot(collection(db,'orders'),snap=>{
+    let p='',r='',pr='',re='',h='';
+    let revenue=0,c=0;
+    let hasNewOrder=false;
+    hist=[];
 
-snap.forEach(
-d =>
-products.push({
-id:d.id,
-...d.data()
-})
-);
+    snap.forEach(d=>{
+      const o={id:d.id,...d.data()};
+      hist.push(o);
 
-renderProducts();
+      if(!isFirstLoad && !existingOrderIds.has(d.id) && (o.status==='PENDING' || o.status==='ORDER_RECEIVED')){
+        hasNewOrder=true;
+      }
+
+      if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}
+      h+=card(d.id,o);
+      if(o.status==='PENDING')p+=card(d.id,o);
+      else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
+      else if(o.status==='PREPARING')pr+=card(d.id,o);
+      else if(o.status==='COMPLETED')re+=card(d.id,o);
+    });
+
+    if(hasNewOrder){
+      playSound();
+    }
+
+    existingOrderIds=new Set(snap.docs.map(d=>d.id));
+    isFirstLoad=false;
+
+    pending.innerHTML=p;
+    received.innerHTML=r;
+    preparing.innerHTML=pr;
+    completed.innerHTML=re;
+    historyList.innerHTML=h;
+    rev.textContent=revenue;
+    cnt.textContent=c;
+    avg.textContent=c?Math.round(revenue/c):0;
+  });
 }
-);
-
-onSnapshot(collection(db,'orders'),snap=>{
-let p='',r='',pr='',re='',h='';
-let revenue=0,c=0;
-let hasNewOrder=false;
-hist=[];
-
-snap.forEach(d=>{
-const o={id:d.id,...d.data()};
-hist.push(o);
-
-if(!isFirstLoad && !existingOrderIds.has(d.id) && (o.status==='PENDING' || o.status==='ORDER_RECEIVED')){
-hasNewOrder=true;
-}
-
-if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}
-h+=card(d.id,o);
-if(o.status==='PENDING')p+=card(d.id,o);
-else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
-else if(o.status==='PREPARING')pr+=card(d.id,o);
-else if(o.status==='COMPLETED')re+=card(d.id,o);
-});
-
-if(hasNewOrder){
-playSound();
-}
-
-existingOrderIds=new Set(snap.docs.map(d=>d.id));
-isFirstLoad=false;
-
-pending.innerHTML=p;
-received.innerHTML=r;
-preparing.innerHTML=pr;
-completed.innerHTML=re;
-historyList.innerHTML=h;
-rev.textContent=revenue;
-cnt.textContent=c;
-avg.textContent=c?Math.round(revenue/c):0;
-});
 </script></body></html>
