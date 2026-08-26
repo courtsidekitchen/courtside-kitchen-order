@@ -9,7 +9,7 @@
 body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;padding-bottom:40px;color:#333}
 .container{max-width:600px;margin:0 auto}
 
-/* Header */
+/* Header with Logo */
 .header{text-align:center;padding:10px 0 20px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
 .header img{width:80px;height:80px;object-fit:contain;border-radius:50%}
 .header h1{margin:0;color:#0066cc;font-size:24px}
@@ -78,6 +78,7 @@ body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;paddi
 <body>
 
 <div class="container">
+  <!-- Header with Logo -->
   <div class="header">
     <img src="logo.png" alt="Courtside Kitchen Logo" onerror="this.style.display='none'">
     <h1>Courtside Kitchen</h1>
@@ -114,19 +115,19 @@ body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;paddi
       <input id="paymentReference" class="customer-input" type="text" placeholder="e.g. GCash Ref No. 123456">
     </div>
 
-    <button id="placeOrderBtn" class="btn-place-order" onclick="submitOrder()">
+    <button id="placeOrderBtn" class="btn-place-order" onclick="window.submitOrder()">
       🍽️ PLACE ORDER
     </button>
   </div>
 
-  <!-- Post-Order Status Card with Cancel Window & Track Portal Link -->
+  <!-- Post-Order Status Card -->
   <div id="statusBox" class="status-card">
     <h2 style="color:green;margin-top:0;">Order Placed Successfully! 🎉</h2>
     <p><b>Order ID:</b> <span id="placedOrderId"></span></p>
     
     <div id="cancelContainer">
       <p style="color:#d97706;font-size:14px;">Need to make changes? You can cancel within <b id="timerCount">30</b> seconds.</p>
-      <button id="cancelOrderBtn" class="btn-cancel" onclick="cancelCurrentOrder()">Cancel Order</button>
+      <button id="cancelOrderBtn" class="btn-cancel" onclick="window.cancelCurrentOrder()">Cancel Order</button>
     </div>
 
     <div style="margin-top:20px;border-top:1px solid #eee;padding-top:16px;">
@@ -156,7 +157,7 @@ let cart = {};
 let activeDocId = null;
 let cancelTimer = null;
 
-const WHATSAPP_PHONE = '639XXXXXXXXX'; // Replace with your WhatsApp phone number (with country code)
+const WHATSAPP_PHONE = '639XXXXXXXXX'; // Replace with your WhatsApp phone number
 
 onSnapshot(collection(db, 'products'), (snap) => {
   products = [];
@@ -344,10 +345,8 @@ window.submitOrder = async () => {
   };
 
   try {
-    // 1. Write order directly into Firebase matching track schema[cite: 1]
     await setDoc(doc(db, 'orders', customDocId), orderData);
 
-    // 2. Trigger WhatsApp Message Integration
     let waMsg = `*New Order: ${customDocId}*\nCustomer: ${nameInput}\n`;
     orderItems.forEach(i => {
       waMsg += `- ${i.name} x${i.qty}${i.boba ? ' (+Boba)' : ''}\n`;
@@ -355,14 +354,12 @@ window.submitOrder = async () => {
     waMsg += `Total: ₱${subtotal + bobaCost}`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(waMsg)}`, '_blank');
 
-    // 3. Reset Cart & Show Status Card
     cart = {};
     document.getElementById('checkoutBox').style.display = 'none';
     document.getElementById('statusBox').style.display = 'block';
     document.getElementById('placedOrderId').textContent = customDocId;
     document.getElementById('trackPortalLink').href = `track.html?order=${customDocId}`;[cite: 1]
 
-    // 4. Start 30-Second Cancel Countdown
     startCancelTimer();
     renderMenu();
   } catch (err) {
