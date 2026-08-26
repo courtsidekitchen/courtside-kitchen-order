@@ -1,410 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Courtside Kitchen Menu</title>
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Courtside Kitchen RC2</title>
 <style>
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;padding-bottom:40px;color:#333}
-.container{max-width:600px;margin:0 auto}
-
-/* Header with Logo */
+body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;padding:14px;border-radius:14px;margin-bottom:12px}.category{background:#f5f5f5;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;display:flex;justify-content:space-between}.content{display:none;padding-top:10px}.content.open{display:block}.item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee}.item-info{flex:1}.item-name{font-weight:bold}.item-price{color:#0066cc;margin:4px 0}.item-qty{display:flex;gap:10px;margin:8px 0}.item-qty button{padding:4px 8px;background:#0066cc;color:#fff;border:none;border-radius:4px;cursor:pointer}.item-qty input{width:50px;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px}.item-boba{font-size:12px;color:#666}.cart{position:sticky;bottom:0;background:#0066cc;color:#fff;padding:12px;border-radius:12px;margin:12px}.cart>div{padding:4px;display:flex;justify-content:space-between}.cart-total{font-size:24px;font-weight:bold;padding:8px 0;border-top:2px solid #fff}.btn{width:100%;padding:12px;background:#4caf50;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}.btn:disabled{background:#ccc;cursor:not-allowed}.payment-details{background:#f0f0f0;padding:12px;border-radius:8px;margin-top:12px;border-left:4px solid #0066cc}.payment-details-title{font-weight:bold;margin-bottom:8px}.payment-details-item{padding:6px 0;font-size:14px}.payment-details-item label{font-weight:bold;color:#333}.payment-details-item span{color:#666}.payment-toggle{margin-top:12px;padding:12px;background:#fff3cd;border-radius:8px;border-left:4px solid #ff9800}.payment-toggle-label{font-weight:bold;margin-bottom:8px;display:block}.toggle-container{display:flex;gap:10px;align-items:center}.toggle-btn{padding:8px 16px;background:#ddd;border:none;border-radius:4px;cursor:pointer;font-weight:bold;transition:all 0.3s}.toggle-btn.active{background:#4caf50;color:#fff}.toggle-status{font-size:14px;margin-left:10px}
 .header{text-align:center;padding:10px 0 20px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
 .header img{width:80px;height:80px;object-fit:contain;border-radius:50%}
 .header h1{margin:0;color:#0066cc;font-size:24px}
-
-/* Category Cards */
-.category-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
-.category-header{display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:18px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
-
-/* Item Row Layout */
-.item-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
-.item-row:last-child{border-bottom:none}
-
-/* Item Details */
-.item-details{display:flex;flex-direction:column;gap:4px;flex:1;padding-right:12px}
-.item-name{font-weight:bold;font-size:16px;color:#222}
-.item-desc{font-size:12px;color:#777}
-.item-price{color:#0066cc;font-weight:bold;font-size:15px}
-.item-opt{font-size:12px;color:#555;display:flex;align-items:center;gap:4px;margin-top:2px;cursor:pointer}
-
-/* Item Controls */
-.item-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.btn-qty{width:32px;height:32px;background:#0066cc;color:#fff;border:none;border-radius:6px;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.btn-qty:active{background:#004c99}
-.qty-display{width:36px;height:32px;text-align:center;border:1px solid #ccc;border-radius:6px;font-size:14px;font-weight:bold;line-height:30px;background:#fff}
-
-/* Inline Summary & Payment Card */
-.checkout-card{background:#fff;border-radius:12px;padding:20px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:none}
-.summary-items{font-size:15px;line-height:1.6;margin-bottom:10px}
-.summary-line{font-size:15px;margin:4px 0;color:#333}
-.grand-total{font-size:22px;font-weight:bold;margin:16px 0;color:#000}
-
-/* Payment Section Styling */
-.payment-section{border-top:2px dashed #eee;margin-top:16px;padding-top:16px}
-.payment-title{font-weight:bold;font-size:16px;margin-bottom:10px;color:#004080}
-.qr-container{text-align:center;margin:12px 0;background:#f9f9f9;padding:12px;border-radius:8px;border:1px solid #eee}
-.qr-image{width:180px;height:180px;object-fit:contain;border-radius:8px;border:1px solid #ddd}
-.payment-details-box{font-size:13px;color:#444;margin-top:8px;line-height:1.4}
-
-.form-label{font-size:14px;font-weight:bold;display:block;margin-top:12px;color:#444}
-.customer-input{width:100%;padding:12px;margin:6px 0 12px 0;border:1px solid #ccc;border-radius:8px;font-size:15px}
-
-.btn-place-order{
-  width:100%;
-  background:#004080;
-  color:#fff;
-  border:none;
-  padding:14px;
-  border-radius:10px;
-  font-size:16px;
-  font-weight:bold;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  margin-top:10px;
-}
-.btn-place-order:hover{background:#003366}
-
-/* Post-Order Status Card */
-.status-card{background:#fff;border-radius:12px;padding:20px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:none;text-align:center}
-.btn-track{background:#163a70;color:#fff;border:none;padding:12px 20px;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block;margin-top:10px}
-.btn-cancel{background:#b71c1c;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:12px}
-</style>
-</head>
-<body>
-
-<div class="container">
-  <!-- Header with Logo -->
-  <div class="header">
-    <img src="logo.png" alt="Courtside Kitchen Logo" onerror="this.style.display='none'">
-    <h1>Courtside Kitchen</h1>
-  </div>
-
-  <div id="menuContainer">Loading menu...</div>
-
-  <!-- Inline Checkout Summary & Payment Box -->
-  <div id="checkoutBox" class="checkout-card">
-    <div id="summaryItems" class="summary-items"></div>
-    
-    <div class="summary-line">Subtotal ₱<span id="subtotalVal">0</span></div>
-    <div class="summary-line">Boba ₱<span id="bobaVal">0</span></div>
-    <div class="summary-line">Discount ₱0</div>
-    
-    <div class="grand-total">Total ₱<span id="totalVal">0</span></div>
-
-    <!-- GCash / QR Payment Section -->
-    <div class="payment-section">
-      <div class="payment-title">Payment Method: GCash / QR Code</div>
-      
-      <div class="qr-container">
-        <img src="qr-code.png" alt="GCash QR Code" class="qr-image" onerror="this.src='https://via.placeholder.com/180?text=Scan+QR+Code'">
-        <div class="payment-details-box">
-          <div><b>Account Name:</b> Courtside Kitchen</div>
-          <div><b>GCash Number:</b> 09XX-XXX-XXXX</div>
-        </div>
-      </div>
-
-      <label class="form-label" for="customerName">Customer Name *</label>
-      <input id="customerName" class="customer-input" type="text" placeholder="Enter full name">
-
-      <label class="form-label" for="paymentReference">Reference Number / Proof</label>
-      <input id="paymentReference" class="customer-input" type="text" placeholder="e.g. GCash Ref No. 123456">
-    </div>
-
-    <button id="placeOrderBtn" class="btn-place-order" onclick="window.submitOrder()">
-      🍽️ PLACE ORDER
-    </button>
-  </div>
-
-  <!-- Post-Order Status Card -->
-  <div id="statusBox" class="status-card">
-    <h2 style="color:green;margin-top:0;">Order Placed Successfully! 🎉</h2>
-    <p><b>Order ID:</b> <span id="placedOrderId"></span></p>
-    
-    <div id="cancelContainer">
-      <p style="color:#d97706;font-size:14px;">Need to make changes? You can cancel within <b id="timerCount">30</b> seconds.</p>
-      <button id="cancelOrderBtn" class="btn-cancel" onclick="window.cancelCurrentOrder()">Cancel Order</button>
-    </div>
-
-    <div style="margin-top:20px;border-top:1px solid #eee;padding-top:16px;">
-      <p>Track your order status live on the tracking portal:</p>
-      <a id="trackPortalLink" href="#" class="btn-track">🔎 Go to Tracking Portal</a>
-    </div>
-  </div>
+</style></head><body>
+<div class='container'>
+<div class="header">
+  <img src="logo.png" alt="Courtside Kitchen Logo" onerror="this.style.display='none'">
+  <h1>Courtside Kitchen</h1>
 </div>
-
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-const app = initializeApp({
-  apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
-  authDomain: 'courtside-kitchen.firebaseapp.com',
-  projectId: 'courtside-kitchen',
-  storageBucket: 'courtside-kitchen.appspot.com',
-  messagingSenderId: '1062967764463',
-  appId: '1:1062967764463:web:0b6dbbfec0904d0f0c05a1'
-});
-
-const db = getFirestore(app);
-
-let products = [];
-let cart = {};
-let activeDocId = null;
-let cancelTimer = null;
-
-const WHATSAPP_PHONE = '639XXXXXXXXX'; // Replace with your WhatsApp phone number
-
-onSnapshot(collection(db, 'products'), (snap) => {
-  products = [];
-  snap.forEach(doc => {
-    products.push({ id: doc.id, ...doc.data() });
-  });
-  renderMenu();
-});
-
-function renderMenu() {
-  const container = document.getElementById('menuContainer');
-  if (products.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">No products available.</p>';
-    return;
-  }
-
-  const categories = {};
-  products.forEach(p => {
-    const cat = p.category || 'General';
-    if (!categories[cat]) categories[cat] = [];
-    categories[cat].push(p);
-  });
-
-  let html = '';
-  for (const [catName, items] of Object.entries(categories)) {
-    html += `
-      <div class="category-card">
-        <div class="category-header">
-          <span>${catName}</span>
-          <span style="font-size:14px;color:#666;">${items.length}</span>
-        </div>
-    `;
-
-    items.forEach(item => {
-      const currentQty = cart[item.id] ? cart[item.id].qty : 0;
-      const hasBoba = cart[item.id] ? cart[item.id].boba : false;
-      const isMilkTea = catName.toLowerCase().includes('tea') || (item.name && item.name.toLowerCase().includes('matcha'));
-
-      html += `
-        <div class="item-row">
-          <div class="item-details">
-            <div class="item-name">${item.name}</div>
-            ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
-            <div class="item-price">₱${item.price || 0}</div>
-            ${isMilkTea ? `
-              <label class="item-opt">
-                <input type="checkbox" ${hasBoba ? 'checked' : ''} onchange="window.toggleBoba('${item.id}', this.checked)"> Boba +₱5
-              </label>
-            ` : ''}
-          </div>
-          <div class="item-controls">
-            <button class="btn-qty" onclick="window.updateQty('${item.id}', -1)">-</button>
-            <div class="qty-display">${currentQty}</div>
-            <button class="btn-qty" onclick="window.updateQty('${item.id}', 1)">+</button>
-          </div>
-        </div>
-      `;
-    });
-
-    html += `</div>`;
-  }
-
-  container.innerHTML = html;
-  updateSummaryCard();
+<div id='menu'></div>
+<div class='card'>
+<input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br>
+<textarea id='notes' placeholder='Special requests' style='width:100%;height:70px'></textarea><br><br>
+<select id='discount' onchange='calc()' style='width:100%;padding:10px'>
+<option value='0'>No Discount</option><option value='20'>Senior Citizen (20%)</option><option value='20'>PWD (20%)</option></select>
+<br><br>
+<select id='paymentMethod' onchange='updatePaymentInfo()' style='width:100%;padding:10px'>
+<option value='GCash'>GCash</option><option value='BPI'>BPI</option></select>
+<br><br>
+<img id='paymentImage' src='GCASH.jpg' style='max-width:250px;width:100%;border-radius:12px'>
+<div class='payment-details'>
+<div class='payment-details-title' id='paymentMethodTitle'>GCash Payment Details</div>
+<div class='payment-details-item'>
+<label>Account Name:</label>
+<span id='accountName'>PA****K NI**O L.</span>
+</div>
+<div class='payment-details-item'>
+<label>Mobile Number:</label>
+<span id='accountNumber'>09178512376</span>
+</div>
+</div>
+<div class='payment-toggle'>
+<label class='payment-toggle-label'>💳 Payment Made?</label>
+<div class='toggle-container'>
+<button class='toggle-btn' id='paymentYes' onclick='setPaymentStatus(true)'>✓ Yes</button>
+<button class='toggle-btn active' id='paymentNo' onclick='setPaymentStatus(false)'>✗ No</button>
+<span class='toggle-status' id='paymentStatus'>Awaiting payment...</span>
+</div>
+</div>
+<p>Attach payment screenshot and valid ID if claiming discount.</p>
+</div><div id='success'></div></div>
+<div class='cart'><div id='summary'>No items selected</div><div>Subtotal ₱<span id='sub'>0</span></div><div>Boba ₱<span id='boba'>0</span></div><div>Discount ₱<span id='disc'>0</span></div><div class='cart-total'>Total ₱<span id='tot'>0</span></div><button id='placeOrderBtn'
+class='btn'
+disabled
+onclick='placeOrder()'>
+🍽️ PLACE ORDER
+</button>
+<script type='module'>
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getFirestore,collection,onSnapshot,doc,runTransaction,setDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
+let products=[],cart={},bobaMap={},openCats=new Set(),paymentMade=false;
+const paymentMethods={
+GCash:{
+title:'GCash Payment Details',
+image:'GCASH.jpg',
+accountName:'PA****K NI**O L.',
+accountNumber:'09178512376'
+},
+BPI:{
+title:'BPI Payment Details',
+image:'BPI.jpg',
+accountName:'PA****K NI**O LA***O.',
+accountNumber:'0846454643'
 }
-
-window.updateQty = (id, change) => {
-  const prod = products.find(p => p.id === id);
-  if (!prod) return;
-
-  if (!cart[id]) {
-    cart[id] = { 
-      id: prod.id, 
-      name: prod.name, 
-      price: Number(prod.price || 0), 
-      qty: 0, 
-      boba: false,
-      category: prod.category || ''
-    };
-  }
-
-  cart[id].qty += change;
-
-  if (cart[id].qty <= 0) {
-    delete cart[id];
-  }
-
-  renderMenu();
 };
-
-window.toggleBoba = (id, isChecked) => {
-  if (cart[id]) {
-    cart[id].boba = isChecked;
-  } else {
-    const prod = products.find(p => p.id === id);
-    if (prod) {
-      cart[id] = { 
-        id: prod.id, 
-        name: prod.name, 
-        price: Number(prod.price || 0), 
-        qty: 1, 
-        boba: isChecked,
-        category: prod.category || ''
-      };
-    }
-  }
-  renderMenu();
+window.updatePaymentInfo=()=>{
+const method=document.getElementById('paymentMethod').value;
+const paymentInfo=paymentMethods[method];
+document.getElementById('paymentImage').src=paymentInfo.image;
+document.getElementById('paymentMethodTitle').textContent=paymentInfo.title;
+document.getElementById('accountName').textContent=paymentInfo.accountName;
+document.getElementById('accountNumber').textContent=paymentInfo.accountNumber;
 };
-
-function updateSummaryCard() {
-  const checkoutBox = document.getElementById('checkoutBox');
-  const cartItems = Object.values(cart);
-
-  if (cartItems.length === 0) {
-    checkoutBox.style.display = 'none';
-    return;
-  }
-
-  let itemsHtml = '';
-  let baseSubtotal = 0;
-  let totalBoba = 0;
-
-  cartItems.forEach(item => {
-    baseSubtotal += item.price * item.qty;
-
-    const isMilkTea = item.category.toLowerCase().includes('tea') || item.name.toLowerCase().includes('matcha');
-    if (item.boba && isMilkTea) {
-      totalBoba += 5 * item.qty;
-    }
-
-    itemsHtml += `<div>${item.name} x${item.qty}${item.boba && isMilkTea ? ' + Boba' : ''}</div>`;
-  });
-
-  const grandTotal = baseSubtotal + totalBoba;
-
-  document.getElementById('summaryItems').innerHTML = itemsHtml;
-  document.getElementById('subtotalVal').textContent = baseSubtotal;
-  document.getElementById('bobaVal').textContent = totalBoba;
-  document.getElementById('totalVal').textContent = grandTotal;
-
-  checkoutBox.style.display = 'block';
+window.setPaymentStatus=(status)=>{
+paymentMade=status;
+const btnYes=document.getElementById('paymentYes');
+const btnNo=document.getElementById('paymentNo');
+const statusText=document.getElementById('paymentStatus');
+const placeOrderBtn=document.getElementById('placeOrderBtn');
+if(status){
+btnYes.classList.add('active');
+btnNo.classList.remove('active');
+statusText.textContent='Payment received ✓';
+placeOrderBtn.disabled=false;
+}else{
+btnNo.classList.add('active');
+btnYes.classList.remove('active');
+statusText.textContent='Awaiting payment...';
+placeOrderBtn.disabled=true;
 }
-
-window.submitOrder = async () => {
-  const nameInput = document.getElementById('customerName').value.trim();
-  const refInput = document.getElementById('paymentReference').value.trim();
-
-  if (!nameInput) {
-    alert('Please enter your name.');
-    return;
-  }
-
-  const btn = document.getElementById('placeOrderBtn');
-  btn.disabled = true;
-  btn.textContent = 'PLACING ORDER...';
-
-  const orderItems = Object.values(cart).map(i => ({
-    id: i.id,
-    name: i.name,
-    qty: i.qty,
-    price: i.price,
-    boba: i.boba || false
-  }));
-
-  let subtotal = 0;
-  let bobaCost = 0;
-  orderItems.forEach(i => {
-    subtotal += i.price * i.qty;
-    if(i.boba) bobaCost += (5 * i.qty);
-  });
-
-  const customDocId = 'CK-' + Math.floor(1000 + Math.random() * 9000);
-  activeDocId = customDocId;
-
-  const orderData = {
-    customerName: nameInput,
-    paymentRef: refInput || 'N/A',
-    items: orderItems,
-    subtotal: subtotal,
-    bobaTotal: bobaCost,
-    total: subtotal + bobaCost,
-    status: 'PENDING',
-    createdAt: new Date().toISOString(),
-    orderNumber: customDocId
-  };
-
-  try {
-    await setDoc(doc(db, 'orders', customDocId), orderData);
-
-    let waMsg = `*New Order: ${customDocId}*\nCustomer: ${nameInput}\n`;
-    orderItems.forEach(i => {
-      waMsg += `- ${i.name} x${i.qty}${i.boba ? ' (+Boba)' : ''}\n`;
-    });
-    waMsg += `Total: ₱${subtotal + bobaCost}`;
-    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(waMsg)}`, '_blank');
-
-    cart = {};
-    document.getElementById('checkoutBox').style.display = 'none';
-    document.getElementById('statusBox').style.display = 'block';
-    document.getElementById('placedOrderId').textContent = customDocId;
-    document.getElementById('trackPortalLink').href = `track.html?order=${customDocId}`;[cite: 1]
-
-    startCancelTimer();
-    renderMenu();
-  } catch (err) {
-    alert('Error placing order: ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🍽️ PLACE ORDER';
-  }
 };
-
-function startCancelTimer() {
-  let timeLeft = 30;
-  const timerElem = document.getElementById('timerCount');
-  const cancelBox = document.getElementById('cancelContainer');
-  cancelBox.style.display = 'block';
-
-  if (cancelTimer) clearInterval(cancelTimer);
-
-  cancelTimer = setInterval(() => {
-    timeLeft--;
-    timerElem.textContent = timeLeft;
-    if (timeLeft <= 0) {
-      clearInterval(cancelTimer);
-      cancelBox.style.display = 'none';
-    }
-  }, 1000);
+window.toggleCat=id=>{openCats.has(id)?openCats.delete(id):openCats.add(id);document.getElementById(id)?.classList.toggle('open');};
+window.q=(id,n)=>{cart[id]=Math.max(0,(cart[id]||0)+n);calc();render();};
+window.tb=id=>{bobaMap[id]=!bobaMap[id];calc();render();};
+function buildItems(){const items=[];products.forEach(p=>{const q=cart[p.id]||0;if(q)items.push({name:p.name,qty:q,price:p.price||0,boba:!!bobaMap[p.id]})});return items;}
+function calc(){let s=0,b=0,t='';products.forEach(p=>{let q=cart[p.id]||0;if(q){s+=q*(p.price||0);if(bobaMap[p.id])b+=q*5;t+=`${p.name} x${q}${bobaMap[p.id]?' + Boba':''}\n`;}});let d=(s+b)*(Number(document.getElementById('discount').value||0)/100);sub.textContent=s;boba.textContent=b;disc.textContent=d.toFixed(2);tot.textContent=(s+b-d).toFixed(2);summary.textContent=t||'No items selected';}
+function render(){
+ 
+let g={},h='';
+ 
+products.forEach(
+p => (g[p.category || 'Other'] ??= []).push(p)
+);
+ 
+const categoryOrder = [
+'Fruit Shakes',
+'Fruit Sodas',
+'Milk Tea',
+'Power Plays',
+'Quick Points'
+];
+ 
+const orderedCategories = [
+...categoryOrder.filter(c => g[c]),
+...Object.keys(g).filter(
+c => !categoryOrder.includes(c)
+)
+];
+ 
+for(const c of orderedCategories){
+ 
+let id =
+c.toLowerCase()
+.replace(/[^a-z0-9]+/g,'-');
+ 
+h+=`<div class='card'><div class='category' onclick="toggleCat('${id}')"><span>${c}</span><span>${g[c].length}</span></div><div id='${id}' class='content ${openCats.has(id)?'open':''}'>`;g[c].forEach(p=>{h+=`<div class='item'><div class='item-info'><div class='item-name'>${p.name}</div><div class='item-price'>₱${p.price}</div><div class='item-qty'><button onclick="q('${p.id}',-1)">-</button><input type='number' value='${cart[p.id]||0}' readonly><button onclick="q('${p.id}',1)">+</button></div><label class='item-boba'><input type='checkbox' ${bobaMap[p.id]?'checked':''}  onchange="tb('${p.id}')"> Boba +₱5</label></div></div>`});h+='</div></div>';}
+menu.innerHTML=h;
 }
-
-window.cancelCurrentOrder = async () => {
-  if (!activeDocId) return;
-
-  if (confirm('Are you sure you want to cancel this order?')) {
-    try {
-      await updateDoc(doc(db, 'orders', activeDocId), {
-        status: 'CANCELLED',
-        cancelledBy: 'Customer'
-      });
-      alert('Your order has been cancelled.');
-      if (cancelTimer) clearInterval(cancelTimer);
-      document.getElementById('cancelContainer').style.display = 'none';
-    } catch (err) {
-      alert('Failed to cancel order: ' + err.message);
-    }
-  }
+async function nextOrder(){const ref=doc(db,'counters','orders');let n=0;await runTransaction(db,async tx=>{const s=await tx.get(ref);n=(s.data()?.lastOrderNumber||0)+1;tx.update(ref,{lastOrderNumber:n});});return n;}
+window.placeOrder=async()=>{
+ 
+if(!paymentMade){
+alert('Please confirm payment has been made before placing order');
+return;
+}
+ 
+document.getElementById('placeOrderBtn').style.display='none';
+ 
+if(!customerName.value)
+return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const track=`track_rc1.html?order=${orderNo}`;const order={orderNumber:orderNo,customerName:customerName.value,notes:notes.value,items:items,paymentMethod:document.getElementById('paymentMethod').value,total:Number(document.getElementById('tot').textContent),status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',orderNo.toString()),order);const wa=`Order #${orderNo}\n${items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('\n')}\nTotal: ₱${order.total}\n\n${track}`;const whatsappUrl=
+`https://wa.me/639178512376?text=${encodeURIComponent(wa)}`;
+ 
+window.location.href = whatsappUrl;success.innerHTML=`<div class='card'><h3>✅ ${orderNo}</h3><p>Status:<span id='orderStatus'>PENDING</span></p><p>Cancel window:<span id='timer'>30</span>s</p><b>Tracking: ${track}</b></div>`;let seconds=30;const timer=setInterval(()=>{document.getElementById('timer').textContent=--seconds;if(seconds<0)clearInterval(timer);},1000);
 };
-</script>
-</body>
-</html>
+window.cancelOrder=async(id)=>{await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});alert('Cancelled');};
+onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();calc();});
+</script></body></html>
