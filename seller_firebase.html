@@ -61,11 +61,10 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 </div>
 
 <div id="dashboard">
-<audio id="notifSound" src="sms_jackpot.mp3" preload="auto"></audio>
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="toggleAudioBtn" onclick="toggleAudio()" style="background:#4caf50;">🔔 Sound Enabled (Tap to Test)</button>
+    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test (Tap Me)</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -132,22 +131,40 @@ const db = getFirestore(app);
 let hist=[]; let products=[]; let existingOrderIds = new Set(); let isFirstLoad = true;
 let pollTimer = null;
 
-function playAudio() {
-  const audio = document.getElementById('notifSound');
-  if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }
+// Initialize global audio object for mobile browser bypass
+const notifAudio = new Audio('sms_jackpot.mp3');
+notifAudio.preload = 'auto';
+let isAudioUnlocked = false;
+
+function unlockAndPlayAudio() {
+  notifAudio.currentTime = 0;
+  notifAudio.play().then(() => {
+    isAudioUnlocked = true;
+  }).catch(() => {});
 }
 
-window.toggleAudio = () => {
-  playAudio();
+// Mobile browser unlock listener
+const initAudioOnTouch = () => {
+  if (!isAudioUnlocked) {
+    unlockAndPlayAudio();
+    // Pause instantly if user just touched screen normally so sound doesn't ring randomly
+    setTimeout(() => { notifAudio.pause(); notifAudio.currentTime = 0; }, 100);
+  }
+};
+document.addEventListener('touchstart', initAudioOnTouch, { once: true });
+document.addEventListener('click', initAudioOnTouch, { once: true });
+
+window.testSound = () => {
+  unlockAndPlayAudio();
 };
 
-document.addEventListener('touchstart', playAudio, { once: true });
-document.addEventListener('click', playAudio, { once: true });
+function triggerOrderSound() {
+  notifAudio.currentTime = 0;
+  notifAudio.play().catch(e => console.error("Sound play blocked by browser:", e));
+}
 
 window.login = async () => {
+  initAudioOnTouch();
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errorEl = document.getElementById('loginError');
@@ -205,7 +222,6 @@ async function loadProducts() {
 
 async function loadOrders() {
   try {
-    // Add cache-busting timestamp parameter to force live updates every 3 seconds
     const snap = await getDocs(collection(db, 'orders'));
     
     let p='', r='', pr='', re='', h='';
@@ -237,7 +253,7 @@ async function loadOrders() {
     });
 
     if (hasNewOrder) {
-      playAudio();
+      triggerOrderSound();
     }
 
     existingOrderIds = currentDocIds;
@@ -261,7 +277,6 @@ function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
   loadProducts();
   loadOrders();
-  // Live polling every 2.5 seconds
   pollTimer = setInterval(() => {
     loadOrders();
   }, 2500);
