@@ -28,15 +28,16 @@ body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;m
 <div class='payment-toggle'>
 <label class='payment-toggle-label'>💳 Payment Made?</label>
 <div class='toggle-container'>
-<button class='toggle-btn active' id='paymentYes' onclick='setPaymentStatus(true)'>✓ Yes</button>
-<button class='toggle-btn' id='paymentNo' onclick='setPaymentStatus(false)'>✗ No</button>
-<span class='toggle-status' id='paymentStatus'>Payment received ✓</span>
+<button class='toggle-btn' id='paymentYes' onclick='setPaymentStatus(true)'>✓ Yes</button>
+<button class='toggle-btn active' id='paymentNo' onclick='setPaymentStatus(false)'>✗ No</button>
+<span class='toggle-status' id='paymentStatus'>Awaiting payment...</span>
 </div>
 </div>
 <p>Attach payment screenshot and valid ID if claiming discount.</p>
 </div><div id='success'></div></div>
 <div class='cart'><div id='summary'>No items selected</div><div>Subtotal ₱<span id='sub'>0</span></div><div>Boba ₱<span id='boba'>0</span></div><div>Discount ₱<span id='disc'>0</span></div><div class='cart-total'>Total ₱<span id='tot'>0</span></div><button id='placeOrderBtn'
 class='btn'
+disabled
 onclick='placeOrder()'>
 🍽️ PLACE ORDER
 </button>
@@ -44,7 +45,7 @@ onclick='placeOrder()'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getFirestore,collection,onSnapshot,doc,runTransaction,setDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let products=[],cart={},bobaMap={},openCats=new Set(),paymentMade=true;
+let products=[],cart={},bobaMap={},openCats=new Set(),paymentMade=false;
 const paymentMethods={
 GCash:{
 title:'GCash Payment Details',
