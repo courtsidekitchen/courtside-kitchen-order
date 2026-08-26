@@ -3,7 +3,11 @@
 <style>
 body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{padding:10px;margin:4px}.tab{display:none}.active{display:block}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.col{background:#fff;padding:10px;border-radius:5px}.card{background:#fff;padding:15px;border-radius:5px;margin:10px 0}.metric{display:inline-block;margin:10px 20px 10px 0;padding:10px 20px;background:#fff;border-radius:5px}.items{background:#f0f0f0;padding:10px;border-radius:3px;margin:10px 0}button{padding:8px 15px;background:#0066cc;color:#fff;border:none;border-radius:3px;cursor:pointer}button:hover{background:#0052a3}input{width:100%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:3px;box-sizing:border-box}.card button{width:100%;padding:12px;margin:8px 0;font-size:16px;font-weight:bold}.button-group{display:flex;flex-direction:column;gap:8px}.card .button-group button{margin:0}@media(max-width:768px){.board{grid-template-columns:1fr}.card button{padding:15px;font-size:18px}.card{padding:12px}}
 </style></head><body>
-<h1>Courtside Kitchen</h1>
+<audio id='notifSound' src='sms_jackpot.mp3' preload='auto'></audio>
+<div style='display:flex;justify-content:space-between;align-items:center;'>
+  <h1>Courtside Kitchen</h1>
+  <button id='enableAudioBtn' onclick='enableAudio()' style='background:#ff9800;'>🔔 Enable Sound Notifications</button>
+</div>
 <div class='metrics'><div class='metric'>Revenue: ₱<span id='rev'>0</span></div><div class='metric'>Completed: <span id='cnt'>0</span></div><div class='metric'>Avg: ₱<span id='avg'>0</span></div></div>
 <div class='tabs'>
 <button onclick="tab('orders')">Orders</button>
@@ -94,7 +98,27 @@ setDoc,
 deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let hist=[];let products=[];window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
+let hist=[];let products=[];let existingOrderIds=new Set();let isFirstLoad=true;let audioEnabled=false;
+
+window.enableAudio=()=>{
+const audio=document.getElementById('notifSound');
+audio.play().then(()=>{
+audio.pause();
+audio.currentTime=0;
+audioEnabled=true;
+const btn=document.getElementById('enableAudioBtn');
+btn.textContent='🔔 Sound Enabled ✓';
+btn.style.background='#4caf50';
+}).catch(e=>console.log(e));
+};
+
+function playSound(){
+const audio=document.getElementById('notifSound');
+audio.currentTime=0;
+audio.play().catch(e=>console.log('Autoplay prevented:',e));
+}
+
+window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
 window.move=(id,s)=>updateDoc(doc(db,'orders',id),{status:s});
 window.decline=async(id)=>{let r=prompt('Reason');if(r) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
@@ -334,5 +358,44 @@ id:d.id,
 
 renderProducts();
 }
-);onSnapshot(collection(db,'orders'),snap=>{let p='',r='',pr='',re='',h='';let revenue=0,c=0;hist=[];snap.forEach(d=>{const o={id:d.id,...d.data()};hist.push(o);if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}h+=card(d.id,o);if(o.status==='PENDING')p+=card(d.id,o);else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);else if(o.status==='PREPARING')pr+=card(d.id,o);else if(o.status==='COMPLETED')re+=card(d.id,o);});pending.innerHTML=p;received.innerHTML=r;preparing.innerHTML=pr;completed.innerHTML=re;historyList.innerHTML=h;rev.textContent=revenue;cnt.textContent=c;avg.textContent=c?Math.round(revenue/c):0;});
+);
+
+onSnapshot(collection(db,'orders'),snap=>{
+let p='',r='',pr='',re='',h='';
+let revenue=0,c=0;
+let hasNewOrder=false;
+hist=[];
+
+snap.forEach(d=>{
+const o={id:d.id,...d.data()};
+hist.push(o);
+
+if(!isFirstLoad && !existingOrderIds.has(d.id) && (o.status==='PENDING' || o.status==='ORDER_RECEIVED')){
+hasNewOrder=true;
+}
+
+if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}
+h+=card(d.id,o);
+if(o.status==='PENDING')p+=card(d.id,o);
+else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
+else if(o.status==='PREPARING')pr+=card(d.id,o);
+else if(o.status==='COMPLETED')re+=card(d.id,o);
+});
+
+if(hasNewOrder){
+playSound();
+}
+
+existingOrderIds=new Set(snap.docs.map(d=>d.id));
+isFirstLoad=false;
+
+pending.innerHTML=p;
+received.innerHTML=r;
+preparing.innerHTML=pr;
+completed.innerHTML=re;
+historyList.innerHTML=h;
+rev.textContent=revenue;
+cnt.textContent=c;
+avg.textContent=c?Math.round(revenue/c):0;
+});
 </script></body></html>
