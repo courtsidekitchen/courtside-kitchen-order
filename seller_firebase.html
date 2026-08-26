@@ -15,71 +15,73 @@ body{font-family:Arial;background:#ececec;margin:0;padding:15px}.tabs button{pad
 <button onclick='exportCsv()'>Export CSV</button>
 <div id='historyList'></div>
 </div>
- 
+
+<div id='products' class='tab'>
 <div class='metrics'>
 <div class='metric'>
 Products:
 <span id='prodCount'>0</span>
 </div>
- 
+
 <div class='metric'>
 Out Of Stock:
 <span id='outCount'>0</span>
 </div>
- 
+
 <div class='metric'>
 Categories:
 <span id='catCount'>0</span>
 </div>
 </div>
- 
+
 <div class='card'>
 <input id='searchProducts'
 placeholder='Search products...'
 oninput='renderProducts()'>
- 
+
 <br><br>
- 
+
 <button onclick='toggleAdd()'>
 ➕ Add Product
 </button>
 </div>
- 
+
 <div id='addBox'
 class='card'
 style='display:none'>
- 
+
 <h3>Add Product</h3>
- 
+
 <input id='aCategory'
 placeholder='Category'>
- 
+
 <input id='aName'
 placeholder='Product Name'>
- 
+
 <input id='aDescription'
 placeholder='Description'>
- 
+
 <input id='aPrice'
 type='number'
 placeholder='Price'>
- 
+
 <input id='aQty'
 type='number'
 placeholder='Quantity'>
- 
+
 <input id='aImage'
 placeholder='Image URL'>
- 
+
 <button onclick='addProduct()'>
 Save Product
 </button>
- 
+
 </div>
- 
+
 <div id='productsList'></div>
- 
+
 </div>
+
 <script type='module'>
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
