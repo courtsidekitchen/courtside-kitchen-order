@@ -25,14 +25,16 @@ h1{margin:0;font-size:24px}
 .col{background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
 .col h3{margin-top:0;font-size:16px;border-bottom:2px solid #eee;padding-bottom:8px}
 .card{background:#fff;padding:14px;border-radius:8px;margin:10px 0;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-.metric{flex:1;min-width:120px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:14px;font-weight:bold}
+.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}
+.metric{flex:1;min-width:200px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:16px;font-weight:bold}
+.filter-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.filter-box select, .filter-box input{padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;width:auto}
 .items{background:#f8f8f8;padding:10px;border-radius:6px;margin:10px 0;font-size:14px}
 button{padding:10px 16px;background:#0066cc;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px}
 button:hover{background:#0052a3}
 input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
-.card button{width:100%;padding:12px;margin:6px 0;font-size:15px;font-weight:bold}
-.button-group{display:flex;flex-direction:column;gap:8px}
+.card button{width:100%;padding:10px;margin:4px 0;font-size:13px;font-weight:bold}
+.button-group{display:flex;flex-direction:column;gap:4px}
 .card .button-group button{margin:0}
 
 @media(max-width:1024px){
@@ -44,8 +46,8 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
   .header-bar{flex-direction:column;align-items:flex-start}
   .header-actions{width:100%}
   .header-actions button{flex:1}
-  .metric{min-width:45%}
-  .card button{padding:14px;font-size:16px}
+  .metric{min-width:100%}
+  .card button{padding:12px;font-size:14px}
 }
 </style>
 </head>
@@ -64,15 +66,30 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test (Tap Me First)</button>
+    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
+
 <div class="metrics">
   <div class="metric">Revenue: ₱<span id="rev">0</span></div>
-  <div class="metric">Completed: <span id="cnt">0</span></div>
-  <div class="metric">Avg: ₱<span id="avg">0</span></div>
+  <div class="filter-box">
+    <label for="revFilter"><b>Time Range:</b></label>
+    <select id="revFilter" onchange="handleFilterChange()">
+      <option value="daily">Today (Daily)</option>
+      <option value="weekly">This Week</option>
+      <option value="monthly">This Month</option>
+      <option value="all">All Time</option>
+      <option value="custom">Custom Range</option>
+    </select>
+    <div id="customDates" style="display:none;gap:6px;align-items:center;">
+      <input type="date" id="startDate" onchange="calculateRevenue()">
+      <span>to</span>
+      <input type="date" id="endDate" onchange="calculateRevenue()">
+    </div>
+  </div>
 </div>
+
 <div class="tabs">
 <button onclick="tab('orders')">Orders</button>
 <button onclick="tab('history')">History</button>
@@ -133,7 +150,6 @@ let knownOrderIds = new Set();
 let isInitialLoad = true;
 let pollTimer = null;
 
-// Global Audio Setup
 const notifAudio = new Audio('sms_jackpot.mp3');
 notifAudio.preload = 'auto';
 
@@ -144,7 +160,6 @@ function unlockAudio() {
   }).catch(() => {});
 }
 
-// Global user interaction listener to unlock sound immediately
 document.addEventListener('touchstart', unlockAudio, { once: true });
 document.addEventListener('click', unlockAudio, { once: true });
 
@@ -216,34 +231,88 @@ async function loadProducts() {
   } catch (e) {}
 }
 
+function parseOrderDate(created) {
+  if (!created) return new Date(0);
+  if (typeof created === 'number') return new Date(created);
+  if (created.seconds) return new Date(created.seconds * 1000);
+  const parsed = new Date(created);
+  return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+}
+
+window.handleFilterChange = () => {
+  const filterVal = document.getElementById('revFilter').value;
+  const customBox = document.getElementById('customDates');
+  customBox.style.display = filterVal === 'custom' ? 'flex' : 'none';
+  calculateRevenue();
+};
+
+window.calculateRevenue = () => {
+  const filterVal = document.getElementById('revFilter').value;
+  const now = new Date();
+  let totalRev = 0;
+
+  hist.forEach(o => {
+    const statusUpper = (o.status || '').toString().toUpperCase();
+    if (statusUpper !== 'COMPLETED') return;
+
+    const oDate = parseOrderDate(o.createdAt);
+    const amount = Number(o.total || o.totalPrice || 0);
+
+    if (filterVal === 'daily') {
+      if (oDate.toDateString() === now.toDateString()) totalRev += amount;
+    } else if (filterVal === 'weekly') {
+      const oneWeekAgo = new Date(now);
+      oneWeekAgo.setDate(now.getDate() - 7);
+      if (oDate >= oneWeekAgo && oDate <= now) totalRev += amount;
+    } else if (filterVal === 'monthly') {
+      if (oDate.getMonth() === now.getMonth() && oDate.getFullYear() === now.getFullYear()) totalRev += amount;
+    } else if (filterVal === 'all') {
+      totalRev += amount;
+    } else if (filterVal === 'custom') {
+      const startInput = document.getElementById('startDate').value;
+      const endInput = document.getElementById('endDate').value;
+      if (startInput && endInput) {
+        const start = new Date(startInput);
+        start.setHours(0,0,0,0);
+        const end = new Date(endInput);
+        end.setHours(23,59,59,999);
+        if (oDate >= start && oDate <= end) totalRev += amount;
+      }
+    }
+  });
+
+  document.getElementById('rev').textContent = totalRev.toLocaleString();
+};
+
 async function loadOrders() {
   try {
     const snap = await getDocs(collection(db, 'orders'));
     
     let p='', r='', pr='', re='', h='';
-    let revenue=0, c=0;
     let newIncomingOrderDetected = false;
-    hist = [];
+    let rawOrders = [];
 
     snap.forEach(d => {
       const o = {id: d.id, ...d.data()};
-      hist.push(o);
+      rawOrders.push(o);
 
       const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
 
-      // IF this is NOT the initial startup load AND it's a completely NEW order ID that just entered the database
       if (!isInitialLoad && !knownOrderIds.has(d.id)) {
         if (statusUpper === 'PENDING' || statusUpper === 'ORDER_RECEIVED') {
           newIncomingOrderDetected = true;
         }
       }
-
-      // Add ID to known IDs set
       knownOrderIds.add(d.id);
+    });
 
-      if (statusUpper === 'COMPLETED') { revenue += (o.total || o.totalPrice || 0); c++; }
-      
-      const orderCardHtml = card(d.id, o);
+    // Sort most recent to oldest
+    rawOrders.sort((a, b) => parseOrderDate(b.createdAt) - parseOrderDate(a.createdAt));
+    hist = rawOrders;
+
+    rawOrders.forEach(o => {
+      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
+      const orderCardHtml = card(o.id, o);
       h += orderCardHtml;
 
       if (statusUpper === 'PENDING') p += orderCardHtml;
@@ -252,7 +321,6 @@ async function loadOrders() {
       else if (statusUpper === 'COMPLETED') re += orderCardHtml;
     });
 
-    // Mark initial load finished so future new orders trigger sound
     isInitialLoad = false;
 
     if (newIncomingOrderDetected) {
@@ -264,9 +332,8 @@ async function loadOrders() {
     document.getElementById('preparing').innerHTML = pr;
     document.getElementById('completed').innerHTML = re;
     document.getElementById('historyList').innerHTML = h;
-    document.getElementById('rev').textContent = revenue;
-    document.getElementById('cnt').textContent = c;
-    document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
+
+    calculateRevenue();
 
   } catch (e) {
     console.error("Orders load failed:", e);
@@ -287,7 +354,7 @@ window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); load
 window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); loadOrders(); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
-function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
+function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
 function itemsHtml(items = []) {
   if (!Array.isArray(items)) return '<i>No items detailed</i>';
@@ -313,13 +380,14 @@ function card(id, o = {}) {
       ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total}<br>
-      ${rawStatus !== 'COMPLETED' && rawStatus !== 'DECLINED' ? `
+      ${rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : `
         <div class='button-group'>
-          <button onclick="move('${id}','ORDER_RECEIVED')">✅ Receive Order</button>
-          <button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button>
-          <button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button>
+          ${rawStatus !== 'PENDING' ? `<button onclick="move('${id}','PENDING')" style="background:#777">⏳ Back to Pending</button>` : ''}
+          ${rawStatus !== 'ORDER_RECEIVED' ? `<button onclick="move('${id}','ORDER_RECEIVED')">✅ Received</button>` : ''}
+          ${rawStatus !== 'PREPARING' ? `<button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button>` : ''}
+          ${rawStatus !== 'COMPLETED' ? `<button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button>` : ''}
           <button onclick="decline('${id}')" style="background:#f44336">❌ Decline</button>
-        </div>` : rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : ''}
+        </div>`}
     </div>
   `;
 }
