@@ -65,7 +65,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="enableAudioBtn" onclick="enableAudio()" style="background:#ff9800;">🔔 Enable Audio & Lock-Screen Notifications</button>
+    <button id="enableAudioBtn" onclick="enableAudio()" style="background:#ff9800;">🔔 Enable Audio & System Notifications</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -132,7 +132,7 @@ let messaging = null;
 try {
   messaging = getMessaging(app);
 } catch (e) {
-  console.log("FCM Messaging initialization skipped:", e);
+  console.log("FCM not initialized natively, using standard Web Notifications fallback.");
 }
 
 let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
@@ -153,26 +153,56 @@ window.enableAudio = async () => {
     audio.currentTime = 0;
   } catch(e){ console.log(e); }
 
+  if (!("Notification" in window)) {
+    alert("This browser does not support notifications.");
+    return;
+  }
+
   try {
     const permission = await Notification.requestPermission();
-    if (permission === 'granted' && messaging) {
-      const token = await getToken(messaging, { 
-        vapidKey: 'BJG9Bk5PYa94XJRE4qx69eQ9T74jMuoBCH-SrBYUJdThJU41BG0SRhoZJ8HwDmuoR1LmaEFlW12TvscH9qqzjWI' 
-      });
-      await setDoc(doc(db, 'seller_tokens', 'android_device'), { token: token, updatedAt: new Date().toISOString() });
+    if (permission === 'granted') {
+      let token = "native_web_notification";
+      if (messaging) {
+        try {
+          token = await getToken(messaging, { 
+            vapidKey: 'BJG9Bk5PYa94XJRE4qx69eQ9T74jMuoBCH-SrBYUJdThJU41BG0SRhoZJ8HwDmuoR1LmaEFlW12TvscH9qqzjWI' 
+          });
+        } catch(e) { console.log("FCM Token fetch skipped, using Native Push."); }
+      }
+      
+      await setDoc(doc(db, 'seller_tokens', 'tablet_device'), { token: token, updatedAt: new Date().toISOString() });
+      
       const btn = document.getElementById('enableAudioBtn');
       btn.textContent = '🔔 Notifications Enabled ✓';
       btn.style.background = '#4caf50';
-    } else if (!messaging) {
-      alert('Messaging is not supported on this browser.');
+      
+      // Send test system notification directly
+      showSystemNotification("Notifications Activated!", "You will get alerts for new orders.");
     } else {
-      alert('Notification permissions were blocked in your browser settings.');
+      alert('Notification permissions were blocked in your tablet settings.');
     }
   } catch (err) {
     console.error('Push error:', err);
-    alert('Push notification error: ' + err.message);
+    alert('Permission request error: ' + err.message);
   }
 };
+
+function showSystemNotification(title, body) {
+  if (Notification.permission === 'granted') {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body: body,
+          icon: '/logo.png',
+          vibrate: [200, 100, 200],
+          tag: 'new-order'
+        });
+      });
+    } else {
+      new Notification(title, { body: body, icon: '/logo.png' });
+    }
+  }
+}
 
 if (messaging) {
   onMessage(messaging, () => {
@@ -355,6 +385,8 @@ function startRealtimeListeners() {
     let p='',r='',pr='',re='',h='';
     let revenue=0,c=0;
     let hasNewOrder=false;
+    let newOrderTitle = '🚨 New Order Received!';
+    let newOrderBody = 'Check the seller dashboard for new orders.';
     hist=[];
 
     snap.forEach(d=>{
@@ -363,6 +395,9 @@ function startRealtimeListeners() {
 
       if(!isFirstLoad && !existingOrderIds.has(d.id) && (o.status==='PENDING' || o.status==='ORDER_RECEIVED')){
         hasNewOrder=true;
+        if (o.customerName) {
+          newOrderBody = `Order from ${o.customerName} (₱${o.total || 0})`;
+        }
       }
 
       if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}
@@ -375,6 +410,7 @@ function startRealtimeListeners() {
 
     if(hasNewOrder){
       playSound();
+      showSystemNotification(newOrderTitle, newOrderBody);
     }
 
     existingOrderIds=new Set(snap.docs.map(d=>d.id));
