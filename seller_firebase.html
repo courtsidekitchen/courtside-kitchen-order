@@ -120,10 +120,12 @@ import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc}
 import {getMessaging, getToken, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 const app = initializeApp({
-  apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
-  authDomain:'courtside-kitchen.firebaseapp.com',
-  projectId:'courtside-kitchen',
-  messagingSenderId:'1062967764463'
+  apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
+  authDomain: 'courtside-kitchen.firebaseapp.com',
+  projectId: 'courtside-kitchen',
+  storageBucket: 'courtside-kitchen.appspot.com',
+  messagingSenderId: '1062967764463',
+  appId: '1:1062967764463:web:0b6dbbfec0904d0f0c05a1'
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -176,7 +178,6 @@ window.enableAudio = async () => {
       btn.textContent = '🔔 Notifications Enabled ✓';
       btn.style.background = '#4caf50';
       
-      // Send test system notification directly
       showSystemNotification("Notifications Activated!", "You will get alerts for new orders.");
     } else {
       alert('Notification permissions were blocked in your tablet settings.');
@@ -268,9 +269,43 @@ window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove(
 window.move=(id,s)=>updateDoc(doc(db,'orders',id),{status:s});
 window.decline=async(id)=>{let r=prompt('Reason');if(r) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
-function itemsHtml(items=[]){return items.map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>');}
-function card(id,o){return `<div class='card'><b>${o.orderNumber||id}</b><br>Customer: ${o.customerName||''}<br>${o.status==='PENDING'?`Pending: ${remain(o.createdAt)}`:''}<div class='items'>${itemsHtml(o.items)}</div>Total: ₱${o.total}<br>${o.status!=='COMPLETED'&&o.status!=='DECLINED'?`<div class='button-group'><button onclick="move('${id}','ORDER_RECEIVED')">✅ Receive Order</button><button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button><button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button><button onclick="decline('${id}')" style="background:#f44336">❌ Decline</button></div>`:o.status==='DECLINED'?`<b style='color:red'>DECLINED: ${o.declineReason}</b>`:''}</div>`;}
+
+function itemsHtml(items = []) {
+  if (!Array.isArray(items)) return '<i>No items detailed</i>';
+  return items.map(i => {
+    if (typeof i === 'string') return i;
+    const name = i.name || i.title || 'Item';
+    const qty = i.qty || i.quantity || 1;
+    const boba = i.boba ? ' + Boba' : '';
+    return `${name} x${qty}${boba}`;
+  }).join('<br>');
+}
+
+function card(id, o = {}) {
+  const orderNum = o.orderNumber || id || 'N/A';
+  const customer = o.customerName || o.name || 'Guest Customer';
+  const total = o.total || o.totalPrice || 0;
+  const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
+
+  return `
+    <div class='card'>
+      <b>${orderNum}</b><br>
+      Customer: ${customer}<br>
+      ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
+      <div class='items'>${itemsHtml(o.items)}</div>
+      Total: ₱${total}<br>
+      ${rawStatus !== 'COMPLETED' && rawStatus !== 'DECLINED' ? `
+        <div class='button-group'>
+          <button onclick="move('${id}','ORDER_RECEIVED')">✅ Receive Order</button>
+          <button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button>
+          <button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button>
+          <button onclick="decline('${id}')" style="background:#f44336">❌ Decline</button>
+        </div>` : rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : ''}
+    </div>
+  `;
+}
 
 window.toggleAdd = () => {
   const box = document.getElementById('addBox');
@@ -393,19 +428,24 @@ function startRealtimeListeners() {
       const o={id:d.id,...d.data()};
       hist.push(o);
 
-      if(!isFirstLoad && !existingOrderIds.has(d.id) && (o.status==='PENDING' || o.status==='ORDER_RECEIVED')){
+      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
+
+      if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
         hasNewOrder=true;
-        if (o.customerName) {
-          newOrderBody = `Order from ${o.customerName} (₱${o.total || 0})`;
+        if (o.customerName || o.name) {
+          newOrderBody = `Order from ${o.customerName || o.name} (₱${o.total || o.totalPrice || 0})`;
         }
       }
 
-      if(o.status==='COMPLETED'){revenue+=o.total||0;c++;}
-      h+=card(d.id,o);
-      if(o.status==='PENDING')p+=card(d.id,o);
-      else if(o.status==='ORDER_RECEIVED')r+=card(d.id,o);
-      else if(o.status==='PREPARING')pr+=card(d.id,o);
-      else if(o.status==='COMPLETED')re+=card(d.id,o);
+      if(statusUpper==='COMPLETED'){revenue+=(o.total || o.totalPrice || 0);c++;}
+      
+      const orderCardHtml = card(d.id, o);
+      h += orderCardHtml;
+
+      if(statusUpper==='PENDING') p += orderCardHtml;
+      else if(statusUpper==='ORDER_RECEIVED') r += orderCardHtml;
+      else if(statusUpper==='PREPARING') pr += orderCardHtml;
+      else if(statusUpper==='COMPLETED') re += orderCardHtml;
     });
 
     if(hasNewOrder){
