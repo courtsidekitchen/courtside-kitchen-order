@@ -64,7 +64,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test (Tap Me)</button>
+    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test (Tap Me First)</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -128,43 +128,38 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let hist=[]; let products=[]; let existingOrderIds = new Set(); let isFirstLoad = true;
+let hist=[]; let products=[]; 
+let knownOrderIds = new Set(); 
+let isInitialLoad = true;
 let pollTimer = null;
 
-// Initialize global audio object for mobile browser bypass
+// Global Audio Setup
 const notifAudio = new Audio('sms_jackpot.mp3');
 notifAudio.preload = 'auto';
-let isAudioUnlocked = false;
 
-function unlockAndPlayAudio() {
-  notifAudio.currentTime = 0;
+function unlockAudio() {
   notifAudio.play().then(() => {
-    isAudioUnlocked = true;
+    notifAudio.pause();
+    notifAudio.currentTime = 0;
   }).catch(() => {});
 }
 
-// Mobile browser unlock listener
-const initAudioOnTouch = () => {
-  if (!isAudioUnlocked) {
-    unlockAndPlayAudio();
-    // Pause instantly if user just touched screen normally so sound doesn't ring randomly
-    setTimeout(() => { notifAudio.pause(); notifAudio.currentTime = 0; }, 100);
-  }
-};
-document.addEventListener('touchstart', initAudioOnTouch, { once: true });
-document.addEventListener('click', initAudioOnTouch, { once: true });
+// Global user interaction listener to unlock sound immediately
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockAudio, { once: true });
 
 window.testSound = () => {
-  unlockAndPlayAudio();
+  notifAudio.currentTime = 0;
+  notifAudio.play().catch(e => console.error("Audio blocked:", e));
 };
 
 function triggerOrderSound() {
   notifAudio.currentTime = 0;
-  notifAudio.play().catch(e => console.error("Sound play blocked by browser:", e));
+  notifAudio.play().catch(e => console.error("Sound play blocked:", e));
 }
 
 window.login = async () => {
-  initAudioOnTouch();
+  unlockAudio();
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const errorEl = document.getElementById('loginError');
@@ -207,7 +202,8 @@ onAuthStateChanged(auth, user => {
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
     if(pollTimer) clearInterval(pollTimer);
-    isFirstLoad = true;
+    isInitialLoad = true;
+    knownOrderIds.clear();
   }
 });
 
@@ -226,20 +222,24 @@ async function loadOrders() {
     
     let p='', r='', pr='', re='', h='';
     let revenue=0, c=0;
-    let hasNewOrder = false;
+    let newIncomingOrderDetected = false;
     hist = [];
-    const currentDocIds = new Set();
 
     snap.forEach(d => {
       const o = {id: d.id, ...d.data()};
       hist.push(o);
-      currentDocIds.add(d.id);
 
       const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
 
-      if (!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper === 'PENDING' || statusUpper === 'ORDER_RECEIVED')) {
-        hasNewOrder = true;
+      // IF this is NOT the initial startup load AND it's a completely NEW order ID that just entered the database
+      if (!isInitialLoad && !knownOrderIds.has(d.id)) {
+        if (statusUpper === 'PENDING' || statusUpper === 'ORDER_RECEIVED') {
+          newIncomingOrderDetected = true;
+        }
       }
+
+      // Add ID to known IDs set
+      knownOrderIds.add(d.id);
 
       if (statusUpper === 'COMPLETED') { revenue += (o.total || o.totalPrice || 0); c++; }
       
@@ -252,12 +252,12 @@ async function loadOrders() {
       else if (statusUpper === 'COMPLETED') re += orderCardHtml;
     });
 
-    if (hasNewOrder) {
+    // Mark initial load finished so future new orders trigger sound
+    isInitialLoad = false;
+
+    if (newIncomingOrderDetected) {
       triggerOrderSound();
     }
-
-    existingOrderIds = currentDocIds;
-    isFirstLoad = false;
 
     document.getElementById('pending').innerHTML = p;
     document.getElementById('received').innerHTML = r;
