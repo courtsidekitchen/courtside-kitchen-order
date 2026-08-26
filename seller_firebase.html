@@ -140,11 +140,36 @@ try {
 let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
 let unsubscribeOrders = null;
 let unsubscribeProducts = null;
+let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
-    .then(reg => console.log('SW Registered:', reg.scope))
-    .catch(err => console.error('SW Fail:', err));
+  const swCode = `
+    self.addEventListener('push', function(event) {
+      const data = event.data ? event.data.json() : { title: '🚨 New Order Received!', body: 'Check dashboard for new orders.' };
+      event.waitUntil(
+        self.registration.showNotification(data.title, {
+          body: data.body,
+          icon: '/logo.png',
+          vibrate: [500, 200, 500, 200, 500],
+          requireInteraction: true,
+          tag: 'new-order'
+        })
+      );
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  
+  navigator.serviceWorker.register(swUrl)
+    .then(reg => {
+      swRegistration = reg;
+      console.log('SW Registered:', reg.scope);
+    })
+    .catch(err => {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(reg => { swRegistration = reg; })
+        .catch(e => console.error('SW Fail:', e));
+    });
 }
 
 window.enableAudio = async () => {
@@ -190,12 +215,21 @@ window.enableAudio = async () => {
 
 function showSystemNotification(title, body) {
   if (Notification.permission === 'granted') {
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    if (swRegistration) {
+      swRegistration.showNotification(title, {
+        body: body,
+        icon: '/logo.png',
+        vibrate: [500, 200, 500, 200, 500],
+        requireInteraction: true,
+        tag: 'new-order'
+      });
+    } else if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(title, {
           body: body,
           icon: '/logo.png',
-          vibrate: [200, 100, 200],
+          vibrate: [500, 200, 500, 200, 500],
+          requireInteraction: true,
           tag: 'new-order'
         });
       });
@@ -287,7 +321,7 @@ function card(id, o = {}) {
   const orderNum = o.orderNumber || id || 'N/A';
   const customer = o.customerName || o.name || 'Guest Customer';
   const total = o.total || o.totalPrice || 0;
-  const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
+  const rawStatus = normalizeStatus(o.status);
 
   return `
     <div class='card'>
@@ -305,6 +339,16 @@ function card(id, o = {}) {
         </div>` : rawStatus === 'DECLINED' ? `<b style='color:red'>DECLINED: ${o.declineReason || 'No reason'}</b>` : ''}
     </div>
   `;
+}
+
+function normalizeStatus(st) {
+  if (!st) return 'PENDING';
+  const clean = st.toString().toUpperCase().replace(/[\s_]+/g, '');
+  if (clean === 'ORDERRECEIVED' || clean === 'RECEIVED') return 'ORDER_RECEIVED';
+  if (clean === 'PREPARING') return 'PREPARING';
+  if (clean === 'COMPLETED' || clean === 'COMPLETE') return 'COMPLETED';
+  if (clean === 'DECLINED' || clean === 'CANCELLED') return 'DECLINED';
+  return 'PENDING';
 }
 
 window.toggleAdd = () => {
@@ -428,7 +472,7 @@ function startRealtimeListeners() {
       const o={id:d.id,...d.data()};
       hist.push(o);
 
-      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
+      const statusUpper = normalizeStatus(o.status);
 
       if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
         hasNewOrder=true;
