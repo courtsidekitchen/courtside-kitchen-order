@@ -5,6 +5,8 @@ body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;m
 .header{text-align:center;padding:16px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
 .header img{width:120px;height:120px;object-fit:contain;mix-blend-mode:multiply}
 .header h1{margin:0;color:#0066cc;font-size:26px}
+.qr-download-link{display:inline-block;text-decoration:none;margin-top:8px}
+.qr-download-link small{color:#0066cc;font-weight:bold;display:block;margin-top:4px}
 </style></head><body>
 <div class='container'>
 <div class="header">
@@ -18,7 +20,10 @@ body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;m
 <select id='paymentMethod' onchange='updatePaymentInfo()' style='width:100%;padding:10px'>
 <option value='GCash'>GCash</option><option value='BPI'>BPI</option></select>
 <br><br>
-<img id='paymentImage' src='GCASH.jpg' style='max-width:250px;width:100%;border-radius:12px'>
+<a id='paymentDownloadLink' href='GCASH.jpg' download='Payment_QR.jpg' class='qr-download-link'>
+  <img id='paymentImage' src='GCASH.jpg' style='max-width:250px;width:100%;border-radius:12px;cursor:pointer'>
+  <small>📥 Tap image to download QR code</small>
+</a>
 <div class='payment-details'>
 <div class='payment-details-title' id='paymentMethodTitle'>GCash Payment Details</div>
 <div class='payment-details-item'>
@@ -69,6 +74,7 @@ window.updatePaymentInfo=()=>{
 const method=document.getElementById('paymentMethod').value;
 const paymentInfo=paymentMethods[method];
 document.getElementById('paymentImage').src=paymentInfo.image;
+document.getElementById('paymentDownloadLink').href=paymentInfo.image;
 document.getElementById('paymentMethodTitle').textContent=paymentInfo.title;
 document.getElementById('accountName').textContent=paymentInfo.accountName;
 document.getElementById('accountNumber').textContent=paymentInfo.accountNumber;
