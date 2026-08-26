@@ -250,15 +250,17 @@ onAuthStateChanged(auth, user => {
 function startRealtimeListeners() {
   // 1. Real-time Products Listener
   if(unsubscribeProducts) unsubscribeProducts();
-  unsubscribeProducts = onSnapshot(collection(db, 'products'), snapshot => {
+  unsubscribeProducts = onSnapshot(collection(db, 'products'), { includeMetadataChanges: true }, snapshot => {
     products = [];
     snapshot.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
+  }, error => {
+    console.error("Products listener error:", error);
   });
 
-  // 2. Real-time Orders Listener (Live Push Updates)
+  // 2. Real-time Orders Listener (Forced Server Sync & Debugging)
   if(unsubscribeOrders) unsubscribeOrders();
-  unsubscribeOrders = onSnapshot(collection(db, 'orders'), snapshot => {
+  unsubscribeOrders = onSnapshot(collection(db, 'orders'), { includeMetadataChanges: true }, snapshot => {
     let p='', r='', pr='', re='', h='';
     let revenue=0, c=0;
     let hasNewOrder=false;
@@ -309,6 +311,9 @@ function startRealtimeListeners() {
     document.getElementById('rev').textContent = revenue;
     document.getElementById('cnt').textContent = c;
     document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
+  }, error => {
+    console.error("Orders listener error:", error);
+    alert("Firestore Connection Error: " + error.message);
   });
 }
 
