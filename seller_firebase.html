@@ -22,13 +22,18 @@ h1{margin:0;font-size:24px}
 .tab{display:none}
 .active{display:block}
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.col{background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.col{background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);min-height:300px;display:flex;flex-direction:column}
 .col h3{margin-top:0;font-size:16px;border-bottom:2px solid #eee;padding-bottom:8px}
-.card{background:#fff;padding:14px;border-radius:8px;margin:10px 0;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.dropzone{flex:1;min-height:150px;border-radius:6px;transition:background 0.2s}
+.dropzone.drag-over{background:#e3f2fd;border:2px dashed #0066cc}
+.card{background:#fff;padding:14px;border-radius:8px;margin:10px 0;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,0.05);cursor:grab;user-select:none;touch-action:none}
+.card:active{cursor:grabbing}
+.card.dragging{opacity:0.4;border:2px dashed #0066cc}
 .metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}
 .metric{flex:1;min-width:200px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:16px;font-weight:bold}
 .filter-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
 .filter-box select, .filter-box input{padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;width:auto}
+.search-card{background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:12px}
 .items{background:#f8f8f8;padding:10px;border-radius:6px;margin:10px 0;font-size:14px}
 button{padding:10px 16px;background:#0066cc;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px}
 button:hover{background:#0052a3}
@@ -90,12 +95,37 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
   </div>
 </div>
 
+<div class="search-card">
+  <input id="searchOrdersInput" placeholder="🔎 Search orders by Order Number, Customer, Item, or Notes..." oninput="renderOrdersBoard()" style="margin:0;">
+</div>
+
 <div class="tabs">
 <button onclick="tab('orders')">Orders</button>
 <button onclick="tab('history')">History</button>
 <button onclick="tab('products')">Products</button>
 </div>
-<div id="orders" class="tab active"><div class="board"><div class="col"><h3>PENDING</h3><div id="pending"></div></div><div class="col"><h3>ORDER_RECEIVED</h3><div id="received"></div></div><div class="col"><h3>PREPARING</h3><div id="preparing"></div></div><div class="col"><h3>COMPLETED</h3><div id="completed"></div></div></div></div>
+
+<div id="orders" class="tab active">
+  <div class="board">
+    <div class="col">
+      <h3>PENDING</h3>
+      <div id="pending" class="dropzone" data-status="PENDING"></div>
+    </div>
+    <div class="col">
+      <h3>ORDER_RECEIVED</h3>
+      <div id="received" class="dropzone" data-status="ORDER_RECEIVED"></div>
+    </div>
+    <div class="col">
+      <h3>PREPARING</h3>
+      <div id="preparing" class="dropzone" data-status="PREPARING"></div>
+    </div>
+    <div class="col">
+      <h3>COMPLETED</h3>
+      <div id="completed" class="dropzone" data-status="COMPLETED"></div>
+    </div>
+  </div>
+</div>
+
 <div id="history" class="tab">
 <button onclick="exportCsv()">Export CSV</button>
 <div id="historyList"></div>
@@ -149,31 +179,21 @@ let hist=[]; let products=[];
 let knownOrderIds = new Set(); 
 let isInitialLoad = true;
 let pollTimer = null;
+let draggedOrderId = null;
 
-// Robust Audio Player function that bypasses browser freezes
 function triggerOrderSound() {
   try {
     const snd = new Audio('sms_jackpot.mp3?t=' + Date.now());
     snd.volume = 1.0;
-    const playPromise = snd.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.warn("Autoplay deferred or blocked:", err);
-      });
-    }
-  } catch (e) {
-    console.error("Audio trigger failed:", e);
-  }
+    snd.play().catch(() => {});
+  } catch (e) {}
 }
 
-// Keep unlocking sound context on every click or touch across the app
 function keepAudioUnlocked() {
   try {
     const silentAudio = new Audio('sms_jackpot.mp3');
     silentAudio.volume = 0.01;
-    silentAudio.play().then(() => {
-      silentAudio.pause();
-    }).catch(() => {});
+    silentAudio.play().then(() => silentAudio.pause()).catch(() => {});
   } catch (e) {}
 }
 
@@ -295,11 +315,42 @@ window.calculateRevenue = () => {
   document.getElementById('rev').textContent = totalRev.toLocaleString();
 };
 
+window.renderOrdersBoard = () => {
+  const query = (document.getElementById('searchOrdersInput')?.value || '').trim().toLowerCase();
+  let p='', r='', pr='', re='', h='';
+
+  const filteredOrders = hist.filter(o => {
+    if (!query) return true;
+    const num = (o.orderNumber || o.id || '').toString().toLowerCase();
+    const name = (o.customerName || '').toLowerCase();
+    const notes = (o.notes || '').toLowerCase();
+    const itemNames = (o.items || []).map(i => (typeof i === 'string' ? i : i.name || '')).join(' ').toLowerCase();
+    return num.includes(query) || name.includes(query) || notes.includes(query) || itemNames.includes(query);
+  });
+
+  filteredOrders.forEach(o => {
+    const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
+    const orderCardHtml = card(o.id, o);
+    h += orderCardHtml;
+
+    if (statusUpper === 'PENDING') p += orderCardHtml;
+    else if (statusUpper === 'ORDER_RECEIVED') r += orderCardHtml;
+    else if (statusUpper === 'PREPARING') pr += orderCardHtml;
+    else if (statusUpper === 'COMPLETED') re += orderCardHtml;
+  });
+
+  document.getElementById('pending').innerHTML = p;
+  document.getElementById('received').innerHTML = r;
+  document.getElementById('preparing').innerHTML = pr;
+  document.getElementById('completed').innerHTML = re;
+  document.getElementById('historyList').innerHTML = h;
+
+  initDragDrop();
+};
+
 async function loadOrders() {
   try {
     const snap = await getDocs(collection(db, 'orders'));
-    
-    let p='', r='', pr='', re='', h='';
     let newIncomingOrderDetected = false;
     let rawOrders = [];
 
@@ -320,29 +371,13 @@ async function loadOrders() {
     rawOrders.sort((a, b) => parseOrderDate(b.createdAt) - parseOrderDate(a.createdAt));
     hist = rawOrders;
 
-    rawOrders.forEach(o => {
-      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
-      const orderCardHtml = card(o.id, o);
-      h += orderCardHtml;
-
-      if (statusUpper === 'PENDING') p += orderCardHtml;
-      else if (statusUpper === 'ORDER_RECEIVED') r += orderCardHtml;
-      else if (statusUpper === 'PREPARING') pr += orderCardHtml;
-      else if (statusUpper === 'COMPLETED') re += orderCardHtml;
-    });
-
     isInitialLoad = false;
 
     if (newIncomingOrderDetected) {
       triggerOrderSound();
     }
 
-    document.getElementById('pending').innerHTML = p;
-    document.getElementById('received').innerHTML = r;
-    document.getElementById('preparing').innerHTML = pr;
-    document.getElementById('completed').innerHTML = re;
-    document.getElementById('historyList').innerHTML = h;
-
+    renderOrdersBoard();
     calculateRevenue();
 
   } catch (e) {
@@ -355,11 +390,17 @@ function startPolling() {
   loadProducts();
   loadOrders();
   pollTimer = setInterval(() => {
-    loadOrders();
+    if (!draggedOrderId) { // Don't interrupt active drag interactions
+      loadOrders();
+    }
   }, 2500);
 }
 
-window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
+window.tab=id=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+};
+
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); loadOrders(); };
 window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); loadOrders(); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
@@ -384,7 +425,7 @@ function card(id, o = {}) {
   const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
 
   return `
-    <div class='card'>
+    <div class='card' draggable="true" data-id="${id}">
       <b>${orderNum}</b><br>
       Customer: ${customer}<br>
       ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
@@ -402,6 +443,72 @@ function card(id, o = {}) {
   `;
 }
 
+// Drag & Drop Implementation (Desktop & Touch)
+function initDragDrop() {
+  const cards = document.querySelectorAll('.card[draggable="true"]');
+  const dropzones = document.querySelectorAll('.dropzone');
+
+  cards.forEach(cardEl => {
+    cardEl.addEventListener('dragstart', (e) => {
+      draggedOrderId = cardEl.getAttribute('data-id');
+      cardEl.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', draggedOrderId);
+    });
+
+    cardEl.addEventListener('dragend', () => {
+      cardEl.classList.remove('dragging');
+      draggedOrderId = null;
+      dropzones.forEach(dz => dz.classList.remove('drag-over'));
+    });
+
+    // Touch Support for Mobile / Tablets
+    cardEl.addEventListener('touchstart', (e) => {
+      if (e.target.tagName.toLowerCase() === 'button') return;
+      draggedOrderId = cardEl.getAttribute('data-id');
+      cardEl.classList.add('dragging');
+    }, { passive: true });
+
+    cardEl.addEventListener('touchend', (e) => {
+      if (!draggedOrderId) return;
+      cardEl.classList.remove('dragging');
+      const touch = e.changedTouches[0];
+      const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      const dropzone = targetEl ? targetEl.closest('.dropzone') : null;
+      
+      if (dropzone) {
+        const newStatus = dropzone.getAttribute('data-status');
+        if (newStatus) {
+          window.move(draggedOrderId, newStatus);
+        }
+      }
+      draggedOrderId = null;
+      dropzones.forEach(dz => dz.classList.remove('drag-over'));
+    });
+  });
+
+  dropzones.forEach(dz => {
+    dz.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dz.classList.add('drag-over');
+    });
+
+    dz.addEventListener('dragleave', () => {
+      dz.classList.remove('drag-over');
+    });
+
+    dz.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      const orderId = e.dataTransfer.getData('text/plain') || draggedOrderId;
+      const newStatus = dz.getAttribute('data-status');
+      if (orderId && newStatus) {
+        window.move(orderId, newStatus);
+      }
+    });
+  });
+}
+
+// Product Manager
 window.toggleAdd = () => {
   const box = document.getElementById('addBox');
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
