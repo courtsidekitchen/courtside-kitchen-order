@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;color:#333}
-.login-container{max-width:400px;margin:50px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);text-align:center}
+.login-container{display:none;max-width:400px;margin:50px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);text-align:center}
 .login-container h2{margin-top:0;color:#0066cc}
 .login-container input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:6px;font-size:15px}
 .login-container button{width:100%;padding:12px;background:#0066cc;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
@@ -65,7 +65,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="enableAudioBtn" onclick="enableAudio()" style="background:#ff9800;">🔔 Enable Audio & System Notifications</button>
+    <button id="toggleAudioBtn" onclick="toggleAudio()" style="background:#4caf50;">🔔 Notifications Enabled (Tap to Mute)</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -116,7 +116,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {getMessaging, getToken, onMessage} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 const app = initializeApp({
@@ -138,8 +138,23 @@ try {
 }
 
 let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
-let unsubscribeOrders = null;
-let unsubscribeProducts = null;
+let refreshInterval = null;
+let notificationsEnabled = true; // Enabled by default
+
+// Unlocks browser audio policy automatically on the first user screen tap
+const unlockAudio = () => {
+  const audio = document.getElementById('notifSound');
+  if (audio) {
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(() => {});
+  }
+  document.removeEventListener('click', unlockAudio);
+  document.removeEventListener('touchstart', unlockAudio);
+};
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/firebase-messaging-sw.js')
@@ -147,49 +162,28 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('SW Fail:', err));
 }
 
-window.enableAudio = async () => {
-  const audio = document.getElementById('notifSound');
-  try {
-    await audio.play();
-    audio.pause();
-    audio.currentTime = 0;
-  } catch(e){ console.log(e); }
+// Automatically request native notification permissions on boot
+if ("Notification" in window && Notification.permission === "default") {
+  Notification.requestPermission();
+}
 
-  if (!("Notification" in window)) {
-    alert("This browser does not support notifications.");
-    return;
-  }
+window.toggleAudio = async () => {
+  notificationsEnabled = !notificationsEnabled;
+  const btn = document.getElementById('toggleAudioBtn');
 
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      let token = "native_web_notification";
-      if (messaging) {
-        try {
-          token = await getToken(messaging, { 
-            vapidKey: 'BJG9Bk5PYa94XJRE4qx69eQ9T74jMuoBCH-SrBYUJdThJU41BG0SRhoZJ8HwDmuoR1LmaEFlW12TvscH9qqzjWI' 
-          });
-        } catch(e) { console.log("FCM Token fetch skipped."); }
-      }
-      
-      await setDoc(doc(db, 'seller_tokens', 'tablet_device'), { token: token, updatedAt: new Date().toISOString() });
-      
-      const btn = document.getElementById('enableAudioBtn');
-      btn.textContent = '🔔 Notifications Enabled ✓';
-      btn.style.background = '#4caf50';
-      
-      showSystemNotification("Notifications Activated!", "You will get alerts for new orders.");
-    } else {
-      alert('Notification permissions were blocked in settings.');
-    }
-  } catch (err) {
-    console.error('Push error:', err);
-    alert('Permission error: ' + err.message);
+  if (notificationsEnabled) {
+    btn.textContent = '🔔 Notifications Enabled (Tap to Mute)';
+    btn.style.background = '#4caf50';
+    unlockAudio();
+  } else {
+    btn.textContent = '🔕 Notifications Muted (Tap to Enable)';
+    btn.style.background = '#757575';
   }
 };
 
 function showSystemNotification(title, body) {
-  if (Notification.permission === 'granted') {
+  if (!notificationsEnabled) return;
+  if ("Notification" in window && Notification.permission === 'granted') {
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(title, {
@@ -203,6 +197,13 @@ function showSystemNotification(title, body) {
       new Notification(title, { body: body, icon: '/logo.png' });
     }
   }
+}
+
+function playSound(){
+  if (!notificationsEnabled) return;
+  const audio = document.getElementById('notifSound');
+  audio.currentTime = 0;
+  audio.play().catch(e => console.log('Autoplay prevented:', e));
 }
 
 if (messaging) {
@@ -241,6 +242,7 @@ window.login = async () => {
 
 window.logout = async () => {
   if(confirm('Are you sure you want to log out?')){
+    if(refreshInterval) clearInterval(refreshInterval);
     await signOut(auth);
   }
 };
@@ -249,25 +251,22 @@ onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    startRealtimeListeners();
+    
+    fetchData();
+    
+    if(refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(fetchData, 1000);
   } else {
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
-    if(unsubscribeOrders) unsubscribeOrders();
-    if(unsubscribeProducts) unsubscribeProducts();
+    if(refreshInterval) clearInterval(refreshInterval);
     isFirstLoad = true;
   }
 });
 
-function playSound(){
-  const audio=document.getElementById('notifSound');
-  audio.currentTime=0;
-  audio.play().catch(e=>console.log('Autoplay prevented:',e));
-}
-
 window.tab=id=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')};
-window.move=(id,s)=>updateDoc(doc(db,'orders',id),{status:s});
-window.decline=async(id)=>{let r=prompt('Reason');if(r) await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r});};
+window.move=(id,s)=>{ updateDoc(doc(db,'orders',id),{status:s}); fetchData(); };
+window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); fetchData(); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-new Date(created))/1000));return d+'s';}
@@ -343,6 +342,7 @@ window.addProduct = async() => {
   document.getElementById('aImage').value = '';
   toggleAdd();
 
+  fetchData();
   alert('Product saved!');
 };
 
@@ -355,12 +355,14 @@ window.saveProduct = async(id) => {
     qty: Number(document.getElementById('q_'+id).value),
     image: document.getElementById('i_'+id).value
   },{merge:true});
+  fetchData();
   alert('Updated');
 };
 
 window.deleteProduct = async(id) => {
   if(confirm('Delete Product?')){
     await deleteDoc(doc(db,'products',id));
+    fetchData();
   }
 };
 
@@ -409,27 +411,27 @@ window.renderProducts = () => {
   document.getElementById('productsList').innerHTML = h;
 };
 
-function startRealtimeListeners() {
-  if (unsubscribeProducts) unsubscribeProducts();
-  if (unsubscribeOrders) unsubscribeOrders();
-
-  unsubscribeProducts = onSnapshot(collection(db,'products'), snap => {
-    products=[];
-    snap.forEach(d => products.push({id:d.id,...d.data()}));
+async function fetchData() {
+  try {
+    const prodSnap = await getDocs(collection(db, 'products'));
+    products = [];
+    prodSnap.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
-  });
 
-  unsubscribeOrders = onSnapshot(collection(db,'orders'), snap => {
-    let p='',r='',pr='',re='',h='';
-    let revenue=0,c=0;
+    const orderSnap = await getDocs(collection(db, 'orders'));
+    let p='', r='', pr='', re='', h='';
+    let revenue=0, c=0;
     let hasNewOrder=false;
     let newOrderTitle = '🚨 New Order Received!';
     let newOrderBody = 'Check dashboard for new orders.';
     hist=[];
 
-    snap.forEach(d => {
-      const o={id:d.id,...d.data()};
+    const currentDocIds = new Set();
+
+    orderSnap.forEach(d => {
+      const o={id:d.id, ...d.data()};
       hist.push(o);
+      currentDocIds.add(d.id);
 
       const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
 
@@ -440,7 +442,7 @@ function startRealtimeListeners() {
         }
       }
 
-      if(statusUpper==='COMPLETED'){revenue+=(o.total || o.totalPrice || 0);c++;}
+      if(statusUpper==='COMPLETED'){ revenue += (o.total || o.totalPrice || 0); c++; }
       
       const orderCardHtml = card(d.id, o);
       h += orderCardHtml;
@@ -456,18 +458,20 @@ function startRealtimeListeners() {
       showSystemNotification(newOrderTitle, newOrderBody);
     }
 
-    existingOrderIds=new Set(snap.docs.map(d=>d.id));
-    isFirstLoad=false;
+    existingOrderIds = currentDocIds;
+    isFirstLoad = false;
 
-    document.getElementById('pending').innerHTML=p;
-    document.getElementById('received').innerHTML=r;
-    document.getElementById('preparing').innerHTML=pr;
-    document.getElementById('completed').innerHTML=re;
-    document.getElementById('historyList').innerHTML=h;
-    document.getElementById('rev').textContent=revenue;
-    document.getElementById('cnt').textContent=c;
-    document.getElementById('avg').textContent=c?Math.round(revenue/c):0;
-  });
+    document.getElementById('pending').innerHTML = p;
+    document.getElementById('received').innerHTML = r;
+    document.getElementById('preparing').innerHTML = pr;
+    document.getElementById('completed').innerHTML = re;
+    document.getElementById('historyList').innerHTML = h;
+    document.getElementById('rev').textContent = revenue;
+    document.getElementById('cnt').textContent = c;
+    document.getElementById('avg').textContent = c ? Math.round(revenue/c) : 0;
+  } catch (err) {
+    console.error("Fetch error:", err);
+  }
 }
 </script>
 </body>
