@@ -71,7 +71,8 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <div class="header-bar">
   <h1>Courtside Kitchen</h1>
   <div class="header-actions">
-    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔔 Sound Test</button>
+    <button id="enableNotifBtn" onclick="requestNotificationPermission()" style="background:#ff9800;">🔔 Allow Lock Alert</button>
+    <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔊 Sound Test</button>
     <button onclick="logout()" style="background:#f44336;">🚪 Logout</button>
   </div>
 </div>
@@ -162,7 +163,7 @@ input{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -178,15 +179,55 @@ const db = getFirestore(app);
 let hist=[]; let products=[]; 
 let knownOrderIds = new Set(); 
 let isInitialLoad = true;
-let pollTimer = null;
 let draggedOrderId = null;
+let swRegistration = null;
 
-function triggerOrderSound() {
+// Register existing firebase-messaging-sw.js
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg => {
+    swRegistration = reg;
+  }).catch(() => {});
+}
+
+window.requestNotificationPermission = async () => {
+  if ('Notification' in window) {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      alert('Lock-screen notifications enabled!');
+      document.getElementById('enableNotifBtn').style.display = 'none';
+    } else {
+      alert('Notifications were blocked. Please enable them in browser settings.');
+    }
+  }
+};
+
+function triggerOrderAlert(orderId = '', customer = '') {
+  // Web Audio playback
   try {
     const snd = new Audio('sms_jackpot.mp3?t=' + Date.now());
     snd.volume = 1.0;
     snd.play().catch(() => {});
   } catch (e) {}
+
+  // System Hardware / Lock-Screen notification
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const title = '🚨 New Order Received!';
+    const options = {
+      body: `Order ${orderId} - ${customer}`,
+      icon: 'Courtside Kitchen - Colored.png',
+      badge: 'Courtside Kitchen - Colored.png',
+      vibrate: [300, 100, 300, 100, 300],
+      sound: 'sms_jackpot.mp3',
+      requireInteraction: true,
+      tag: orderId || 'new-order'
+    };
+
+    if (swRegistration && swRegistration.showNotification) {
+      swRegistration.showNotification(title, options);
+    } else {
+      new Notification(title, options);
+    }
+  }
 }
 
 function keepAudioUnlocked() {
@@ -201,7 +242,7 @@ document.addEventListener('touchstart', keepAudioUnlocked, { passive: true });
 document.addEventListener('click', keepAudioUnlocked, { passive: true });
 
 window.testSound = () => {
-  triggerOrderSound();
+  triggerOrderAlert('CK-TEST', 'Test Order');
 };
 
 window.login = async () => {
@@ -234,7 +275,6 @@ window.login = async () => {
 
 window.logout = async () => {
   if(confirm('Are you sure you want to log out?')){
-    if(pollTimer) clearInterval(pollTimer);
     await signOut(auth);
   }
 };
@@ -243,24 +283,17 @@ onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    startPolling();
+    if (window.Notification && Notification.permission === 'granted') {
+      document.getElementById('enableNotifBtn').style.display = 'none';
+    }
+    initLiveListeners();
   } else {
     document.getElementById('loginBox').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
-    if(pollTimer) clearInterval(pollTimer);
     isInitialLoad = true;
     knownOrderIds.clear();
   }
 });
-
-async function loadProducts() {
-  try {
-    const snap = await getDocs(collection(db, 'products'));
-    products = [];
-    snap.forEach(d => products.push({ id: d.id, ...d.data() }));
-    renderProducts();
-  } catch (e) {}
-}
 
 function parseOrderDate(created) {
   if (!created) return new Date(0);
@@ -348,21 +381,25 @@ window.renderOrdersBoard = () => {
   initDragDrop();
 };
 
-async function loadOrders() {
-  try {
-    const snap = await getDocs(collection(db, 'orders'));
-    let newIncomingOrderDetected = false;
+function initLiveListeners() {
+  onSnapshot(collection(db, 'products'), snap => {
+    products = [];
+    snap.forEach(d => products.push({ id: d.id, ...d.data() }));
+    renderProducts();
+  });
+
+  onSnapshot(collection(db, 'orders'), snap => {
     let rawOrders = [];
+    let alertQueue = [];
 
     snap.forEach(d => {
       const o = {id: d.id, ...d.data()};
       rawOrders.push(o);
 
       const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
-
       if (!isInitialLoad && !knownOrderIds.has(d.id)) {
         if (statusUpper === 'PENDING' || statusUpper === 'ORDER_RECEIVED') {
-          newIncomingOrderDetected = true;
+          alertQueue.push({ id: o.orderNumber || d.id, customer: o.customerName || 'Walk-in' });
         }
       }
       knownOrderIds.add(d.id);
@@ -371,29 +408,14 @@ async function loadOrders() {
     rawOrders.sort((a, b) => parseOrderDate(b.createdAt) - parseOrderDate(a.createdAt));
     hist = rawOrders;
 
-    isInitialLoad = false;
-
-    if (newIncomingOrderDetected) {
-      triggerOrderSound();
+    if (!isInitialLoad && alertQueue.length > 0) {
+      triggerOrderAlert(alertQueue[0].id, alertQueue[0].customer);
     }
 
+    isInitialLoad = false;
     renderOrdersBoard();
     calculateRevenue();
-
-  } catch (e) {
-    console.error("Orders load failed:", e);
-  }
-}
-
-function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  loadProducts();
-  loadOrders();
-  pollTimer = setInterval(() => {
-    if (!draggedOrderId) { // Don't interrupt active drag interactions
-      loadOrders();
-    }
-  }, 2500);
+  });
 }
 
 window.tab=id=>{
@@ -401,8 +423,8 @@ window.tab=id=>{
   document.getElementById(id).classList.add('active');
 };
 
-window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); loadOrders(); };
-window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); loadOrders(); }};
+window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
+window.decline=async(id)=>{let r=prompt('Reason');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
@@ -443,7 +465,6 @@ function card(id, o = {}) {
   `;
 }
 
-// Drag & Drop Implementation (Desktop & Touch)
 function initDragDrop() {
   const cards = document.querySelectorAll('.card[draggable="true"]');
   const dropzones = document.querySelectorAll('.dropzone');
@@ -461,7 +482,6 @@ function initDragDrop() {
       dropzones.forEach(dz => dz.classList.remove('drag-over'));
     });
 
-    // Touch Support for Mobile / Tablets
     cardEl.addEventListener('touchstart', (e) => {
       if (e.target.tagName.toLowerCase() === 'button') return;
       draggedOrderId = cardEl.getAttribute('data-id');
@@ -542,7 +562,6 @@ window.addProduct = async() => {
   document.getElementById('aQty').value = '';
   document.getElementById('aImage').value = '';
   toggleAdd();
-  loadProducts();
 };
 
 window.saveProduct = async(id) => {
@@ -554,13 +573,11 @@ window.saveProduct = async(id) => {
     qty: Number(document.getElementById('q_'+id).value),
     image: document.getElementById('i_'+id).value
   },{merge:true});
-  loadProducts();
 };
 
 window.deleteProduct = async(id) => {
   if(confirm('Delete Product?')){
     await deleteDoc(doc(db,'products',id));
-    loadProducts();
   }
 };
 
