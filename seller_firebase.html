@@ -134,42 +134,17 @@ let messaging = null;
 try {
   messaging = getMessaging(app);
 } catch (e) {
-  console.log("FCM not initialized natively, using standard Web Notifications fallback.");
+  console.log("FCM fallback mode");
 }
 
 let hist=[]; let products=[]; let existingOrderIds=new Set(); let isFirstLoad=true;
 let unsubscribeOrders = null;
 let unsubscribeProducts = null;
-let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
-  const swCode = `
-    self.addEventListener('push', function(event) {
-      const data = event.data ? event.data.json() : { title: '🚨 New Order Received!', body: 'Check dashboard for new orders.' };
-      event.waitUntil(
-        self.registration.showNotification(data.title, {
-          body: data.body,
-          icon: '/logo.png',
-          vibrate: [500, 200, 500, 200, 500],
-          requireInteraction: true,
-          tag: 'new-order'
-        })
-      );
-    });
-  `;
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(blob);
-  
-  navigator.serviceWorker.register(swUrl)
-    .then(reg => {
-      swRegistration = reg;
-      console.log('SW Registered:', reg.scope);
-    })
-    .catch(err => {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(reg => { swRegistration = reg; })
-        .catch(e => console.error('SW Fail:', e));
-    });
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+    .then(reg => console.log('SW Registered:', reg.scope))
+    .catch(err => console.error('SW Fail:', err));
 }
 
 window.enableAudio = async () => {
@@ -194,7 +169,7 @@ window.enableAudio = async () => {
           token = await getToken(messaging, { 
             vapidKey: 'BJG9Bk5PYa94XJRE4qx69eQ9T74jMuoBCH-SrBYUJdThJU41BG0SRhoZJ8HwDmuoR1LmaEFlW12TvscH9qqzjWI' 
           });
-        } catch(e) { console.log("FCM Token fetch skipped, using Native Push."); }
+        } catch(e) { console.log("FCM Token fetch skipped."); }
       }
       
       await setDoc(doc(db, 'seller_tokens', 'tablet_device'), { token: token, updatedAt: new Date().toISOString() });
@@ -205,31 +180,22 @@ window.enableAudio = async () => {
       
       showSystemNotification("Notifications Activated!", "You will get alerts for new orders.");
     } else {
-      alert('Notification permissions were blocked in your tablet settings.');
+      alert('Notification permissions were blocked in settings.');
     }
   } catch (err) {
     console.error('Push error:', err);
-    alert('Permission request error: ' + err.message);
+    alert('Permission error: ' + err.message);
   }
 };
 
 function showSystemNotification(title, body) {
   if (Notification.permission === 'granted') {
-    if (swRegistration) {
-      swRegistration.showNotification(title, {
-        body: body,
-        icon: '/logo.png',
-        vibrate: [500, 200, 500, 200, 500],
-        requireInteraction: true,
-        tag: 'new-order'
-      });
-    } else if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(title, {
           body: body,
           icon: '/logo.png',
-          vibrate: [500, 200, 500, 200, 500],
-          requireInteraction: true,
+          vibrate: [200, 100, 200],
           tag: 'new-order'
         });
       });
@@ -317,21 +283,11 @@ function itemsHtml(items = []) {
   }).join('<br>');
 }
 
-function normalizeStatus(st) {
-  if (!st) return 'PENDING';
-  const clean = st.toString().toUpperCase().replace(/[\s_]+/g, '');
-  if (clean === 'ORDERRECEIVED' || clean === 'RECEIVED') return 'ORDER_RECEIVED';
-  if (clean === 'PREPARING') return 'PREPARING';
-  if (clean === 'COMPLETED' || clean === 'COMPLETE') return 'COMPLETED';
-  if (clean === 'DECLINED' || clean === 'CANCELLED') return 'DECLINED';
-  return 'PENDING';
-}
-
 function card(id, o = {}) {
   const orderNum = o.orderNumber || id || 'N/A';
   const customer = o.customerName || o.name || 'Guest Customer';
   const total = o.total || o.totalPrice || 0;
-  const rawStatus = normalizeStatus(o.status);
+  const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
 
   return `
     <div class='card'>
@@ -457,25 +413,25 @@ function startRealtimeListeners() {
   if (unsubscribeProducts) unsubscribeProducts();
   if (unsubscribeOrders) unsubscribeOrders();
 
-  unsubscribeProducts = onSnapshot(collection(db,'products'),snap => {
+  unsubscribeProducts = onSnapshot(collection(db,'products'), snap => {
     products=[];
     snap.forEach(d => products.push({id:d.id,...d.data()}));
     renderProducts();
   });
 
-  unsubscribeOrders = onSnapshot(collection(db,'orders'),snap=>{
+  unsubscribeOrders = onSnapshot(collection(db,'orders'), snap => {
     let p='',r='',pr='',re='',h='';
     let revenue=0,c=0;
     let hasNewOrder=false;
     let newOrderTitle = '🚨 New Order Received!';
-    let newOrderBody = 'Check the seller dashboard for new orders.';
+    let newOrderBody = 'Check dashboard for new orders.';
     hist=[];
 
-    snap.forEach(d=>{
+    snap.forEach(d => {
       const o={id:d.id,...d.data()};
       hist.push(o);
 
-      const statusUpper = normalizeStatus(o.status);
+      const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
 
       if(!isFirstLoad && !existingOrderIds.has(d.id) && (statusUpper==='PENDING' || statusUpper==='ORDER_RECEIVED')){
         hasNewOrder=true;
@@ -513,20 +469,6 @@ function startRealtimeListeners() {
     document.getElementById('avg').textContent=c?Math.round(revenue/c):0;
   });
 }
-
-// Auto-reconnect when screen turns back on or tab is active
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && auth.currentUser) {
-    startRealtimeListeners();
-  }
-});
-
-// Fallback background refresh every 15 seconds
-setInterval(() => {
-  if (auth.currentUser && document.visibilityState === 'visible') {
-    startRealtimeListeners();
-  }
-}, 15000);
 </script>
 </body>
 </html>
