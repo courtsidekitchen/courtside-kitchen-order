@@ -35,9 +35,10 @@ html, body{height:100%;margin:0;padding:0;overflow:hidden;font-family:-apple-sys
 .sidebar-header img{height:38px;object-fit:contain}
 .sidebar-close{background:none;border:none;font-size:20px;cursor:pointer;color:#64748b}
 .sidebar-menu{padding:8px 0;flex:1;overflow-y:auto}
-.sidebar-item{display:flex;align-items:center;gap:10px;padding:12px 18px;font-size:14px;font-weight:bold;color:#475569;cursor:pointer;border-left:4px solid transparent;transition:all 0.15s}
+.sidebar-item{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;font-size:14px;font-weight:bold;color:#475569;cursor:pointer;border-left:4px solid transparent;transition:all 0.15s}
 .sidebar-item:hover{background:#f1f5f9;color:#0f2b48}
 .sidebar-item.active{background:#e8eff7;color:#0f2b48;border-left-color:#0f2b48}
+.badge-count{background:#d97706;color:#ffffff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:bold}
 
 /* Content Body */
 .content-body{flex:1;padding:8px 10px;overflow:hidden;display:flex;flex-direction:column}
@@ -133,6 +134,18 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
 .dropzone{flex:1;overflow-y:auto}
 .ticket-card{background:#ffffff;padding:10px;border-radius:6px;margin:6px 0;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(15,43,72,0.05);cursor:grab;font-size:12.5px}
 
+/* Open Tickets Duration Badge */
+.unpaid-timer-badge{
+  background:#fef3c7;
+  color:#92400e;
+  border:1px solid #fde68a;
+  padding:3px 8px;
+  border-radius:6px;
+  font-weight:bold;
+  font-size:11.5px;
+  display:inline-block;
+}
+
 /* Thermal & PDF Print Engine */
 #thermalReceiptArea{display:none}
 #pdfPrintArea{display:none}
@@ -211,12 +224,28 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
       <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
     </div>
     <div class="sidebar-menu">
-      <div class="sidebar-item active" id="menu-pos" onclick="navigateTo('pos', 'POS Register')">🛒 POS Register</div>
-      <div class="sidebar-item" id="menu-orders" onclick="navigateTo('orders', 'Kitchen Orders Board')">📋 Kitchen Orders</div>
-      <div class="sidebar-item" id="menu-pos-history" onclick="navigateTo('pos-history', 'Ticket History & Actions')">🎫 Ticket History & Actions</div>
-      <div class="sidebar-item" id="menu-revenue" onclick="navigateTo('revenue', 'Revenue & Reports')">📊 Revenue & Reports (PIN)</div>
-      <div class="sidebar-item" id="menu-pos-discounts" onclick="navigateTo('pos-discounts', 'Discounts & Promos')">🔒 Discounts & Promos (PIN)</div>
-      <div class="sidebar-item" id="menu-products" onclick="navigateTo('products', 'Product Inventory')">📦 Inventory / Products</div>
+      <div class="sidebar-item active" id="menu-pos" onclick="navigateTo('pos', 'POS Register')">
+        <span>🛒 POS Register</span>
+      </div>
+      <div class="sidebar-item" id="menu-open-tickets" onclick="navigateTo('open-tickets', 'Open & Unpaid Tickets')">
+        <span>⏳ Open & Unpaid Tickets</span>
+        <span id="sidebarUnpaidBadge" class="badge-count">0</span>
+      </div>
+      <div class="sidebar-item" id="menu-orders" onclick="navigateTo('orders', 'Kitchen Orders Board')">
+        <span>📋 Kitchen Orders</span>
+      </div>
+      <div class="sidebar-item" id="menu-pos-history" onclick="navigateTo('pos-history', 'Ticket History & Actions')">
+        <span>🎫 Ticket History & Actions</span>
+      </div>
+      <div class="sidebar-item" id="menu-revenue" onclick="navigateTo('revenue', 'Revenue & Reports')">
+        <span>📊 Revenue & Reports (PIN)</span>
+      </div>
+      <div class="sidebar-item" id="menu-pos-discounts" onclick="navigateTo('pos-discounts', 'Discounts & Promos')">
+        <span>🔒 Discounts & Promos (PIN)</span>
+      </div>
+      <div class="sidebar-item" id="menu-products" onclick="navigateTo('products', 'Product Inventory')">
+        <span>📦 Inventory / Products</span>
+      </div>
     </div>
   </div>
 
@@ -281,12 +310,27 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
             <div class="pos-action-strip">
               <button id="posSubmitBtn" class="btn-charge" onclick="submitPosOrder()">⚡ CHARGE</button>
               <div class="pos-action-subrow">
-                <button class="btn-open-tickets" onclick="navigateTo('orders', 'Kitchen Orders Board')">📋 OPEN TICKETS</button>
+                <button class="btn-open-tickets" onclick="navigateTo('open-tickets', 'Open & Unpaid Tickets')">📋 OPEN TICKETS</button>
                 <button class="btn-save-unpaid" onclick="openSaveUnpaidModal()">💾 SAVE (UNPAID)</button>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- DEDICATED OPEN / UNPAID TICKETS TAB -->
+    <div id="open-tickets" class="tab">
+      <div class="scroll-view" style="background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+          <div>
+            <h3 style="margin:0;color:#0f2b48;font-size:15px;">⏳ Open & Unpaid Customer Tickets</h3>
+            <small style="color:#64748b;">Review ongoing tickets, track how long they've been open, and settle payment.</small>
+          </div>
+          <button onclick="navigateTo('pos', 'POS Register')" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">➕ New Walk-in Ticket</button>
+        </div>
+        <input id="openTicketsSearch" placeholder="🔍 Search open tickets by customer, mobile #, ticket #, or pager..." oninput="renderOpenTicketsView()" style="padding:6px 10px;">
+        <div id="openTicketsContainer" style="margin-top:10px;"></div>
       </div>
     </div>
 
@@ -577,6 +621,7 @@ window.navigateTo = (tabId, label, preserveDrawer = false) => {
     if (overlay) overlay.classList.remove('active');
   }
 
+  if (tabId === 'open-tickets') renderOpenTicketsView();
   if (tabId === 'pos-history') renderPosHistory();
   if (tabId === 'orders') renderOrdersBoard();
   
@@ -721,6 +766,23 @@ function parseOrderDate(created) {
   if (created.seconds) return new Date(created.seconds * 1000);
   const parsed = new Date(created);
   return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+}
+
+function formatElapsedDuration(createdStr) {
+  if (!createdStr) return '0s';
+  const created = parseOrderDate(createdStr);
+  const diffSec = Math.max(0, Math.floor((Date.now() - created.getTime()) / 1000));
+  const hrs = Math.floor(diffSec / 3600);
+  const mins = Math.floor((diffSec % 3600) / 60);
+  const secs = diffSec % 60;
+
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m ${secs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  return `${secs}s`;
 }
 
 function getFilteredOrders() {
@@ -1129,7 +1191,7 @@ window.renderOrdersBoard = () => {
   initDragDrop();
 };
 
-// 1-Second Auto Countdown & Background Tick
+// 1-Second Auto Countdown & Elapsed Duration Tick
 setInterval(() => {
   if (document.getElementById('orders')?.classList.contains('active')) {
     document.querySelectorAll('.pending-timer').forEach(el => {
@@ -1140,6 +1202,14 @@ setInterval(() => {
       }
     });
   }
+
+  // Update real-time duration elapsed on open/unpaid tickets
+  document.querySelectorAll('.unpaid-duration-timer').forEach(el => {
+    const createdStr = el.getAttribute('data-created');
+    if (createdStr) {
+      el.textContent = `⏱️ Open for: ${formatElapsedDuration(createdStr)}`;
+    }
+  });
 }, 1000);
 
 function initLiveListeners() {
@@ -1192,6 +1262,8 @@ function initLiveListeners() {
     }
 
     isInitialLoad = false;
+    updateUnpaidBadgeCount();
+    renderOpenTicketsView();
     renderOrdersBoard();
     renderPosHistory();
     calculateRevenue();
@@ -1199,9 +1271,150 @@ function initLiveListeners() {
   });
 }
 
+function updateUnpaidBadgeCount() {
+  const unpaidCount = hist.filter(o => {
+    const s = (o.status || '').toUpperCase();
+    return o.isUnpaid === true && !['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(s);
+  }).length;
+
+  const badgeEl = document.getElementById('sidebarUnpaidBadge');
+  if (badgeEl) badgeEl.textContent = unpaidCount;
+}
+
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
 window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Phone,Pager,Status,GrossSubtotal,DiscountType,DiscountCategory,DiscountAmount,NetTotal,PaymentMethod'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.customerPhone||''},${o.pagerNumber||''},${o.status},${o.subtotal||o.total||0},${o.discountType||'None'},${o.discountCategory||'None'},${o.discountAmount||0},${o.total||0},${o.paymentMethod||'Cash'}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+
+// Open & Unpaid Tickets Renderer
+window.renderOpenTicketsView = () => {
+  const q = (document.getElementById('openTicketsSearch')?.value || '').trim().toLowerCase();
+  const container = document.getElementById('openTicketsContainer');
+  if (!container) return;
+
+  const openTickets = hist.filter(o => {
+    const s = (o.status || '').toUpperCase();
+    const isInactive = ['VOIDED', 'CANCELLED', 'REFUNDED', 'DECLINED'].includes(s);
+    if (isInactive || o.isUnpaid !== true) return false;
+
+    if (!q) return true;
+    const num = (o.orderNumber || o.id || '').toLowerCase();
+    const name = (o.customerName || '').toLowerCase();
+    const phone = (o.customerPhone || '').toLowerCase();
+    const pager = (o.pagerNumber || '').toLowerCase();
+    return num.includes(q) || name.includes(q) || phone.includes(q) || pager.includes(q);
+  });
+
+  if (!openTickets.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:30px;color:#64748b;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;">
+        <span style="font-size:32px;">🎉</span><br>
+        <b style="color:#0f2b48;font-size:14px;">No Open / Unpaid Tickets!</b><br>
+        <small>All active tickets have been settled and paid.</small>
+      </div>
+    `;
+    return;
+  }
+
+  let h = '';
+  openTickets.forEach(o => {
+    const rawPager = (o.pagerNumber || '').trim();
+    const pagerBadge = rawPager && rawPager !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">📟 ${escapeHTML(rawPager.toUpperCase().replace('PAGER', 'CUSTOMER #'))}</span> ` : '';
+    const dateFormatted = parseOrderDate(o.createdAt).toLocaleString();
+
+    h += `
+      <div style="background:#f8fafc;border:1.5px solid #f59e0b;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+          <div>
+            <b style="color:#0f2b48;font-size:14.5px;">${escapeHTML(o.orderNumber || o.id)}</b>
+            <span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;margin-left:4px;">UNPAID</span>
+            ${pagerBadge}
+          </div>
+          <div class="unpaid-timer-badge">
+            <span class="unpaid-duration-timer" data-created="${escapeHTML(o.createdAt)}">⏱️ Open for: ${formatElapsedDuration(o.createdAt)}</span>
+          </div>
+        </div>
+
+        <div style="font-size:12.5px;color:#475569;margin:6px 0;">
+          Customer: <b>${escapeHTML(o.customerName || 'Walk-in')}</b> ${o.customerPhone ? `| Mobile: <b>${escapeHTML(o.customerPhone)}</b>` : ''}<br>
+          Opened at: <b>${dateFormatted}</b> | Kitchen Status: <b style="color:#0f2b48;">${escapeHTML(o.status || 'ORDER_RECEIVED')}</b>
+        </div>
+
+        <div class="items" style="font-size:12.5px;background:#ffffff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;margin:6px 0;">
+          ${itemsHtml(o.items)}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px dashed #cbd5e1;padding-top:6px;margin-top:4px;">
+          <span>Gross: ₱${Number(o.subtotal || o.total || 0).toLocaleString()}</span>
+          <span>[${escapeHTML(o.discountCategory || 'DISC')}] ${escapeHTML(o.discountType || 'None')} (-₱${Number(o.discountAmount || 0).toLocaleString()})</span>
+          <b style="color:#0f2b48;font-size:14px;">Total Due: ₱${Number(o.total || 0).toLocaleString()}</b>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          <button onclick="settleAndMarkPaid('${escapeHTML(o.id)}')" style="flex:1;background:#2e7d32;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
+            💵 Settle & Mark Paid
+          </button>
+          <button onclick="printFromHistory('${escapeHTML(o.id)}')" style="background:#0f2b48;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">
+            🖨️ Print Ticket
+          </button>
+          <button onclick="posVoidTicket('${escapeHTML(o.id)}')" style="background:#64748b;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">
+            🚫 Void Ticket
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = h;
+};
+
+// Settle & Tag Paid Function
+window.settleAndMarkPaid = async (id) => {
+  const o = hist.find(x => x.id === id || x.orderNumber === id);
+  if (!o) return alert('Ticket not found');
+
+  const totalDue = Number(o.total || 0);
+  const method = prompt(`Settle Ticket ${o.orderNumber || id}\nTotal Due: ₱${totalDue}\n\nEnter payment method (Cash / GCash / BPI):`, 'Cash');
+  if (!method) return;
+
+  const normMethod = method.trim().toLowerCase();
+  let cashTendered = null;
+  let changeGiven = null;
+
+  if (normMethod === 'cash') {
+    const cashStr = prompt(`Enter Cash Tendered for ₱${totalDue}:`, totalDue);
+    if (!cashStr) return;
+    cashTendered = Number(cashStr);
+    if (isNaN(cashTendered) || cashTendered < totalDue) {
+      return alert(`Insufficient cash provided. Total is ₱${totalDue}, received ₱${cashTendered}.`);
+    }
+    changeGiven = Math.max(0, cashTendered - totalDue);
+    if (changeGiven > 0) {
+      alert(`Payment Successful!\nChange: ₱${changeGiven.toLocaleString()}`);
+    }
+  }
+
+  const cleanMethod = normMethod === 'gcash' ? 'GCash' : (normMethod === 'bpi' ? 'BPI' : 'Cash');
+
+  try {
+    const updatePayload = {
+      isUnpaid: false,
+      paymentMethod: cleanMethod,
+      paidAt: new Date().toISOString(),
+      cashTendered: cashTendered,
+      changeGiven: changeGiven
+    };
+
+    await updateDoc(doc(db, 'orders', id), updatePayload);
+
+    // Print updated receipt
+    const updatedReceiptData = { ...o, ...updatePayload };
+    window.printThermalReceipt(updatedReceiptData);
+
+    alert(`Ticket ${o.orderNumber || id} marked as PAID via ${cleanMethod}!`);
+  } catch (err) {
+    alert('Error updating ticket: ' + err.message);
+  }
+};
 
 // PIN Protected Bulk Cleanup for Inactive / Completed Tickets
 window.clearCompletedTicketsWithPin = async () => {
@@ -1976,15 +2189,7 @@ window.calculateChange = () => {
 
 // History Ticket Actions
 window.posMarkTicketPaid = async (id) => {
-  const method = prompt('Select payment method (Cash / GCash / BPI):', 'Cash');
-  if (method) {
-    await updateDoc(doc(db, 'orders', id), {
-      isUnpaid: false,
-      paymentMethod: method,
-      paidAt: new Date().toISOString()
-    });
-    alert(`Ticket ${id} marked as PAID via ${method}!`);
-  }
+  await window.settleAndMarkPaid(id);
 };
 
 window.posVoidTicket = async (id) => {
