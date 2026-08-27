@@ -467,6 +467,17 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// XSS Sanitizer Utility
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return str.toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const ADDON_DEFS = {
   fries: { name: 'Plain fries', price: 50 },
   rice: { name: 'Extra Rice', price: 35 },
@@ -846,8 +857,8 @@ function renderActiveReport() {
     const discMap = {};
     orders.forEach(o => {
       if (o.discountType && o.discountType !== 'NONE' && Number(o.discountAmount) > 0) {
-        const key = o.discountType;
-        const category = o.discountCategory || (['SENIOR', 'PWD'].includes(key) ? 'DISCOUNT' : 'PROMO');
+        const key = escapeHTML(o.discountType);
+        const category = escapeHTML(o.discountCategory || (['SENIOR', 'PWD'].includes(key) ? 'DISCOUNT' : 'PROMO'));
         if (!discMap[key]) {
           discMap[key] = { name: key, category: category, count: 0, amount: 0 };
         }
@@ -876,7 +887,7 @@ function renderActiveReport() {
     const itemMap = {};
     orders.forEach(o => {
       (o.items || []).forEach(i => {
-        const name = typeof i === 'string' ? i : i.name;
+        const name = escapeHTML(typeof i === 'string' ? i : i.name);
         const qty = Number(i.qty || 1);
         const price = Number(i.price || 0);
         if (!itemMap[name]) itemMap[name] = { qty: 0, sales: 0 };
@@ -901,7 +912,7 @@ function renderActiveReport() {
     orders.forEach(o => {
       (o.items || []).forEach(i => {
         const p = products.find(prod => prod.name === (i.name || i));
-        const cat = p ? (p.category || 'Other') : (i.name?.startsWith('Plain fries') || i.name?.startsWith('Extra') ? 'Add-ons' : 'Other');
+        const cat = escapeHTML(p ? (p.category || 'Other') : (i.name?.startsWith('Plain fries') || i.name?.startsWith('Extra') ? 'Add-ons' : 'Other'));
         const qty = Number(i.qty || 1);
         const price = Number(i.price || 0);
         if (!catMap[cat]) catMap[cat] = { qty: 0, sales: 0 };
@@ -944,10 +955,10 @@ function renderActiveReport() {
   } else if (currentReportType === 'receipts') {
     let rows = orders.map(o => `
       <tr>
-        <td><b>${o.orderNumber || o.id}</b></td>
+        <td><b>${escapeHTML(o.orderNumber || o.id)}</b></td>
         <td>${parseOrderDate(o.createdAt).toLocaleDateString()}</td>
-        <td>${o.customerName || 'Walk-in'}</td>
-        <td>${o.paymentMethod || 'Cash'}</td>
+        <td>${escapeHTML(o.customerName || 'Walk-in')}</td>
+        <td>${escapeHTML(o.paymentMethod || 'Cash')}</td>
         <td style="text-align:right;">₱${Number(o.subtotal || o.total || 0).toLocaleString()}</td>
         <td style="text-align:right;color:#dc2626;">-₱${Number(o.discountAmount || 0).toLocaleString()}</td>
         <td style="text-align:right;font-weight:bold;">₱${Number(o.total || 0).toLocaleString()}</td>
@@ -968,15 +979,17 @@ function renderActiveReport() {
         (i.addons || []).forEach(addonName => {
           const found = Object.values(ADDON_DEFS).find(x => x.name === addonName);
           const price = found ? found.price : (addonName.includes('₱5') ? 5 : (addonName.includes('₱30') ? 30 : 0));
-          if (!modMap[addonName]) modMap[addonName] = { qty: 0, sales: 0 };
-          modMap[addonName].qty += Number(i.qty || 1);
-          modMap[addonName].sales += (price * Number(i.qty || 1));
+          const escapedName = escapeHTML(addonName);
+          if (!modMap[escapedName]) modMap[escapedName] = { qty: 0, sales: 0 };
+          modMap[escapedName].qty += Number(i.qty || 1);
+          modMap[escapedName].sales += (price * Number(i.qty || 1));
         });
         if (i.name?.startsWith('Plain fries') || i.name?.startsWith('Extra')) {
           const price = Number(i.price || 0);
-          if (!modMap[i.name]) modMap[i.name] = { qty: 0, sales: 0 };
-          modMap[i.name].qty += Number(i.qty || 1);
-          modMap[i.name].sales += (price * Number(i.qty || 1));
+          const escapedName = escapeHTML(i.name);
+          if (!modMap[escapedName]) modMap[escapedName] = { qty: 0, sales: 0 };
+          modMap[escapedName].qty += Number(i.qty || 1);
+          modMap[escapedName].sales += (price * Number(i.qty || 1));
         }
       });
     });
@@ -1192,37 +1205,49 @@ function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor(
 function itemsHtml(items = []) {
   if (!Array.isArray(items)) return '<i>No items detailed</i>';
   return items.map(i => {
-    if (typeof i === 'string') return i;
-    const name = i.name || i.title || 'Item';
-    const qty = i.qty || i.quantity || 1;
+    if (typeof i === 'string') return escapeHTML(i);
+    const name = escapeHTML(i.name || i.title || 'Item');
+    const qty = Number(i.qty || i.quantity || 1);
     let addText = '';
     if (i.addons && i.addons.length > 0) {
-      addText = ` <small style="color:#0f2b48;font-weight:bold;">[+${i.addons.join(', ')}]</small>`;
+      const sanitizedAddons = i.addons.map(a => escapeHTML(a)).join(', ');
+      addText = ` <small style="color:#0f2b48;font-weight:bold;">[+${sanitizedAddons}]</small>`;
     }
     return `${name} x${qty}${addText}`;
   }).join('<br>');
 }
 
 function card(id, o = {}) {
-  const orderNum = o.orderNumber || id || 'N/A';
-  const customer = o.customerName || o.name || 'Guest Customer';
-  const total = o.total || o.totalPrice || 0;
-  const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
-  const pagerBadge = o.pagerNumber && o.pagerNumber !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">📟 ${o.pagerNumber.toUpperCase().replace('PAGER', 'CUSTOMER #')}</span> ` : '';
-  const unpaidBadge = o.isUnpaid ? `<span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">UNPAID</span> ` : '';
+  const orderNum = escapeHTML(o.orderNumber || id || 'N/A');
+  const customer = escapeHTML(o.customerName || o.name || 'Guest Customer');
+  const phone = escapeHTML(o.customerPhone || '');
+  const total = Number(o.total || o.totalPrice || 0);
+  const rawStatus = escapeHTML((o.status || 'PENDING').toString().toUpperCase());
+  const pager = escapeHTML(o.pagerNumber || '');
+  const payment = escapeHTML(o.paymentMethod || 'Cash');
+  const discType = escapeHTML(o.discountType || '');
+  
+  const pagerBadge = pager && pager !== 'NONE' 
+    ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">📟 ${pager.toUpperCase().replace('PAGER', 'CUSTOMER #')}</span> ` 
+    : '';
+  const unpaidBadge = o.isUnpaid 
+    ? `<span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">UNPAID</span> ` 
+    : '';
+
+  const reason = escapeHTML(o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed');
 
   return `
-    <div class='ticket-card' draggable="true" data-id="${id}">
+    <div class='ticket-card' draggable="true" data-id="${escapeHTML(id)}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
         <b style="color:#0f2b48;">${orderNum}</b>
         <div>${unpaidBadge}${pagerBadge}</div>
       </div>
-      Customer: ${customer} ${o.customerPhone ? `<small>(${o.customerPhone})</small>` : ''}<br>
-      ${rawStatus === 'PENDING' ? `<span class="pending-timer" data-created="${o.createdAt}">Pending: ${remain(o.createdAt)}</span><br>` : ''}
+      Customer: ${customer} ${phone ? `<small>(${phone})</small>` : ''}<br>
+      ${rawStatus === 'PENDING' ? `<span class="pending-timer" data-created="${escapeHTML(o.createdAt)}">Pending: ${remain(o.createdAt)}</span><br>` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
-      Total: ₱${total} (${o.paymentMethod || 'Cash'})<br>
-      ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:#0f2b48;font-weight:bold;">[${o.discountCategory || 'DISC'}] ${o.discountType}: -₱${o.discountAmount||0}</small><br>` : ''}
-      ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : ''}
+      Total: ₱${total} (${payment})<br>
+      ${discType && discType !== 'NONE' ? `<small style="color:#0f2b48;font-weight:bold;">[${escapeHTML(o.discountCategory || 'DISC')}] ${discType}: -₱${Number(o.discountAmount || 0)}</small><br>` : ''}
+      ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${reason}</b>` : ''}
     </div>
   `;
 }
@@ -1359,7 +1384,7 @@ window.saveCustomDiscount = async () => {
 
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   await setDoc(doc(db, 'discounts', id), {
-    type: type, // "DISCOUNT" or "PROMO"
+    type: type,
     name: name,
     percentage: pct,
     description: desc,
@@ -1399,10 +1424,10 @@ function renderCustomDiscountsList() {
       <div class="discount-card" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <span style="background:${isPromo ? '#dbeafe;color:#1e40af' : '#fee2e2;color:#991b1b'};padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;">${isPromo ? 'PROMO' : 'DISCOUNT'}</span>
-          <b style="font-size:13px;margin-left:4px;">${d.name}</b> <span style="color:#0f2b48;font-weight:bold;">(${d.percentage}% OFF)</span><br>
-          <small style="color:#64748b;">${d.description || 'No special conditions'}</small>
+          <b style="font-size:13px;margin-left:4px;">${escapeHTML(d.name)}</b> <span style="color:#0f2b48;font-weight:bold;">(${Number(d.percentage)}% OFF)</span><br>
+          <small style="color:#64748b;">${escapeHTML(d.description || 'No special conditions')}</small>
         </div>
-        <button onclick="deleteCustomDiscount('${d.id}', '${d.name.replace(/'/g, "\\'")}')" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
+        <button onclick="deleteCustomDiscount('${escapeHTML(d.id)}', '${escapeHTML(d.name).replace(/'/g, "\\'")}')" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
           🗑️ Delete
         </button>
       </div>
@@ -1424,7 +1449,7 @@ function populatePosDiscountDropdown() {
 
   discounts.forEach(d => {
     const category = d.type || 'PROMO';
-    h += `<option value="${d.name}" data-pct="${d.percentage}" data-cat="${category}">[${category}] ${d.name} (${d.percentage}%)</option>`;
+    h += `<option value="${escapeHTML(d.name)}" data-pct="${Number(d.percentage)}" data-cat="${category}">[${category}] ${escapeHTML(d.name)} (${Number(d.percentage)}%)</option>`;
   });
 
   select.innerHTML = h;
@@ -1499,9 +1524,9 @@ window.filterPosCatalog = () => {
     filteredProducts.forEach(p => {
       const isOut = (p.qty || 0) <= 0;
       h += `
-        <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${p.id}')">
-          <div class="pos-item-name">${p.name}</div>
-          <div class="pos-item-price">₱${p.price || 0}</div>
+        <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${escapeHTML(p.id)}')">
+          <div class="pos-item-name">${escapeHTML(p.name)}</div>
+          <div class="pos-item-price">₱${Number(p.price || 0)}</div>
           ${isOut ? '<small style="color:red;font-weight:bold;font-size:10px;">Out of stock</small>' : ''}
         </div>
       `;
@@ -1513,7 +1538,7 @@ window.filterPosCatalog = () => {
       if (!q || item.name.toLowerCase().includes(q)) {
         h += `
           <div class="pos-item" style="border:1px dashed #0f2b48;background:#f0f4f8;" onclick="posAddStandaloneAddon('${k}')">
-            <div class="pos-item-name">${item.name}</div>
+            <div class="pos-item-name">${escapeHTML(item.name)}</div>
             <div class="pos-item-price">₱${item.price}</div>
             <small style="color:#0f2b48;font-weight:bold;font-size:10px;">Side Add-on</small>
           </div>
@@ -1580,7 +1605,7 @@ function renderPosCart() {
       h += `
         <div class="cart-row">
           <div>
-            <b style="font-size:12px;">${addon.name}</b> (₱${addon.price})
+            <b style="font-size:12px;">${escapeHTML(addon.name)}</b> (₱${addon.price})
             <br><small style="color:#0f2b48;font-weight:bold;font-size:10px;">Standalone Add-on</small>
           </div>
           <div class="qty-ctrl">
@@ -1610,19 +1635,19 @@ function renderPosCart() {
 
     let pillsHtml = Object.entries(ADDON_DEFS).map(([k, ad]) => {
       const active = !!selectedAddons[k];
-      return `<span class="addon-pill ${active ? 'active' : ''}" onclick="posToggleItemAddon('${id}', '${k}')">+${ad.name} (₱${ad.price})</span>`;
+      return `<span class="addon-pill ${active ? 'active' : ''}" onclick="posToggleItemAddon('${escapeHTML(id)}', '${k}')">+${escapeHTML(ad.name)} (₱${ad.price})</span>`;
     }).join('');
 
     h += `
       <div class="cart-row">
         <div>
-          <b style="font-size:12px;">${p.name}</b> (₱${p.price})
+          <b style="font-size:12px;">${escapeHTML(p.name)}</b> (₱${Number(p.price)})
           <div class="addon-pill-box">${pillsHtml}</div>
         </div>
         <div class="qty-ctrl">
-          <button onclick="posChangeQty('${id}', -1)">-</button>
+          <button onclick="posChangeQty('${escapeHTML(id)}', -1)">-</button>
           <span style="font-size:12px;"><b>${qty}</b></span>
-          <button onclick="posChangeQty('${id}', 1)">+</button>
+          <button onclick="posChangeQty('${escapeHTML(id)}', 1)">+</button>
           <span style="min-width:40px;text-align:right;font-weight:bold;font-size:12px;">₱${itemTotal}</span>
         </div>
       </div>
@@ -1664,14 +1689,14 @@ window.printThermalReceipt = (o) => {
   const dateStr = parseOrderDate(o.createdAt).toLocaleString();
   let itemsLines = '';
   (o.items || []).forEach(i => {
-    const name = typeof i === 'string' ? i : i.name;
-    const qty = i.qty || 1;
-    const price = i.price || 0;
+    const name = escapeHTML(typeof i === 'string' ? i : i.name);
+    const qty = Number(i.qty || 1);
+    const price = Number(i.price || 0);
     let addText = '';
     let addPrice = 0;
 
     if (i.addons && i.addons.length > 0) {
-      addText = `<br>&nbsp;+ ${i.addons.join(', ')}`;
+      addText = `<br>&nbsp;+ ${i.addons.map(a => escapeHTML(a)).join(', ')}`;
       i.addons.forEach(an => {
         const found = Object.values(ADDON_DEFS).find(x => x.name === an);
         if (found) addPrice += found.price;
@@ -1696,29 +1721,29 @@ window.printThermalReceipt = (o) => {
     <div class="receipt-center">
       <b style="font-size:13px;">COURTSIDE KITCHEN</b><br>
       <span>Order Ticket / Receipt</span><br>
-      <b>${o.orderNumber || o.id}</b>
+      <b>${escapeHTML(o.orderNumber || o.id)}</b>
     </div>
-    ${hasPager ? `<div class="receipt-pager-banner">CUSTOMER # ${pagerNumOnly}</div>` : ''}
+    ${hasPager ? `<div class="receipt-pager-banner">CUSTOMER # ${escapeHTML(pagerNumOnly)}</div>` : ''}
     <div class="receipt-divider"></div>
     <div>Date: ${dateStr}</div>
-    <div>Customer: <b>${o.customerName || 'Walk-in'}</b></div>
-    ${o.customerPhone ? `<div>Mobile: ${o.customerPhone}</div>` : ''}
-    <div>Payment: <b>${o.isUnpaid ? 'UNPAID / PENDING' : (o.paymentMethod || 'Cash')}</b></div>
-    ${o.notes ? `<div>Note: ${o.notes}</div>` : ''}
+    <div>Customer: <b>${escapeHTML(o.customerName || 'Walk-in')}</b></div>
+    ${o.customerPhone ? `<div>Mobile: ${escapeHTML(o.customerPhone)}</div>` : ''}
+    <div>Payment: <b>${o.isUnpaid ? 'UNPAID / PENDING' : escapeHTML(o.paymentMethod || 'Cash')}</b></div>
+    ${o.notes ? `<div>Note: ${escapeHTML(o.notes)}</div>` : ''}
     <div class="receipt-divider"></div>
     <div><b>ITEMS & ADD-ONS:</b></div>
     ${itemsLines}
     <div class="receipt-divider"></div>
-    <div class="receipt-row"><span>Gross Subtotal:</span><span>₱${o.subtotal || o.total || 0}</span></div>
+    <div class="receipt-row"><span>Gross Subtotal:</span><span>₱${Number(o.subtotal || o.total || 0).toLocaleString()}</span></div>
     ${o.discountType && o.discountType !== 'NONE' ? `
-      <div class="receipt-row"><span>[${o.discountCategory || 'DISC'}] ${o.discountType}:</span><span>-₱${o.discountAmount || 0}</span></div>
+      <div class="receipt-row"><span>[${escapeHTML(o.discountCategory || 'DISC')}] ${escapeHTML(o.discountType)}:</span><span>-₱${Number(o.discountAmount || 0).toLocaleString()}</span></div>
     ` : ''}
     <div class="receipt-row" style="font-size:13px;font-weight:bold;margin-top:4px;">
-      <span>NET TOTAL:</span><span>₱${o.total || 0}</span>
+      <span>NET TOTAL:</span><span>₱${Number(o.total || 0).toLocaleString()}</span>
     </div>
     ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
-      <div class="receipt-row"><span>Cash:</span><span>₱${o.cashTendered}</span></div>
-      <div class="receipt-row"><span>Change:</span><span>₱${o.changeGiven || 0}</span></div>
+      <div class="receipt-row"><span>Cash:</span><span>₱${Number(o.cashTendered).toLocaleString()}</span></div>
+      <div class="receipt-row"><span>Change:</span><span>₱${Number(o.changeGiven || 0).toLocaleString()}</span></div>
     ` : ''}
     <div class="receipt-divider"></div>
     <div class="receipt-center" style="font-size:10px;margin-top:6px;">
@@ -1969,44 +1994,44 @@ window.renderPosHistory = () => {
 
   let h = '';
   filtered.forEach(o => {
-    const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
+    const rawStatus = escapeHTML((o.status || 'PENDING').toString().toUpperCase());
     const isInactive = ['VOIDED', 'CANCELLED', 'REFUNDED', 'DECLINED'].includes(rawStatus);
-    const pagerBadge = o.pagerNumber && o.pagerNumber !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">📟 ${o.pagerNumber.toUpperCase().replace('PAGER', 'CUSTOMER #')}</span> ` : '';
+    const pagerBadge = o.pagerNumber && o.pagerNumber !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">📟 ${escapeHTML(o.pagerNumber.toUpperCase().replace('PAGER', 'CUSTOMER #'))}</span> ` : '';
     const unpaidBadge = o.isUnpaid ? `<span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">UNPAID</span> ` : '';
 
     h += `
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <b style="color:#0f2b48;">${o.orderNumber || o.id}</b>
+            <b style="color:#0f2b48;">${escapeHTML(o.orderNumber || o.id)}</b>
             ${unpaidBadge}${pagerBadge}
           </div>
           <span style="font-weight:bold;color:${isInactive ? 'red' : '#0f2b48'};font-size:12px;">${rawStatus}</span>
         </div>
         <div style="font-size:12px;color:#64748b;margin:3px 0;">
-          Customer: <b>${o.customerName || 'Walk-in'}</b> ${o.customerPhone ? `(${o.customerPhone})` : ''} | Date: <b>${parseOrderDate(o.createdAt).toLocaleString()}</b> | Payment: <b>${o.paymentMethod || 'N/A'}</b>
+          Customer: <b>${escapeHTML(o.customerName || 'Walk-in')}</b> ${o.customerPhone ? `(${escapeHTML(o.customerPhone)})` : ''} | Date: <b>${parseOrderDate(o.createdAt).toLocaleString()}</b> | Payment: <b>${escapeHTML(o.paymentMethod || 'N/A')}</b>
         </div>
         <div class="items" style="font-size:12px;padding:6px;">${itemsHtml(o.items)}</div>
         <div style="display:flex;justify-content:space-between;font-size:12.5px;">
-          <span>Gross: ₱${o.subtotal || o.total || 0}</span>
-          <span>[${o.discountCategory || 'DISC'}] ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
-          <b style="color:#0f2b48;">Net Total: ₱${o.total || 0}</b>
+          <span>Gross: ₱${Number(o.subtotal || o.total || 0).toLocaleString()}</span>
+          <span>[${escapeHTML(o.discountCategory || 'DISC')}] ${escapeHTML(o.discountType || 'None')} (-₱${Number(o.discountAmount || 0).toLocaleString()})</span>
+          <b style="color:#0f2b48;">Net Total: ₱${Number(o.total || 0).toLocaleString()}</b>
         </div>
         ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
           <div style="font-size:11.5px;color:#0f2b48;margin-top:3px;">
-            Cash: ₱${o.cashTendered} | Change: ₱${o.changeGiven || 0}
+            Cash: ₱${Number(o.cashTendered).toLocaleString()} | Change: ₱${Number(o.changeGiven || 0).toLocaleString()}
           </div>
         ` : ''}
-        ${o.voidReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Void Reason: ${o.voidReason}</div>` : ''}
-        ${o.cancelReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
-        ${o.refundReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Refund Reason: ${o.refundReason}</div>` : ''}
+        ${o.voidReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Void Reason: ${escapeHTML(o.voidReason)}</div>` : ''}
+        ${o.cancelReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Cancel Reason: ${escapeHTML(o.cancelReason)}</div>` : ''}
+        ${o.refundReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Refund Reason: ${escapeHTML(o.refundReason)}</div>` : ''}
         <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
-          <button onclick="printFromHistory('${o.id}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🖨️ Print Receipt</button>
-          ${o.isUnpaid && !isInactive ? `<button onclick="posMarkTicketPaid('${o.id}')" style="background:#2e7d32;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💵 Mark Paid</button>` : ''}
+          <button onclick="printFromHistory('${escapeHTML(o.id)}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🖨️ Print Receipt</button>
+          ${o.isUnpaid && !isInactive ? `<button onclick="posMarkTicketPaid('${escapeHTML(o.id)}')" style="background:#2e7d32;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💵 Mark Paid</button>` : ''}
           ${!isInactive ? `
-            <button onclick="posVoidTicket('${o.id}')" style="background:#64748b;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🚫 Void</button>
-            <button onclick="posCancelTicket('${o.id}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">❌ Cancel</button>
-            <button onclick="posRefundTicket('${o.id}')" style="background:#1e3a5f;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💸 Refund</button>
+            <button onclick="posVoidTicket('${escapeHTML(o.id)}')" style="background:#64748b;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🚫 Void</button>
+            <button onclick="posCancelTicket('${escapeHTML(o.id)}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">❌ Cancel</button>
+            <button onclick="posRefundTicket('${escapeHTML(o.id)}')" style="background:#1e3a5f;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💸 Refund</button>
           ` : ''}
         </div>
       </div>
@@ -2080,22 +2105,22 @@ window.renderProducts = () => {
   products.filter(p => (p.name||'').toLowerCase().includes(q)).forEach(p => {
     h += `
     <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
-      ${p.image ? `<img src='${p.image}' style='max-width:100%;border-radius:6px;max-height:80px;object-fit:cover;'><br>` : ''}
-      <b style="font-size:13px;">${p.name}</b> <span style="font-size:12px;color:#64748b;">(${p.category || 'Other'})</span><br>
-      <span style="font-size:12.5px;">₱${p.price||0} | Qty: ${p.qty||0}</span>
+      ${p.image ? `<img src='${escapeHTML(p.image)}' style='max-width:100%;border-radius:6px;max-height:80px;object-fit:cover;'><br>` : ''}
+      <b style="font-size:13px;">${escapeHTML(p.name)}</b> <span style="font-size:12px;color:#64748b;">(${escapeHTML(p.category || 'Other')})</span><br>
+      <span style="font-size:12.5px;">₱${Number(p.price||0)} | Qty: ${Number(p.qty||0)}</span>
       ${(p.qty||0)<=0 ? "<div style='color:red;font-weight:bold;font-size:11px;'>❌ OUT OF STOCK</div>" : ""}
       <div style="margin-top:6px;">
-        <button onclick="editProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Edit</button>
-        <button onclick="deleteProduct('${p.id}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Delete</button>
+        <button onclick="editProduct('${escapeHTML(p.id)}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Edit</button>
+        <button onclick="deleteProduct('${escapeHTML(p.id)}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Delete</button>
       </div>
-      <div id="e_${p.id}" style="display:none;margin-top:8px;">
-        <input id="c_${p.id}" value="${p.category||''}">
-        <input id="n_${p.id}" value="${p.name||''}">
-        <input id="d_${p.id}" value="${p.description||''}">
-        <input id="p_${p.id}" value="${p.price||0}">
-        <input id="q_${p.id}" value="${p.qty||0}">
-        <input id="i_${p.id}" value="${p.image||''}">
-        <button onclick="saveProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;margin-top:4px;font-size:12px;">Save</button>
+      <div id="e_${escapeHTML(p.id)}" style="display:none;margin-top:8px;">
+        <input id="c_${escapeHTML(p.id)}" value="${escapeHTML(p.category||'')}">
+        <input id="n_${escapeHTML(p.id)}" value="${escapeHTML(p.name||'')}">
+        <input id="d_${escapeHTML(p.id)}" value="${escapeHTML(p.description||'')}">
+        <input id="p_${escapeHTML(p.id)}" value="${Number(p.price||0)}">
+        <input id="q_${escapeHTML(p.id)}" value="${Number(p.qty||0)}">
+        <input id="i_${escapeHTML(p.id)}" value="${escapeHTML(p.image||'')}">
+        <button onclick="saveProduct('${escapeHTML(p.id)}')" style="background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;margin-top:4px;font-size:12px;">Save</button>
       </div>
     </div>
     `;
