@@ -60,6 +60,10 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 .history-ticket-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .history-ticket-actions button{flex:1;min-width:90px;padding:8px;font-size:12px}
 
+/* Pin Modal & Discount Items */
+.pin-box{max-width:320px;margin:20px auto;background:#fff;padding:20px;border-radius:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.discount-card{background:#fdfdfd;border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+
 @media(max-width:1024px){
   .board{grid-template-columns:repeat(2,1fr)}
   .pos-layout{grid-template-columns:1fr}
@@ -146,11 +150,12 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   </div>
 </div>
 
-<!-- POS (CASHIER & TICKET MANAGEMENT) TAB -->
+<!-- POS (CASHIER, TICKETS & DISCOUNT RULES) TAB -->
 <div id="pos" class="tab">
   <div class="tabs" style="margin-bottom:12px;">
     <button id="posRegisterBtn" onclick="togglePosSubTab('register')" style="background:#0066cc;">Register</button>
     <button id="posHistoryBtn" onclick="togglePosSubTab('history')" style="background:#777;">Ticket History & Actions</button>
+    <button id="posDiscountsBtn" onclick="togglePosSubTab('discounts')" style="background:#777;">🔒 Discounts & Promos (PIN)</button>
   </div>
 
   <!-- Register Sub-view -->
@@ -167,20 +172,16 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
       <textarea id="posNotes" placeholder="Order notes / requests" style="height:45px;"></textarea>
       
       <label><b>Payment Method:</b></label>
-      <select id="posPayment">
+      <select id="posPayment" onchange="toggleCashInput()">
         <option value="Cash">Cash</option>
         <option value="GCash">GCash</option>
         <option value="BPI">BPI</option>
       </select>
 
-      <label><b>Discount:</b></label>
-      <select id="posDiscountType" onchange="renderPosCart()">
-        <option value="NONE">No Discount (0%)</option>
-        <option value="SENIOR">Senior Citizen (20%)</option>
-        <option value="PWD">PWD (20%)</option>
-      </select>
+      <label><b>Discount / Promotion:</b></label>
+      <select id="posDiscountType" onchange="renderPosCart()"></select>
 
-      <div id="posCartList" style="max-height:200px;overflow-y:auto;margin:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">
+      <div id="posCartList" style="max-height:180px;overflow-y:auto;margin:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">
         <div style="text-align:center;color:#888;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>
       </div>
 
@@ -188,18 +189,67 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
       <div class="pos-summary-line" style="color:green;"><span>Discount (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
       <div class="pos-summary-line pos-total-line"><span>Total:</span><span>₱<span id="posTot">0</span></span></div>
 
+      <div id="cashCalcSection" style="margin-top:10px;background:#f9f9f9;padding:10px;border-radius:6px;border:1px solid #eee;">
+        <label><b>Cash Tendered (₱):</b></label>
+        <input id="posCashTendered" type="number" placeholder="Enter cash amount received..." oninput="calculateChange()" style="font-weight:bold;font-size:16px;">
+        <div class="pos-summary-line" style="font-size:16px;font-weight:bold;margin-top:4px;">
+          <span>Change:</span>
+          <span style="color:#0066cc;">₱<span id="posChangeVal">0</span></span>
+        </div>
+      </div>
+
       <button id="posSubmitBtn" onclick="submitPosOrder()" style="background:#4caf50;width:100%;padding:14px;font-size:16px;margin-top:10px;">
         🚀 Charge & Send to Kitchen
       </button>
     </div>
   </div>
 
-  <!-- Ticket History, Void, Cancel, Refund Sub-view -->
+  <!-- Ticket History Sub-view -->
   <div id="posHistoryView" style="display:none;">
     <div class="card">
       <h3 style="margin-top:0;">🎫 Ticket Management & Audit Log</h3>
       <input id="posHistorySearch" placeholder="🔍 Search ticket by # (e.g. CK-0001), customer, or status..." oninput="renderPosHistory()">
       <div id="posHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- Discounts & Promos (PIN Locked) Sub-view -->
+  <div id="posDiscountsView" style="display:none;">
+    <!-- PIN Verification Box -->
+    <div id="pinLockBox" class="pin-box">
+      <h3 style="margin-top:0;">🔒 Manager Access</h3>
+      <p style="color:#666;font-size:13px;">Enter Manager PIN to access Discounts & Promos</p>
+      <input id="posManagerPinInput" type="password" maxlength="6" placeholder="Enter PIN" style="text-align:center;font-size:18px;letter-spacing:4px;">
+      <button onclick="verifyManagerPin()" style="width:100%;margin-top:8px;">Unlock</button>
+    </div>
+
+    <!-- Manager Panel (Shown after PIN unlock) -->
+    <div id="pinUnlockedPanel" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin:0;">🏷️ Custom Discounts & Promotions</h3>
+          <button onclick="lockManagerPin()" style="background:#777;padding:6px 12px;font-size:12px;">🔒 Re-lock</button>
+        </div>
+        
+        <div style="background:#f9f9f9;padding:12px;border-radius:8px;margin:12px 0;border:1px solid #eee;">
+          <b>Add New Promotion Rule</b>
+          <input id="newPromoName" placeholder="Promotion Name (e.g., Summer Promo / Student Disc)">
+          <input id="newPromoPct" type="number" min="1" max="100" placeholder="Discount Percentage % (e.g. 15 for 15%)">
+          <input id="newPromoDesc" placeholder="Description / Conditions (e.g. Valid on Weekdays)">
+          <button onclick="saveCustomDiscount()" style="background:#4caf50;margin-top:6px;">💾 Save Promotion Rule</button>
+        </div>
+
+        <b>Active Promotion List</b>
+        <div id="customDiscountsList" style="margin-top:10px;"></div>
+
+        <div style="margin-top:20px;border-top:2px solid #eee;padding-top:14px;">
+          <b>🔑 Change Manager PIN (Firebase Synced)</b>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input id="newManagerPinInput" type="password" maxlength="6" placeholder="New 4-6 digit PIN" style="margin:0;">
+            <button onclick="updateFirebasePin()" style="background:#0066cc;white-space:nowrap;">Update PIN</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -242,7 +292,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore, collection, onSnapshot, doc, runTransaction, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore, collection, onSnapshot, doc, getDoc, runTransaction, updateDoc, setDoc, deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
@@ -255,12 +305,15 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let hist=[]; let products=[]; 
+let hist=[]; let products=[]; let discounts=[];
 let posCart={}; let posBobaMap={}; let posSelectedCategory='ALL';
+let currentFinalTotal = 0;
 let knownOrderIds = new Set(); 
 let isInitialLoad = true;
 let draggedOrderId = null;
 let swRegistration = null;
+let isPinUnlocked = false;
+let currentManagerPin = '1234';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg => {
@@ -459,12 +512,29 @@ window.renderOrdersBoard = () => {
 };
 
 function initLiveListeners() {
+  // Sync Firebase Manager PIN
+  onSnapshot(doc(db, 'settings', 'security'), snap => {
+    if (snap.exists()) {
+      currentManagerPin = snap.data().pin || '1234';
+    } else {
+      setDoc(doc(db, 'settings', 'security'), { pin: '1234' });
+      currentManagerPin = '1234';
+    }
+  });
+
   onSnapshot(collection(db, 'products'), snap => {
     products = [];
     snap.forEach(d => products.push({ id: d.id, ...d.data() }));
     renderProducts();
     renderPosCategoryPills();
     filterPosCatalog();
+  });
+
+  onSnapshot(collection(db, 'discounts'), snap => {
+    discounts = [];
+    snap.forEach(d => discounts.push({ id: d.id, ...d.data() }));
+    populatePosDiscountDropdown();
+    renderCustomDiscountsList();
   });
 
   onSnapshot(collection(db, 'orders'), snap => {
@@ -504,6 +574,7 @@ window.tab=id=>{
 };
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
+window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
@@ -556,6 +627,7 @@ function initDragDrop() {
     });
 
     cardEl.addEventListener('touchstart', (e) => {
+      if (e.target.tagName.toLowerCase() === 'button') return;
       draggedOrderId = cardEl.getAttribute('data-id');
       cardEl.classList.add('dragging');
     }, { passive: true });
@@ -600,26 +672,145 @@ function initDragDrop() {
   });
 }
 
-// POS Features (Register, Discount, Boba, Actions)
+// POS Features & PIN Handlers
 window.togglePosSubTab = (sub) => {
   const regView = document.getElementById('posRegisterView');
   const histView = document.getElementById('posHistoryView');
+  const discView = document.getElementById('posDiscountsView');
   const regBtn = document.getElementById('posRegisterBtn');
   const histBtn = document.getElementById('posHistoryBtn');
+  const discBtn = document.getElementById('posDiscountsBtn');
+
+  regView.style.display = 'none';
+  histView.style.display = 'none';
+  discView.style.display = 'none';
+  regBtn.style.background = '#777';
+  histBtn.style.background = '#777';
+  discBtn.style.background = '#777';
 
   if (sub === 'register') {
     regView.style.display = 'grid';
-    histView.style.display = 'none';
     regBtn.style.background = '#0066cc';
-    histBtn.style.background = '#777';
-  } else {
-    regView.style.display = 'none';
+  } else if (sub === 'history') {
     histView.style.display = 'block';
     histBtn.style.background = '#0066cc';
-    regBtn.style.background = '#777';
     renderPosHistory();
+  } else if (sub === 'discounts') {
+    discView.style.display = 'block';
+    discBtn.style.background = '#0066cc';
+    if (!isPinUnlocked) {
+      document.getElementById('pinLockBox').style.display = 'block';
+      document.getElementById('pinUnlockedPanel').style.display = 'none';
+    } else {
+      document.getElementById('pinLockBox').style.display = 'none';
+      document.getElementById('pinUnlockedPanel').style.display = 'block';
+      renderCustomDiscountsList();
+    }
   }
 };
+
+window.verifyManagerPin = () => {
+  const entered = document.getElementById('posManagerPinInput').value;
+  if (entered === currentManagerPin) {
+    isPinUnlocked = true;
+    document.getElementById('posManagerPinInput').value = '';
+    document.getElementById('pinLockBox').style.display = 'none';
+    document.getElementById('pinUnlockedPanel').style.display = 'block';
+    renderCustomDiscountsList();
+  } else {
+    alert('Incorrect Manager PIN!');
+    document.getElementById('posManagerPinInput').value = '';
+  }
+};
+
+window.lockManagerPin = () => {
+  isPinUnlocked = false;
+  document.getElementById('pinLockBox').style.display = 'block';
+  document.getElementById('pinUnlockedPanel').style.display = 'none';
+};
+
+window.updateFirebasePin = async () => {
+  const newPin = document.getElementById('newManagerPinInput').value.trim();
+  if (!newPin || newPin.length < 4) {
+    return alert('PIN must be at least 4 digits.');
+  }
+  await setDoc(doc(db, 'settings', 'security'), { pin: newPin }, { merge: true });
+  document.getElementById('newManagerPinInput').value = '';
+  alert('Manager PIN updated successfully across all devices!');
+};
+
+window.saveCustomDiscount = async () => {
+  const name = document.getElementById('newPromoName').value.trim();
+  const pct = Number(document.getElementById('newPromoPct').value || 0);
+  const desc = document.getElementById('newPromoDesc').value.trim();
+
+  if (!name || pct <= 0 || pct > 100) {
+    return alert('Please provide a valid Promotion Name and Percentage (1-100%).');
+  }
+
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  await setDoc(doc(db, 'discounts', id), {
+    name: name,
+    percentage: pct,
+    description: desc,
+    createdAt: new Date().toISOString()
+  });
+
+  document.getElementById('newPromoName').value = '';
+  document.getElementById('newPromoPct').value = '';
+  document.getElementById('newPromoDesc').value = '';
+  alert(`Promotion '${name}' added successfully!`);
+};
+
+window.deleteCustomDiscount = async (id) => {
+  if (confirm('Delete this promotion rule?')) {
+    await deleteDoc(doc(db, 'discounts', id));
+  }
+};
+
+function renderCustomDiscountsList() {
+  const listEl = document.getElementById('customDiscountsList');
+  if (!listEl) return;
+  
+  if (!discounts.length) {
+    listEl.innerHTML = '<i style="color:#888;">No custom promotions created yet.</i>';
+    return;
+  }
+
+  let h = '';
+  discounts.forEach(d => {
+    h += `
+      <div class="discount-card">
+        <div>
+          <b>${d.name}</b> (${d.percentage}%)<br>
+          <small style="color:#666;">${d.description || 'No special conditions'}</small>
+        </div>
+        <button onclick="deleteCustomDiscount('${d.id}')" style="background:#f44336;padding:6px 12px;font-size:12px;">Delete</button>
+      </div>
+    `;
+  });
+  listEl.innerHTML = h;
+}
+
+function populatePosDiscountDropdown() {
+  const select = document.getElementById('posDiscountType');
+  if (!select) return;
+
+  const currentVal = select.value;
+  let h = `
+    <option value="NONE" data-pct="0">No Discount (0%)</option>
+    <option value="SENIOR" data-pct="20">Senior Citizen (20%)</option>
+    <option value="PWD" data-pct="20">PWD (20%)</option>
+  `;
+
+  discounts.forEach(d => {
+    h += `<option value="${d.name}" data-pct="${d.percentage}">${d.name} (${d.percentage}%)</option>`;
+  });
+
+  select.innerHTML = h;
+  if (currentVal) select.value = currentVal;
+  renderPosCart();
+}
 
 function renderPosCategoryPills() {
   const cats = ['ALL', ...new Set(products.map(p => p.category || 'Other'))];
@@ -682,6 +873,34 @@ window.posToggleBoba = (id) => {
   renderPosCart();
 };
 
+window.toggleCashInput = () => {
+  const method = document.getElementById('posPayment').value;
+  const cashBox = document.getElementById('cashCalcSection');
+  if (method === 'Cash') {
+    cashBox.style.display = 'block';
+    calculateChange();
+  } else {
+    cashBox.style.display = 'none';
+    document.getElementById('posCashTendered').value = '';
+    document.getElementById('posChangeVal').textContent = '0';
+  }
+};
+
+window.calculateChange = () => {
+  const tendered = Number(document.getElementById('posCashTendered')?.value || 0);
+  const changeEl = document.getElementById('posChangeVal');
+  if (!changeEl) return;
+  
+  if (tendered > 0 && currentFinalTotal > 0) {
+    const change = tendered - currentFinalTotal;
+    changeEl.textContent = change >= 0 ? change.toLocaleString() : `(Short ₱${Math.abs(change).toLocaleString()})`;
+    changeEl.style.color = change >= 0 ? '#0066cc' : 'red';
+  } else {
+    changeEl.textContent = '0';
+    changeEl.style.color = '#0066cc';
+  }
+};
+
 function renderPosCart() {
   const list = document.getElementById('posCartList');
   const entries = Object.entries(posCart);
@@ -693,6 +912,8 @@ function renderPosCart() {
     document.getElementById('posDiscVal').textContent = '0';
     document.getElementById('posTot').textContent = '0';
     document.getElementById('posDiscLabel').textContent = '0%';
+    currentFinalTotal = 0;
+    calculateChange();
     return;
   }
 
@@ -721,22 +942,20 @@ function renderPosCart() {
     `;
   });
 
-  const discType = document.getElementById('posDiscountType').value;
-  let discountRate = 0;
-  if (discType === 'SENIOR' || discType === 'PWD') {
-    discountRate = 0.20;
-    document.getElementById('posDiscLabel').textContent = '20%';
-  } else {
-    document.getElementById('posDiscLabel').textContent = '0%';
-  }
-
+  const select = document.getElementById('posDiscountType');
+  const selectedOption = select?.options[select.selectedIndex];
+  const discountRate = Number(selectedOption?.getAttribute('data-pct') || 0) / 100;
+  
+  document.getElementById('posDiscLabel').textContent = `${Math.round(discountRate * 100)}%`;
   const discountAmount = Math.round(subtotal * discountRate);
-  const finalTotal = Math.max(0, subtotal - discountAmount);
+  currentFinalTotal = Math.max(0, subtotal - discountAmount);
 
   list.innerHTML = h;
   document.getElementById('posSub').textContent = subtotal.toLocaleString();
   document.getElementById('posDiscVal').textContent = discountAmount.toLocaleString();
-  document.getElementById('posTot').textContent = finalTotal.toLocaleString();
+  document.getElementById('posTot').textContent = currentFinalTotal.toLocaleString();
+  
+  calculateChange();
 }
 
 async function getNextPosOrderNumber() {
@@ -772,10 +991,20 @@ window.submitPosOrder = async () => {
     return alert('Please select items before submitting.');
   }
 
-  const discType = document.getElementById('posDiscountType').value;
-  const discountRate = (discType === 'SENIOR' || discType === 'PWD') ? 0.20 : 0;
+  const select = document.getElementById('posDiscountType');
+  const selectedOption = select?.options[select.selectedIndex];
+  const discType = select?.value || 'NONE';
+  const discountRate = Number(selectedOption?.getAttribute('data-pct') || 0) / 100;
   const discountAmount = Math.round(subtotal * discountRate);
   const finalTotal = Math.max(0, subtotal - discountAmount);
+  const paymentMethod = document.getElementById('posPayment').value;
+  const cashTendered = Number(document.getElementById('posCashTendered')?.value || 0);
+
+  if (paymentMethod === 'Cash' && cashTendered < finalTotal) {
+    return alert(`Insufficient cash provided. Total is ₱${finalTotal}, but received ₱${cashTendered}.`);
+  }
+
+  const changeGiven = paymentMethod === 'Cash' ? Math.max(0, cashTendered - finalTotal) : 0;
 
   const btn = document.getElementById('posSubmitBtn');
   btn.disabled = true;
@@ -786,7 +1015,6 @@ window.submitPosOrder = async () => {
     const formattedOrderNo = `CK-${String(n).padStart(4, '0')}`;
     const customer = document.getElementById('posCustomer').value.trim() || 'Walk-in';
     const notes = document.getElementById('posNotes').value.trim();
-    const paymentMethod = document.getElementById('posPayment').value;
     const track = `track_rc1.html?order=${formattedOrderNo}`;
 
     const orderData = {
@@ -795,6 +1023,8 @@ window.submitPosOrder = async () => {
       notes: notes,
       items: items,
       paymentMethod: paymentMethod,
+      cashTendered: paymentMethod === 'Cash' ? cashTendered : null,
+      changeGiven: paymentMethod === 'Cash' ? changeGiven : null,
       subtotal: subtotal,
       discountType: discType,
       discountAmount: discountAmount,
@@ -805,13 +1035,19 @@ window.submitPosOrder = async () => {
     };
 
     await setDoc(doc(db, 'orders', formattedOrderNo), orderData);
-    alert(`Order ${formattedOrderNo} charged and sent to kitchen!`);
+    
+    if (paymentMethod === 'Cash') {
+      alert(`Order ${formattedOrderNo} charged successfully!\nChange to return: ₱${changeGiven}`);
+    } else {
+      alert(`Order ${formattedOrderNo} charged and sent to kitchen!`);
+    }
 
     posCart = {};
     posBobaMap = {};
     document.getElementById('posCustomer').value = 'Walk-in';
     document.getElementById('posNotes').value = '';
     document.getElementById('posDiscountType').value = 'NONE';
+    document.getElementById('posCashTendered').value = '';
     renderPosCart();
   } catch (err) {
     alert('Failed to submit order: ' + err.message);
@@ -887,11 +1123,16 @@ window.renderPosHistory = () => {
           Customer: <b>${o.customerName || 'Walk-in'}</b> | Payment: <b>${o.paymentMethod || 'N/A'}</b>
         </div>
         <div class="items" style="margin:6px 0;font-size:13px;">${itemsHtml(o.items)}</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;flex-wrap:wrap;">
           <span>Subtotal: ₱${o.subtotal || o.total || 0}</span>
           <span>Discount: ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
           <b>Total: ₱${o.total || 0}</b>
         </div>
+        ${o.paymentMethod === 'Cash' && o.cashTendered ? `
+          <div style="font-size:12px;color:#0066cc;margin-top:4px;">
+            Cash Tendered: ₱${o.cashTendered} | Change: ₱${o.changeGiven || 0}
+          </div>
+        ` : ''}
         ${o.voidReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Void Reason: ${o.voidReason}</div>` : ''}
         ${o.cancelReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
         ${o.refundReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Refund Reason: ${o.refundReason}</div>` : ''}
