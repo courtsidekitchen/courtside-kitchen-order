@@ -38,9 +38,6 @@ h1{margin:0;font-size:24px}
 button{padding:10px 16px;background:#0066cc;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px}
 button:hover{background:#0052a3}
 input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:6px;font-size:14px}
-.card button{width:100%;padding:10px;margin:4px 0;font-size:13px;font-weight:bold}
-.button-group{display:flex;flex-direction:column;gap:4px}
-.card .button-group button{margin:0}
 
 /* POS Screen Styles */
 .pos-layout{display:grid;grid-template-columns:1.6fr 1.2fr;gap:14px}
@@ -74,7 +71,6 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   .header-actions{width:100%}
   .header-actions button{flex:1}
   .metric{min-width:100%}
-  .card button{padding:12px;font-size:14px}
 }
 </style>
 </head>
@@ -508,7 +504,6 @@ window.tab=id=>{
 };
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
-window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
@@ -538,14 +533,7 @@ function card(id, o = {}) {
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total}<br>
       ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:green;">Discount: ${o.discountType} (-₱${o.discountAmount||0})</small><br>` : ''}
-      ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : `
-        <div class='button-group'>
-          ${rawStatus !== 'PENDING' ? `<button onclick="move('${id}','PENDING')" style="background:#777">⏳ Back to Pending</button>` : ''}
-          ${rawStatus !== 'ORDER_RECEIVED' ? `<button onclick="move('${id}','ORDER_RECEIVED')">✅ Received</button>` : ''}
-          ${rawStatus !== 'PREPARING' ? `<button onclick="move('${id}','PREPARING')" style="background:#ff9800">👨‍🍳 Preparing</button>` : ''}
-          ${rawStatus !== 'COMPLETED' ? `<button onclick="move('${id}','COMPLETED')" style="background:#4caf50">🎉 Complete</button>` : ''}
-          <button onclick="decline('${id}')" style="background:#f44336">❌ Decline</button>
-        </div>`}
+      ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : ''}
     </div>
   `;
 }
@@ -568,7 +556,6 @@ function initDragDrop() {
     });
 
     cardEl.addEventListener('touchstart', (e) => {
-      if (e.target.tagName.toLowerCase() === 'button') return;
       draggedOrderId = cardEl.getAttribute('data-id');
       cardEl.classList.add('dragging');
     }, { passive: true });
