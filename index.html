@@ -34,7 +34,7 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 /* Cart Modal Drawer */
 .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,43,72,0.5);z-index:200;align-items:flex-end;justify-content:center}
 .modal-overlay.active{display:flex}
-.cart-drawer{background:#ffffff;width:100%;max-width:500px;max-height:85vh;border-radius:16px 16px 0 0;padding:18px;display:flex;flex-direction:column;box-shadow:0 -4px 20px rgba(0,0,0,0.15)}
+.cart-drawer{background:#ffffff;width:100%;max-width:500px;max-height:88vh;border-radius:16px 16px 0 0;padding:18px;display:flex;flex-direction:column;box-shadow:0 -4px 20px rgba(0,0,0,0.15)}
 .cart-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:10px}
 .cart-items-box{flex:1;overflow-y:auto;margin-bottom:10px}
 .cart-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9}
@@ -44,7 +44,10 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 .total-line{font-size:18px;font-weight:bold;color:#0f2b48;border-top:2px solid #0f2b48;margin-top:6px;padding-top:6px}
 input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#f8fafc}
 
-/* Live Tracker View (Preserved on Refresh) */
+/* Payment Instructions Box */
+.payment-info-box{background:#f8fafc;border:1px dashed #0f2b48;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#0f2b48;display:none}
+
+/* Live Tracker View */
 #trackerScreen{display:none;max-width:500px;margin:20px auto;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
 .order-num-badge{background:#0f2b48;color:#ffffff;padding:6px 14px;border-radius:20px;display:inline-block;font-weight:bold;font-size:16px;margin-bottom:10px;letter-spacing:1px}
 .pager-badge{background:#d97706;color:#ffffff;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:bold;margin-bottom:12px;display:inline-block}
@@ -79,7 +82,6 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
 </head>
 <body>
 
-<!-- Hidden Area for Audio / Permissions -->
 <div class="app-header">
   <img src="logo.png" alt="Courtside Kitchen" class="brand-logo-header">
   <button id="cartBtn" class="cart-badge-btn" onclick="openCartModal()">
@@ -108,21 +110,30 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
     </div>
 
     <div>
-      <input id="custName" placeholder="Your Name (Required) *">
-      <input id="custPhone" type="tel" placeholder="Mobile Number (09xxxxxxxxx) *">
-      <textarea id="custNotes" placeholder="Special cooking / prep requests..." style="height:40px;"></textarea>
+      <input id="custName" placeholder="Your Name or Table / Order Note *">
+      <textarea id="custNotes" placeholder="Special cooking / prep requests..." style="height:38px;"></textarea>
+
+      <!-- Payment Method Selection -->
+      <label style="font-size:11.5px;font-weight:bold;color:#475569;">Payment Method:</label>
+      <select id="custPaymentMethod" onchange="handlePaymentMethodChange()">
+        <option value="Cash">Cash (Pay at Counter)</option>
+        <option value="GCash">GCash (E-Wallet)</option>
+        <option value="BPI">BPI (Online Transfer)</option>
+      </select>
+
+      <div id="paymentInfoBox" class="payment-info-box"></div>
 
       <div class="summary-line"><span>Subtotal:</span><span>₱<span id="cartSub">0</span></span></div>
       <div class="summary-line total-line"><span>Total:</span><span>₱<span id="cartTot">0</span></span></div>
 
-      <button id="placeOrderBtn" onclick="submitCustomerOrder()" style="width:100%;background:#0f2b48;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;">
-        🚀 Place Order
+      <button id="placeOrderBtn" onclick="submitCustomerOrder()" style="width:100%;background:#0f2b48;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        🚀 Confirm & Place Order
       </button>
     </div>
   </div>
 </div>
 
-<!-- Live Order Tracker Screen (Restores automatically upon refresh) -->
+<!-- Live Order Tracker Screen -->
 <div id="trackerScreen">
   <img src="logo.png" alt="Courtside Kitchen" class="brand-logo-header" style="height:60px;margin-bottom:8px;"><br>
   <div id="trackerOrderBadge" class="order-num-badge">CK-0000</div><br>
@@ -144,7 +155,7 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
     <div style="font-weight:bold;margin-bottom:6px;color:#0f2b48;">Order Summary</div>
     <div id="trackerItemsContainer"></div>
     <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:15px;color:#0f2b48;border-top:2px solid #e2e8f0;padding-top:6px;margin-top:6px;">
-      <span>Total Paid:</span>
+      <span>Total:</span>
       <span id="trackerTotal">₱0</span>
     </div>
   </div>
@@ -168,6 +179,8 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
+const STORE_WHATSAPP_NUMBER = '639171234567';
+
 const ADDON_DEFS = {
   fries: { name: 'Plain fries', price: 50 },
   rice: { name: 'Extra Rice', price: 35 },
@@ -186,15 +199,14 @@ const PREFERRED_CAT_ORDER = [
 ];
 
 let products = [];
-let customerCart = {}; // ProductId -> Qty
-let itemAddons = {};   // ProductId -> { addonKey: true }
+let customerCart = {};
+let itemAddons = {};
 let selectedCategory = 'ALL';
 let activeOrderId = null;
 let trackerUnsubscribe = null;
 let alarmInterval = null;
 let currentAlarmAudio = null;
 
-// Check URL param or local storage for persistent order memory
 const urlParams = new URLSearchParams(window.location.search);
 const orderParam = urlParams.get('order') || urlParams.get('id');
 const storedOrderId = localStorage.getItem('ck_active_order_id');
@@ -343,11 +355,31 @@ function updateCartBadge() {
 
 window.openCartModal = () => {
   renderCartModal();
+  handlePaymentMethodChange();
   document.getElementById('cartModal').classList.add('active');
 };
 
 window.closeCartModal = () => {
   document.getElementById('cartModal').classList.remove('active');
+};
+
+window.handlePaymentMethodChange = () => {
+  const method = document.getElementById('custPaymentMethod').value;
+  const infoBox = document.getElementById('paymentInfoBox');
+  const btn = document.getElementById('placeOrderBtn');
+
+  if (method === 'GCash') {
+    infoBox.style.display = 'block';
+    infoBox.innerHTML = '📱 <b>GCash Payment:</b> Please send payment upon counter verification or via WhatsApp confirmation.';
+    btn.style.background = '#0070ba';
+  } else if (method === 'BPI') {
+    infoBox.style.display = 'block';
+    infoBox.innerHTML = '🏦 <b>BPI Online:</b> Please transfer upon counter verification or via WhatsApp confirmation.';
+    btn.style.background = '#b71c1c';
+  } else {
+    infoBox.style.display = 'none';
+    btn.style.background = '#0f2b48';
+  }
 };
 
 function renderCartModal() {
@@ -439,23 +471,25 @@ async function getNextOrderNumber() {
 
 window.submitCustomerOrder = async () => {
   const name = document.getElementById('custName').value.trim();
-  const phone = document.getElementById('custPhone').value.trim();
   const notes = document.getElementById('custNotes').value.trim();
+  const paymentMethod = document.getElementById('custPaymentMethod').value;
 
-  if (!name) return alert('Please enter your name.');
-  if (!phone) return alert('Please enter your phone number.');
+  if (!name) return alert('Please enter your name or table note.');
   if (!Object.keys(customerCart).length) return alert('Your cart is empty.');
 
   const items = [];
   let subtotal = 0;
+  let waItemsText = '';
 
   Object.entries(customerCart).forEach(([id, qty]) => {
     if (id.startsWith('addon_')) {
       const addonKey = id.replace('addon_', '');
       const addon = ADDON_DEFS[addonKey];
       if (!addon) return;
-      subtotal += addon.price * qty;
+      const lineCost = addon.price * qty;
+      subtotal += lineCost;
       items.push({ name: addon.name, qty: qty, price: addon.price, addons: [] });
+      waItemsText += `• ${qty}x ${addon.name} - ₱${lineCost}\n`;
       return;
     }
 
@@ -472,8 +506,12 @@ window.submitCustomerOrder = async () => {
       }
     });
 
-    subtotal += (p.price + addonCost) * qty;
+    const lineCost = (p.price + addonCost) * qty;
+    subtotal += lineCost;
     items.push({ name: p.name, qty: qty, price: p.price, addons: attachedAddons });
+    
+    const addonsStr = attachedAddons.length ? ` (+${attachedAddons.join(', ')})` : '';
+    waItemsText += `• ${qty}x ${p.name}${addonsStr} - ₱${lineCost}\n`;
   });
 
   const btn = document.getElementById('placeOrderBtn');
@@ -488,11 +526,10 @@ window.submitCustomerOrder = async () => {
     const orderData = {
       orderNumber: formattedOrderNo,
       customerName: name,
-      customerPhone: phone,
       pagerNumber: 'NONE',
       notes: notes,
       items: items,
-      paymentMethod: 'Online / Counter',
+      paymentMethod: paymentMethod,
       subtotal: subtotal,
       total: subtotal,
       status: 'PENDING',
@@ -502,19 +539,34 @@ window.submitCustomerOrder = async () => {
 
     await setDoc(doc(db, 'orders', formattedOrderNo), orderData);
 
-    // Save Active Order Memory in browser LocalStorage
     localStorage.setItem('ck_active_order_id', formattedOrderNo);
     closeCartModal();
     customerCart = {};
     itemAddons = {};
     updateCartBadge();
 
+    // Prepare WhatsApp Message
+    const waMessage = 
+      `*🛒 COURTSIDE KITCHEN ORDER*\n` +
+      `*Order #:* ${formattedOrderNo}\n` +
+      `*Customer:* ${name}\n` +
+      `*Payment:* ${paymentMethod}\n` +
+      (notes ? `*Notes:* ${notes}\n` : '') +
+      `--------------------------\n` +
+      waItemsText +
+      `--------------------------\n` +
+      `*TOTAL: ₱${subtotal.toLocaleString()}*\n\n` +
+      `📍 Track live status:\n${window.location.origin}/track_rc1.html?order=${formattedOrderNo}`;
+
+    const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
+    window.open(waUrl, '_blank');
+
     showLiveTracker(formattedOrderNo);
   } catch (e) {
     alert('Error submitting order: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = '🚀 Place Order';
+    btn.textContent = '🚀 Confirm & Place Order';
   }
 };
 
@@ -546,7 +598,6 @@ function showLiveTracker(orderId) {
     const data = snap.data();
     const rawStatus = (data.status || 'PENDING').toString().toUpperCase();
 
-    // Pager display
     const rawPager = (data.pagerNumber || '').trim();
     const pagerBadge = document.getElementById('trackerPagerBadge');
     if (rawPager && rawPager !== 'NONE') {
@@ -556,7 +607,6 @@ function showLiveTracker(orderId) {
       pagerBadge.style.display = 'none';
     }
 
-    // Render items breakdown
     let itemsHtml = '';
     (data.items || []).forEach(i => {
       const name = typeof i === 'string' ? i : i.name;
