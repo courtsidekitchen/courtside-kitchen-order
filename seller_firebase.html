@@ -110,10 +110,10 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
 
 /* Scrollable Views */
 .scroll-view{height:100%;overflow-y:auto;padding-right:4px}
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}
-.metric-card{background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0}
-.metric-card span{display:block;font-size:12px;color:#64748b;font-weight:bold}
-.metric-card b{display:block;font-size:18px;margin-top:4px;color:#0f2b48}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin:10px 0}
+.metric-card{background:#ffffff;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0}
+.metric-card span{display:block;font-size:11px;color:#64748b;font-weight:bold}
+.metric-card b{display:block;font-size:17px;margin-top:4px;color:#0f2b48}
 .filter-card{background:#ffffff;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
 /* Reports Center Styles */
@@ -248,7 +248,7 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
                 </select>
               </div>
               <div>
-                <label style="font-size:10.5px;color:#64748b;font-weight:bold;">Discount:</label>
+                <label style="font-size:10.5px;color:#64748b;font-weight:bold;">Discount/Promo:</label>
                 <select id="posDiscountType" onchange="renderPosCart()" style="font-size:11.5px;padding:4px 5px;"></select>
               </div>
               <div>
@@ -265,9 +265,9 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
 
           <!-- Bottom Calculation & Action Area -->
           <div class="ticket-footer-section">
-            <div class="pos-summary-line"><span>Subtotal:</span><span>₱<span id="posSub">0</span></span></div>
-            <div class="pos-summary-line" style="color:#0f2b48;"><span>Discount (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
-            <div class="pos-summary-line pos-total-line"><span>Total:</span><span>₱<span id="posTot">0</span></span></div>
+            <div class="pos-summary-line"><span>Gross Subtotal:</span><span>₱<span id="posSub">0</span></span></div>
+            <div class="pos-summary-line" style="color:#0f2b48;"><span>Discount / Promo (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
+            <div class="pos-summary-line pos-total-line"><span>Net Total:</span><span>₱<span id="posTot">0</span></span></div>
 
             <div id="cashCalcSection" style="margin-top:3px;background:#f8fafc;padding:5px 8px;border-radius:6px;border:1px solid #e2e8f0;">
               <div style="display:flex;gap:6px;align-items:center;">
@@ -317,22 +317,25 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
             </div>
           </div>
 
+          <!-- Financial Breakdown Metric Cards -->
           <div class="metrics-grid">
-            <div class="metric-card"><span>TOTAL REVENUE</span><b style="color:#0f2b48;">₱<span id="rev">0</span></b></div>
-            <div class="metric-card"><span>💵 CASH REVENUE</span><b style="color:#0f2b48;">₱<span id="revCash">0</span></b></div>
-            <div class="metric-card"><span>📱 GCASH REVENUE</span><b style="color:#0f2b48;">₱<span id="revGcash">0</span></b></div>
-            <div class="metric-card"><span>🏦 BPI REVENUE</span><b style="color:#0f2b48;">₱<span id="revBpi">0</span></b></div>
+            <div class="metric-card"><span>GROSS SALES</span><b style="color:#0f2b48;">₱<span id="revGross">0</span></b></div>
+            <div class="metric-card"><span>DISCOUNTS & PROMOS</span><b style="color:#dc2626;">-₱<span id="revDisc">0</span></b></div>
+            <div class="metric-card" style="border:1.5px solid #0f2b48;background:#f8fafc;"><span>NET SALES (REVENUE)</span><b style="color:#0f2b48;font-size:19px;">₱<span id="rev">0</span></b></div>
+            <div class="metric-card"><span>💵 CASH COLLECTED</span><b style="color:#0f2b48;">₱<span id="revCash">0</span></b></div>
+            <div class="metric-card"><span>📱 GCASH COLLECTED</span><b style="color:#0f2b48;">₱<span id="revGcash">0</span></b></div>
+            <div class="metric-card"><span>🏦 BPI COLLECTED</span><b style="color:#0f2b48;">₱<span id="revBpi">0</span></b></div>
           </div>
 
           <div class="reports-layout">
             <div class="report-menu">
               <div class="report-menu-item active" onclick="selectReportType('summary', this)">Sales summary <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('discounts', this)">Discounts & Promos audit <span>➔</span></div>
               <div class="report-menu-item" onclick="selectReportType('items', this)">Sales by item <span>➔</span></div>
               <div class="report-menu-item" onclick="selectReportType('category', this)">Sales by category <span>➔</span></div>
               <div class="report-menu-item" onclick="selectReportType('payment', this)">Sales by payment type <span>➔</span></div>
               <div class="report-menu-item" onclick="selectReportType('receipts', this)">Receipts log <span>➔</span></div>
               <div class="report-menu-item" onclick="selectReportType('modifiers', this)">Sales by modifier (Add-ons) <span>➔</span></div>
-              <div class="report-menu-item" onclick="selectReportType('discounts', this)">Discounts & Promos <span>➔</span></div>
             </div>
 
             <div class="report-content">
@@ -384,16 +387,31 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
         </div>
 
         <div id="pinUnlockedPanelDiscounts" style="display:none;background:#ffffff;padding:14px;border-radius:8px;border:1px solid #e2e8f0;">
-          <h3 style="margin:0 0 8px 0;color:#0f2b48;font-size:15px;">🏷️ Custom Discounts & Promotions</h3>
-          <div style="background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:10px;">
-            <b style="font-size:13px;">Add New Promotion Rule</b>
-            <input id="newPromoName" placeholder="Promotion Name (e.g. Student Disc)">
-            <input id="newPromoPct" type="number" min="1" max="100" placeholder="Discount Percentage % (e.g. 15)">
-            <input id="newPromoDesc" placeholder="Description / Conditions">
-            <button onclick="saveCustomDiscount()" style="background:#0f2b48;color:#fff;border:none;padding:8px;border-radius:6px;font-weight:bold;margin-top:4px;width:100%;cursor:pointer;">💾 Save Promotion Rule</button>
+          <h3 style="margin:0 0 8px 0;color:#0f2b48;font-size:15px;">🏷️ Discounts & Promotional Campaigns Setup</h3>
+          
+          <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:12px;">
+            <b style="font-size:13px;color:#0f2b48;">Create New Discount / Promotion Rule</b>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+              <div>
+                <label style="font-size:11px;font-weight:bold;color:#475569;">Rule Type:</label>
+                <select id="newPromoType" style="margin:0;">
+                  <option value="PROMO">Promotional / Campaign (Promo)</option>
+                  <option value="DISCOUNT">Statutory / Privilege Discount (Discount)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:bold;color:#475569;">Discount Percentage %:</label>
+                <input id="newPromoPct" type="number" min="1" max="100" placeholder="e.g. 15" style="margin:0;">
+              </div>
+            </div>
+            <input id="newPromoName" placeholder="Rule Name (e.g. Student Discount / Summer Promo)" style="margin-top:6px;">
+            <input id="newPromoDesc" placeholder="Conditions / Remarks (e.g. Valid on Weekdays with ID)">
+            <button onclick="saveCustomDiscount()" style="background:#0f2b48;color:#fff;border:none;padding:9px;border-radius:6px;font-weight:bold;margin-top:6px;width:100%;cursor:pointer;">💾 Save Rule</button>
           </div>
-          <b style="font-size:13px;">Active Promotion List</b>
+
+          <b style="font-size:13px;color:#0f2b48;">Active Rules Breakdown</b>
           <div id="customDiscountsList" style="margin-top:8px;"></div>
+          
           <div style="margin-top:16px;border-top:2px solid #f1f5f9;padding-top:10px;">
             <b style="font-size:13px;">🔑 Change Manager PIN (Firebase Synced)</b>
             <div style="display:flex;gap:6px;margin-top:4px;">
@@ -735,19 +753,27 @@ window.handleFilterChange = () => {
 
 window.calculateRevenue = () => {
   const orders = getFilteredOrders();
-  let totalRev = 0, cashRev = 0, gcashRev = 0, bpiRev = 0;
+  let grossSales = 0, totalDisc = 0, netSales = 0;
+  let cashRev = 0, gcashRev = 0, bpiRev = 0;
 
   orders.forEach(o => {
-    const amount = Number(o.total || o.totalPrice || 0);
+    const sub = Number(o.subtotal || o.total || 0);
+    const disc = Number(o.discountAmount || 0);
+    const net = Number(o.total || (sub - disc) || 0);
     const payment = (o.paymentMethod || 'Cash').toString().toUpperCase();
 
-    totalRev += amount;
-    if (payment === 'GCASH') gcashRev += amount;
-    else if (payment === 'BPI') bpiRev += amount;
-    else cashRev += amount;
+    grossSales += sub;
+    totalDisc += disc;
+    netSales += net;
+
+    if (payment === 'GCASH') gcashRev += net;
+    else if (payment === 'BPI') bpiRev += net;
+    else cashRev += net;
   });
 
-  document.getElementById('rev').textContent = totalRev.toLocaleString();
+  document.getElementById('revGross').textContent = grossSales.toLocaleString();
+  document.getElementById('revDisc').textContent = totalDisc.toLocaleString();
+  document.getElementById('rev').textContent = netSales.toLocaleString();
   document.getElementById('revCash').textContent = cashRev.toLocaleString();
   document.getElementById('revGcash').textContent = gcashRev.toLocaleString();
   document.getElementById('revBpi').textContent = bpiRev.toLocaleString();
@@ -768,23 +794,82 @@ function renderActiveReport() {
   let h = '';
 
   if (currentReportType === 'summary') {
-    let gross = 0, totalDisc = 0, net = 0;
+    let gross = 0, statutoryDisc = 0, promoDisc = 0, net = 0;
     orders.forEach(o => {
-      gross += Number(o.subtotal || o.total || 0);
-      totalDisc += Number(o.discountAmount || 0);
-      net += Number(o.total || 0);
+      const sub = Number(o.subtotal || o.total || 0);
+      const discAmt = Number(o.discountAmount || 0);
+      const netAmt = Number(o.total || (sub - discAmt) || 0);
+
+      gross += sub;
+      net += netAmt;
+
+      const category = (o.discountCategory || '').toUpperCase();
+      if (category === 'PROMO') {
+        promoDisc += discAmt;
+      } else {
+        statutoryDisc += discAmt;
+      }
     });
+
+    const totalDeductions = statutoryDisc + promoDisc;
     const avgTicket = orders.length ? Math.round(net / orders.length) : 0;
 
     h = `
-      <h3 style="margin-top:0;color:#0f2b48;">Sales Summary</h3>
+      <h3 style="margin-top:0;color:#0f2b48;">Sales Summary Report</h3>
       <table class="report-table">
-        <tr><th>Metric</th><th style="text-align:right;">Value</th></tr>
-        <tr><td>Gross Sales</td><td style="text-align:right;font-weight:bold;">₱${gross.toLocaleString()}</td></tr>
-        <tr><td>Discounts Applied</td><td style="text-align:right;color:#dc2626;">-₱${totalDisc.toLocaleString()}</td></tr>
-        <tr><td>Net Sales (Revenue)</td><td style="text-align:right;font-weight:bold;color:#0f2b48;">₱${net.toLocaleString()}</td></tr>
+        <tr><th>Financial Metric</th><th style="text-align:right;">Amount (PHP)</th></tr>
+        <tr style="background:#f8fafc;font-weight:bold;">
+          <td><b>1. Gross Sales (Subtotal)</b></td>
+          <td style="text-align:right;color:#0f2b48;">₱${gross.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td>&nbsp;&nbsp;&nbsp;• Statutory Discounts (Senior / PWD / Student)</td>
+          <td style="text-align:right;color:#dc2626;">-₱${statutoryDisc.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td>&nbsp;&nbsp;&nbsp;• Promotional Campaigns & Promos</td>
+          <td style="text-align:right;color:#dc2626;">-₱${promoDisc.toLocaleString()}</td>
+        </tr>
+        <tr style="font-weight:bold;">
+          <td><b>2. Total Discounts & Promos Deducted</b></td>
+          <td style="text-align:right;color:#dc2626;">-₱${totalDeductions.toLocaleString()}</td>
+        </tr>
+        <tr style="background:#e8eff7;font-size:14px;font-weight:900;">
+          <td><b>3. Net Sales (Total Revenue Collected)</b></td>
+          <td style="text-align:right;color:#0f2b48;">₱${net.toLocaleString()}</td>
+        </tr>
         <tr><td>Completed Orders (Tickets)</td><td style="text-align:right;">${orders.length}</td></tr>
-        <tr><td>Average Ticket Size</td><td style="text-align:right;font-weight:bold;">₱${avgTicket.toLocaleString()}</td></tr>
+        <tr><td>Average Net Ticket Size</td><td style="text-align:right;font-weight:bold;">₱${avgTicket.toLocaleString()}</td></tr>
+      </table>
+    `;
+  } else if (currentReportType === 'discounts') {
+    const discMap = {};
+    orders.forEach(o => {
+      if (o.discountType && o.discountType !== 'NONE' && Number(o.discountAmount) > 0) {
+        const key = o.discountType;
+        const category = o.discountCategory || (['SENIOR', 'PWD'].includes(key) ? 'DISCOUNT' : 'PROMO');
+        if (!discMap[key]) {
+          discMap[key] = { name: key, category: category, count: 0, amount: 0 };
+        }
+        discMap[key].count++;
+        discMap[key].amount += Number(o.discountAmount || 0);
+      }
+    });
+
+    let rows = Object.values(discMap).map(d => `
+      <tr>
+        <td><b>${d.name}</b></td>
+        <td><span style="background:${d.category === 'PROMO' ? '#dbeafe;color:#1e40af' : '#fee2e2;color:#991b1b'};padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">${d.category}</span></td>
+        <td style="text-align:center;">${d.count}</td>
+        <td style="text-align:right;color:#dc2626;font-weight:bold;">-₱${d.amount.toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Discounts vs. Promos Audit Log</h3>
+      <table class="report-table">
+        <tr><th>Rule Name</th><th>Classification</th><th style="text-align:center;">Times Claimed</th><th style="text-align:right;">Total Deducted</th></tr>
+        ${rows || '<tr><td colspan="4" style="text-align:center;color:#888;">No discounts or promotions claimed in this period</td></tr>'}
       </table>
     `;
   } else if (currentReportType === 'items') {
@@ -863,6 +948,8 @@ function renderActiveReport() {
         <td>${parseOrderDate(o.createdAt).toLocaleDateString()}</td>
         <td>${o.customerName || 'Walk-in'}</td>
         <td>${o.paymentMethod || 'Cash'}</td>
+        <td style="text-align:right;">₱${Number(o.subtotal || o.total || 0).toLocaleString()}</td>
+        <td style="text-align:right;color:#dc2626;">-₱${Number(o.discountAmount || 0).toLocaleString()}</td>
         <td style="text-align:right;font-weight:bold;">₱${Number(o.total || 0).toLocaleString()}</td>
       </tr>
     `).join('');
@@ -870,8 +957,8 @@ function renderActiveReport() {
     h = `
       <h3 style="margin-top:0;color:#0f2b48;">Receipts Audit Log</h3>
       <table class="report-table">
-        <tr><th>Ticket #</th><th>Date</th><th>Customer</th><th>Payment</th><th style="text-align:right;">Total</th></tr>
-        ${rows || '<tr><td colspan="5" style="text-align:center;color:#888;">No completed receipts</td></tr>'}
+        <tr><th>Ticket #</th><th>Date</th><th>Customer</th><th>Payment</th><th style="text-align:right;">Gross</th><th style="text-align:right;">Disc/Promo</th><th style="text-align:right;">Net Total</th></tr>
+        ${rows || '<tr><td colspan="7" style="text-align:center;color:#888;">No completed receipts</td></tr>'}
       </table>
     `;
   } else if (currentReportType === 'modifiers') {
@@ -880,7 +967,7 @@ function renderActiveReport() {
       (o.items || []).forEach(i => {
         (i.addons || []).forEach(addonName => {
           const found = Object.values(ADDON_DEFS).find(x => x.name === addonName);
-          const price = found ? found.price : 0;
+          const price = found ? found.price : (addonName.includes('₱5') ? 5 : (addonName.includes('₱30') ? 30 : 0));
           if (!modMap[addonName]) modMap[addonName] = { qty: 0, sales: 0 };
           modMap[addonName].qty += Number(i.qty || 1);
           modMap[addonName].sales += (price * Number(i.qty || 1));
@@ -899,31 +986,10 @@ function renderActiveReport() {
     `).join('');
 
     h = `
-      <h3 style="margin-top:0;color:#0f2b48;">Sales by Modifier (Add-ons)</h3>
+      <h3 style="margin-top:0;color:#0f2b48;">Sales by Modifier (Add-ons & Modifiers)</h3>
       <table class="report-table">
         <tr><th>Modifier / Add-on</th><th style="text-align:center;">Quantity Sold</th><th style="text-align:right;">Total Sales</th></tr>
         ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No modifiers sold</td></tr>'}
-      </table>
-    `;
-  } else if (currentReportType === 'discounts') {
-    const discMap = {};
-    orders.forEach(o => {
-      if (o.discountType && o.discountType !== 'NONE' && Number(o.discountAmount) > 0) {
-        if (!discMap[o.discountType]) discMap[o.discountType] = { count: 0, amount: 0 };
-        discMap[o.discountType].count++;
-        discMap[o.discountType].amount += Number(o.discountAmount || 0);
-      }
-    });
-
-    let rows = Object.entries(discMap).map(([name, data]) => `
-      <tr><td><b>${name}</b></td><td style="text-align:center;">${data.count}</td><td style="text-align:right;color:#dc2626;font-weight:bold;">-₱${data.amount.toLocaleString()}</td></tr>
-    `).join('');
-
-    h = `
-      <h3 style="margin-top:0;color:#0f2b48;">Discounts & Promotions Audit</h3>
-      <table class="report-table">
-        <tr><th>Discount Type</th><th style="text-align:center;">Times Applied</th><th style="text-align:right;">Total Deducted</th></tr>
-        ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No discounts claimed</td></tr>'}
       </table>
     `;
   }
@@ -937,12 +1003,28 @@ window.exportCurrentReportExcel = () => {
 
   if (currentReportType === 'summary') {
     let gross = 0, totalDisc = 0, net = 0;
-    orders.forEach(o => { gross += Number(o.subtotal || o.total || 0); totalDisc += Number(o.discountAmount || 0); net += Number(o.total || 0); });
-    csvRows.push('Metric,Value');
-    csvRows.push(`Gross Sales,${gross}`);
-    csvRows.push(`Discounts Applied,-${totalDisc}`);
-    csvRows.push(`Net Sales,${net}`);
-    csvRows.push(`Order Count,${orders.length}`);
+    orders.forEach(o => { 
+      gross += Number(o.subtotal || o.total || 0); 
+      totalDisc += Number(o.discountAmount || 0); 
+      net += Number(o.total || 0); 
+    });
+    csvRows.push('Financial Metric,Amount (PHP)');
+    csvRows.push(`Gross Sales (Subtotal),${gross}`);
+    csvRows.push(`Discounts & Promos Applied,-${totalDisc}`);
+    csvRows.push(`Net Sales (Total Revenue),${net}`);
+    csvRows.push(`Completed Orders,${orders.length}`);
+  } else if (currentReportType === 'discounts') {
+    csvRows.push('Rule Name,Type,Total Claims,Total Deducted');
+    const discMap = {};
+    orders.forEach(o => {
+      if (o.discountType && o.discountType !== 'NONE') {
+        const k = o.discountType;
+        if (!discMap[k]) discMap[k] = { name: k, type: o.discountCategory || 'DISCOUNT', count: 0, amt: 0 };
+        discMap[k].count++;
+        discMap[k].amt += Number(o.discountAmount || 0);
+      }
+    });
+    Object.values(discMap).forEach(d => csvRows.push(`"${d.name}",${d.type},${d.count},${d.amt}`));
   } else if (currentReportType === 'items') {
     const itemMap = {};
     orders.forEach(o => (o.items || []).forEach(i => {
@@ -956,10 +1038,10 @@ window.exportCurrentReportExcel = () => {
     csvRows.push('Item Name,Quantity Sold,Total Sales');
     Object.entries(itemMap).forEach(([n, d]) => csvRows.push(`"${n}",${d.qty},${d.sales}`));
   } else if (currentReportType === 'receipts') {
-    csvRows.push('Ticket,Date,Customer,Payment Method,Total,DiscountType,DiscountAmount');
-    orders.forEach(o => csvRows.push(`${o.orderNumber || o.id},${parseOrderDate(o.createdAt).toLocaleDateString()},"${o.customerName || 'Walk-in'}",${o.paymentMethod || 'Cash'},${o.total || 0},${o.discountType || 'None'},${o.discountAmount || 0}`));
+    csvRows.push('Ticket,Date,Customer,Payment Method,Gross Subtotal,Discount Type,Discount Category,Discount Amount,Net Total');
+    orders.forEach(o => csvRows.push(`${o.orderNumber || o.id},${parseOrderDate(o.createdAt).toLocaleDateString()},"${o.customerName || 'Walk-in'}",${o.paymentMethod || 'Cash'},${o.subtotal || o.total || 0},${o.discountType || 'None'},${o.discountCategory || 'None'},${o.discountAmount || 0},${o.total || 0}`));
   } else {
-    csvRows.push('Category/Item,Total');
+    csvRows.push('Item/Group,Total');
     orders.forEach(o => csvRows.push(`${o.orderNumber},${o.total}`));
   }
 
@@ -980,7 +1062,7 @@ window.printCurrentReportPDF = () => {
     <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f2b48;padding-bottom:10px;margin-bottom:14px;">
       <div>
         <h2 style="margin:0;color:#0f2b48;">COURTSIDE KITCHEN</h2>
-        <small style="color:#64748b;">Analytics & Sales Report (${filterVal.toUpperCase()})</small>
+        <small style="color:#64748b;">Financial Analytics & Sales Report (${filterVal.toUpperCase()})</small>
       </div>
       <div>Date: ${new Date().toLocaleDateString()}</div>
     </div>
@@ -1103,7 +1185,7 @@ function initLiveListeners() {
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
 window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
-window.exportCsv=()=>{let rows=['Order,Customer,Phone,Pager,Status,Total,PaymentMethod,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.customerPhone||''},${o.pagerNumber||''},${o.status},${o.total},${o.paymentMethod||'Cash'},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+window.exportCsv=()=>{let rows=['Order,Customer,Phone,Pager,Status,GrossSubtotal,DiscountType,DiscountCategory,DiscountAmount,NetTotal,PaymentMethod'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.customerPhone||''},${o.pagerNumber||''},${o.status},${o.subtotal||o.total||0},${o.discountType||'None'},${o.discountCategory||'None'},${o.discountAmount||0},${o.total||0},${o.paymentMethod||'Cash'}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
@@ -1139,7 +1221,7 @@ function card(id, o = {}) {
       ${rawStatus === 'PENDING' ? `<span class="pending-timer" data-created="${o.createdAt}">Pending: ${remain(o.createdAt)}</span><br>` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total} (${o.paymentMethod || 'Cash'})<br>
-      ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:#0f2b48;font-weight:bold;">Discount: ${o.discountType} (-₱${o.discountAmount||0})</small><br>` : ''}
+      ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:#0f2b48;font-weight:bold;">[${o.discountCategory || 'DISC'}] ${o.discountType}: -₱${o.discountAmount||0}</small><br>` : ''}
       ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : ''}
     </div>
   `;
@@ -1266,16 +1348,18 @@ window.updateFirebasePin = async () => {
 };
 
 window.saveCustomDiscount = async () => {
+  const type = document.getElementById('newPromoType').value;
   const name = document.getElementById('newPromoName').value.trim();
   const pct = Number(document.getElementById('newPromoPct').value || 0);
   const desc = document.getElementById('newPromoDesc').value.trim();
 
   if (!name || pct <= 0 || pct > 100) {
-    return alert('Please provide a valid Promotion Name and Percentage (1-100%).');
+    return alert('Please provide a valid Rule Name and Percentage (1-100%).');
   }
 
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   await setDoc(doc(db, 'discounts', id), {
+    type: type, // "DISCOUNT" or "PROMO"
     name: name,
     percentage: pct,
     description: desc,
@@ -1285,16 +1369,16 @@ window.saveCustomDiscount = async () => {
   document.getElementById('newPromoName').value = '';
   document.getElementById('newPromoPct').value = '';
   document.getElementById('newPromoDesc').value = '';
-  alert(`Promotion '${name}' added successfully!`);
+  alert(`Rule '${name}' (${type}) added successfully!`);
 };
 
 window.deleteCustomDiscount = async (id, name) => {
-  if (confirm(`Are you sure you want to permanently delete the promotion "${name || id}"?`)) {
+  if (confirm(`Are you sure you want to permanently delete the rule "${name || id}"?`)) {
     try {
       await deleteDoc(doc(db, 'discounts', id));
-      alert(`Promotion deleted.`);
+      alert(`Rule deleted.`);
     } catch (e) {
-      alert('Error deleting promotion: ' + e.message);
+      alert('Error deleting rule: ' + e.message);
     }
   }
 };
@@ -1304,20 +1388,22 @@ function renderCustomDiscountsList() {
   if (!listEl) return;
   
   if (!discounts.length) {
-    listEl.innerHTML = '<div style="color:#64748b;padding:8px 0;"><i>No custom promotions created yet.</i></div>';
+    listEl.innerHTML = '<div style="color:#64748b;padding:8px 0;"><i>No custom discounts or promotions created yet.</i></div>';
     return;
   }
 
   let h = '';
   discounts.forEach(d => {
+    const isPromo = (d.type || 'PROMO') === 'PROMO';
     h += `
       <div class="discount-card" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <b>${d.name}</b> <span style="color:#0f2b48;font-weight:bold;">(${d.percentage}% OFF)</span><br>
+          <span style="background:${isPromo ? '#dbeafe;color:#1e40af' : '#fee2e2;color:#991b1b'};padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;">${isPromo ? 'PROMO' : 'DISCOUNT'}</span>
+          <b style="font-size:13px;margin-left:4px;">${d.name}</b> <span style="color:#0f2b48;font-weight:bold;">(${d.percentage}% OFF)</span><br>
           <small style="color:#64748b;">${d.description || 'No special conditions'}</small>
         </div>
         <button onclick="deleteCustomDiscount('${d.id}', '${d.name.replace(/'/g, "\\'")}')" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
-          🗑️ Delete Promo
+          🗑️ Delete
         </button>
       </div>
     `;
@@ -1331,13 +1417,14 @@ function populatePosDiscountDropdown() {
 
   const currentVal = select.value;
   let h = `
-    <option value="NONE" data-pct="0">No Discount (0%)</option>
-    <option value="SENIOR" data-pct="20">Senior Citizen (20%)</option>
-    <option value="PWD" data-pct="20">PWD (20%)</option>
+    <option value="NONE" data-pct="0" data-cat="NONE">No Discount (0%)</option>
+    <option value="SENIOR" data-pct="20" data-cat="DISCOUNT">Senior Citizen (20% Disc)</option>
+    <option value="PWD" data-pct="20" data-cat="DISCOUNT">PWD (20% Disc)</option>
   `;
 
   discounts.forEach(d => {
-    h += `<option value="${d.name}" data-pct="${d.percentage}">${d.name} (${d.percentage}%)</option>`;
+    const category = d.type || 'PROMO';
+    h += `<option value="${d.name}" data-pct="${d.percentage}" data-cat="${category}">[${category}] ${d.name} (${d.percentage}%)</option>`;
   });
 
   select.innerHTML = h;
@@ -1622,12 +1709,12 @@ window.printThermalReceipt = (o) => {
     <div><b>ITEMS & ADD-ONS:</b></div>
     ${itemsLines}
     <div class="receipt-divider"></div>
-    <div class="receipt-row"><span>Subtotal:</span><span>₱${o.subtotal || o.total || 0}</span></div>
+    <div class="receipt-row"><span>Gross Subtotal:</span><span>₱${o.subtotal || o.total || 0}</span></div>
     ${o.discountType && o.discountType !== 'NONE' ? `
-      <div class="receipt-row"><span>Disc (${o.discountType}):</span><span>-₱${o.discountAmount || 0}</span></div>
+      <div class="receipt-row"><span>[${o.discountCategory || 'DISC'}] ${o.discountType}:</span><span>-₱${o.discountAmount || 0}</span></div>
     ` : ''}
     <div class="receipt-row" style="font-size:13px;font-weight:bold;margin-top:4px;">
-      <span>TOTAL:</span><span>₱${o.total || 0}</span>
+      <span>NET TOTAL:</span><span>₱${o.total || 0}</span>
     </div>
     ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
       <div class="receipt-row"><span>Cash:</span><span>₱${o.cashTendered}</span></div>
@@ -1735,6 +1822,7 @@ async function processOrderSubmission(isUnpaid = false, overrideName = null, ove
   const select = document.getElementById('posDiscountType');
   const selectedOption = select?.options[select.selectedIndex];
   const discType = select?.value || 'NONE';
+  const discCat = selectedOption?.getAttribute('data-cat') || 'NONE';
   const discountRate = Number(selectedOption?.getAttribute('data-pct') || 0) / 100;
   const discountAmount = Math.round(subtotal * discountRate);
   const finalTotal = Math.max(0, subtotal - discountAmount);
@@ -1772,6 +1860,7 @@ async function processOrderSubmission(isUnpaid = false, overrideName = null, ove
       changeGiven: (!isUnpaid && paymentMethod === 'Cash') ? changeGiven : null,
       subtotal: subtotal,
       discountType: discType,
+      discountCategory: discCat,
       discountAmount: discountAmount,
       total: finalTotal,
       status: 'ORDER_RECEIVED',
@@ -1899,9 +1988,9 @@ window.renderPosHistory = () => {
         </div>
         <div class="items" style="font-size:12px;padding:6px;">${itemsHtml(o.items)}</div>
         <div style="display:flex;justify-content:space-between;font-size:12.5px;">
-          <span>Subtotal: ₱${o.subtotal || o.total || 0}</span>
-          <span>Discount: ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
-          <b style="color:#0f2b48;">Total: ₱${o.total || 0}</b>
+          <span>Gross: ₱${o.subtotal || o.total || 0}</span>
+          <span>[${o.discountCategory || 'DISC'}] ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
+          <b style="color:#0f2b48;">Net Total: ₱${o.total || 0}</b>
         </div>
         ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
           <div style="font-size:11.5px;color:#0f2b48;margin-top:3px;">
