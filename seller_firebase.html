@@ -7,17 +7,17 @@
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#ececec;margin:0;padding:12px;color:#333}
-.login-container{display:none;max-width:400px;margin:50px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);text-align:center}
-.login-container h2{margin-top:0;color:#0066cc}
+.login-container{display:none;max-width:400px;margin:50px auto;background:#fff;padding:25px 20px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.1);text-align:center}
+.login-logo{height:100px;max-width:100%;object-fit:contain;margin-bottom:10px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.08))}
 .login-container input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:6px;font-size:15px}
 .login-container button{width:100%;padding:12px;background:#0066cc;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
 .login-container button:hover{background:#0052a3}
 .error-msg{color:red;font-size:14px;margin-top:10px;display:none}
 
 #dashboard{display:none}
-.header-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-h1{margin:0;font-size:24px}
-.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.header-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;padding:4px 0}
+.brand-logo-header{height:130px;max-height:140px;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.12));transition:transform 0.2s ease}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tabs button{padding:10px 16px;margin:4px 4px 4px 0;font-size:14px;font-weight:bold}
 .tab{display:none}
 .active{display:block}
@@ -29,9 +29,10 @@ h1{margin:0;font-size:24px}
 .card{background:#fff;padding:14px;border-radius:8px;margin:10px 0;border:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,0.05);cursor:grab;user-select:none;touch-action:none}
 .card:active{cursor:grabbing}
 .card.dragging{opacity:0.4;border:2px dashed #0066cc}
-.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}
-.metric{flex:1;min-width:200px;padding:12px 16px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:16px;font-weight:bold}
-.filter-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:stretch}
+.metric{flex:1;min-width:160px;padding:12px 14px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:15px}
+.metric b{display:block;font-size:18px;margin-top:4px}
+.filter-box{flex:2;min-width:280px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
 .filter-box select, .filter-box input{padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;width:auto}
 .search-card{background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:12px}
 .items{background:#f8f8f8;padding:10px;border-radius:6px;margin:10px 0;font-size:14px}
@@ -72,6 +73,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   body{padding:8px}
   .board{grid-template-columns:1fr}
   .header-bar{flex-direction:column;align-items:flex-start}
+  .brand-logo-header{height:95px}
   .header-actions{width:100%}
   .header-actions button{flex:1}
   .metric{min-width:100%}
@@ -81,8 +83,8 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 <body>
 
 <div id="loginBox" class="login-container">
-  <h2>Courtside Kitchen</h2>
-  <p style="color:#666;font-size:14px;">Seller Portal Login</p>
+  <img src="logo.png" alt="Courtside Kitchen" class="login-logo"><br>
+  <p style="color:#666;font-size:14px;margin-top:0;">Seller Portal Login</p>
   <input id="loginEmail" type="email" placeholder="Email Address">
   <input id="loginPassword" type="password" placeholder="Password">
   <button id="loginBtn" onclick="login()">🔒 Log In</button>
@@ -91,7 +93,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 
 <div id="dashboard">
 <div class="header-bar">
-  <h1>Courtside Kitchen</h1>
+  <img src="logo.png" alt="Courtside Kitchen" class="brand-logo-header">
   <div class="header-actions">
     <button id="enableNotifBtn" onclick="requestNotificationPermission()" style="background:#ff9800;">🔔 Allow Lock Alert</button>
     <button id="toggleAudioBtn" onclick="testSound()" style="background:#4caf50;">🔊 Sound Test</button>
@@ -99,8 +101,24 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   </div>
 </div>
 
+<!-- Dynamic Revenue Metrics & Payment Breakdown -->
 <div class="metrics">
-  <div class="metric">Revenue: ₱<span id="rev">0</span></div>
+  <div class="metric">
+    Total Revenue
+    <b style="color:#0066cc;">₱<span id="rev">0</span></b>
+  </div>
+  <div class="metric">
+    💵 Cash
+    <b style="color:#2e7d32;">₱<span id="revCash">0</span></b>
+  </div>
+  <div class="metric">
+    📱 GCash
+    <b style="color:#0070ba;">₱<span id="revGcash">0</span></b>
+  </div>
+  <div class="metric">
+    🏦 BPI
+    <b style="color:#b71c1c;">₱<span id="revBpi">0</span></b>
+  </div>
   <div class="filter-box">
     <label for="revFilter"><b>Time Range:</b></label>
     <select id="revFilter" onchange="handleFilterChange()">
@@ -226,10 +244,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
     <!-- Manager Panel (Shown after PIN unlock) -->
     <div id="pinUnlockedPanel" style="display:none;">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="margin:0;">🏷️ Custom Discounts & Promotions</h3>
-          <button onclick="lockManagerPin()" style="background:#777;padding:6px 12px;font-size:12px;">🔒 Re-lock</button>
-        </div>
+        <h3 style="margin:0;">🏷️ Custom Discounts & Promotions</h3>
         
         <div style="background:#f9f9f9;padding:12px;border-radius:8px;margin:12px 0;border:1px solid #eee;">
           <b>Add New Promotion Rule</b>
@@ -444,6 +459,9 @@ window.calculateRevenue = () => {
   const filterVal = document.getElementById('revFilter').value;
   const now = new Date();
   let totalRev = 0;
+  let cashRev = 0;
+  let gcashRev = 0;
+  let bpiRev = 0;
 
   hist.forEach(o => {
     const statusUpper = (o.status || '').toString().toUpperCase();
@@ -451,17 +469,19 @@ window.calculateRevenue = () => {
 
     const oDate = parseOrderDate(o.createdAt);
     const amount = Number(o.total || o.totalPrice || 0);
+    const payment = (o.paymentMethod || 'Cash').toString().toUpperCase();
 
+    let inRange = false;
     if (filterVal === 'daily') {
-      if (oDate.toDateString() === now.toDateString()) totalRev += amount;
+      if (oDate.toDateString() === now.toDateString()) inRange = true;
     } else if (filterVal === 'weekly') {
       const oneWeekAgo = new Date(now);
       oneWeekAgo.setDate(now.getDate() - 7);
-      if (oDate >= oneWeekAgo && oDate <= now) totalRev += amount;
+      if (oDate >= oneWeekAgo && oDate <= now) inRange = true;
     } else if (filterVal === 'monthly') {
-      if (oDate.getMonth() === now.getMonth() && oDate.getFullYear() === now.getFullYear()) totalRev += amount;
+      if (oDate.getMonth() === now.getMonth() && oDate.getFullYear() === now.getFullYear()) inRange = true;
     } else if (filterVal === 'all') {
-      totalRev += amount;
+      inRange = true;
     } else if (filterVal === 'custom') {
       const startInput = document.getElementById('startDate').value;
       const endInput = document.getElementById('endDate').value;
@@ -470,12 +490,26 @@ window.calculateRevenue = () => {
         start.setHours(0,0,0,0);
         const end = new Date(endInput);
         end.setHours(23,59,59,999);
-        if (oDate >= start && oDate <= end) totalRev += amount;
+        if (oDate >= start && oDate <= end) inRange = true;
+      }
+    }
+
+    if (inRange) {
+      totalRev += amount;
+      if (payment === 'GCASH') {
+        gcashRev += amount;
+      } else if (payment === 'BPI') {
+        bpiRev += amount;
+      } else {
+        cashRev += amount;
       }
     }
   });
 
   document.getElementById('rev').textContent = totalRev.toLocaleString();
+  document.getElementById('revCash').textContent = cashRev.toLocaleString();
+  document.getElementById('revGcash').textContent = gcashRev.toLocaleString();
+  document.getElementById('revBpi').textContent = bpiRev.toLocaleString();
 };
 
 window.renderOrdersBoard = () => {
@@ -512,7 +546,6 @@ window.renderOrdersBoard = () => {
 };
 
 function initLiveListeners() {
-  // Sync Firebase Manager PIN
   onSnapshot(doc(db, 'settings', 'security'), snap => {
     if (snap.exists()) {
       currentManagerPin = snap.data().pin || '1234';
@@ -568,14 +601,15 @@ function initLiveListeners() {
   });
 }
 
-window.tab=id=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+window.tab = id => {
+  lockManagerPin();
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 };
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
 window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
-window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,PaymentMethod,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.paymentMethod||'Cash'},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
@@ -602,7 +636,7 @@ function card(id, o = {}) {
       Customer: ${customer}<br>
       ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
-      Total: ₱${total}<br>
+      Total: ₱${total} (${o.paymentMethod || 'Cash'})<br>
       ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:green;">Discount: ${o.discountType} (-₱${o.discountAmount||0})</small><br>` : ''}
       ${['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(rawStatus) ? `<b style='color:red'>${rawStatus}: ${o.voidReason || o.cancelReason || o.refundReason || o.declineReason || 'Processed'}</b>` : ''}
     </div>
@@ -627,7 +661,6 @@ function initDragDrop() {
     });
 
     cardEl.addEventListener('touchstart', (e) => {
-      if (e.target.tagName.toLowerCase() === 'button') return;
       draggedOrderId = cardEl.getAttribute('data-id');
       cardEl.classList.add('dragging');
     }, { passive: true });
@@ -674,6 +707,10 @@ function initDragDrop() {
 
 // POS Features & PIN Handlers
 window.togglePosSubTab = (sub) => {
+  if (sub !== 'discounts') {
+    lockManagerPin();
+  }
+
   const regView = document.getElementById('posRegisterView');
   const histView = document.getElementById('posHistoryView');
   const discView = document.getElementById('posDiscountsView');
@@ -725,8 +762,12 @@ window.verifyManagerPin = () => {
 
 window.lockManagerPin = () => {
   isPinUnlocked = false;
-  document.getElementById('pinLockBox').style.display = 'block';
-  document.getElementById('pinUnlockedPanel').style.display = 'none';
+  const pinBox = document.getElementById('pinLockBox');
+  const unlPanel = document.getElementById('pinUnlockedPanel');
+  const pinInput = document.getElementById('posManagerPinInput');
+  if (pinBox) pinBox.style.display = 'block';
+  if (unlPanel) unlPanel.style.display = 'none';
+  if (pinInput) pinInput.value = '';
 };
 
 window.updateFirebasePin = async () => {
@@ -762,9 +803,14 @@ window.saveCustomDiscount = async () => {
   alert(`Promotion '${name}' added successfully!`);
 };
 
-window.deleteCustomDiscount = async (id) => {
-  if (confirm('Delete this promotion rule?')) {
-    await deleteDoc(doc(db, 'discounts', id));
+window.deleteCustomDiscount = async (id, name) => {
+  if (confirm(`Are you sure you want to permanently delete the promotion "${name || id}"?`)) {
+    try {
+      await deleteDoc(doc(db, 'discounts', id));
+      alert(`Promotion deleted.`);
+    } catch (e) {
+      alert('Error deleting promotion: ' + e.message);
+    }
   }
 };
 
@@ -773,7 +819,7 @@ function renderCustomDiscountsList() {
   if (!listEl) return;
   
   if (!discounts.length) {
-    listEl.innerHTML = '<i style="color:#888;">No custom promotions created yet.</i>';
+    listEl.innerHTML = '<div style="color:#888;padding:8px 0;"><i>No custom promotions created yet.</i></div>';
     return;
   }
 
@@ -782,10 +828,12 @@ function renderCustomDiscountsList() {
     h += `
       <div class="discount-card">
         <div>
-          <b>${d.name}</b> (${d.percentage}%)<br>
+          <b>${d.name}</b> <span style="color:#0066cc;font-weight:bold;">(${d.percentage}% OFF)</span><br>
           <small style="color:#666;">${d.description || 'No special conditions'}</small>
         </div>
-        <button onclick="deleteCustomDiscount('${d.id}')" style="background:#f44336;padding:6px 12px;font-size:12px;">Delete</button>
+        <button onclick="deleteCustomDiscount('${d.id}', '${d.name.replace(/'/g, "\\'")}')" style="background:#f44336;padding:6px 12px;font-size:12px;width:auto;margin:0;">
+          🗑️ Delete Promo
+        </button>
       </div>
     `;
   });
