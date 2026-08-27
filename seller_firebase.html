@@ -88,7 +88,7 @@ html, body{height:100%;margin:0;padding:0;overflow:hidden;font-family:-apple-sys
 
 /* Charge & Save/Open Action Buttons */
 .pos-action-strip{display:flex;flex-direction:column;gap:5px;margin-top:6px;flex-shrink:0}
-.pos-action-strip button{padding:10px;font-size:13.5px;font-weight:bold;border:none;border-radius:6px;cursor:pointer;color:#fff}
+.pos-action-strip button{padding:10px;font-size:13.5px;font-weight:bold;border:none;border-radius:6px;cursor:pointer;color:#fff;transition:all 0.2s;}
 .pos-action-subrow{display:flex;gap:5px}
 .pos-action-subrow button{flex:1;padding:8px 6px;font-size:12.5px}
 .btn-charge{background:#0f2b48;width:100%}
@@ -310,7 +310,7 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
             <div class="pos-action-strip">
               <button id="posSubmitBtn" class="btn-charge" onclick="submitPosOrder()">⚡ CHARGE</button>
               <div class="pos-action-subrow">
-                <button class="btn-open-tickets" onclick="navigateTo('open-tickets', 'Open & Unpaid Tickets')">📋 OPEN TICKETS</button>
+                <button id="btnOpenTicketsPos" class="btn-open-tickets" onclick="navigateTo('open-tickets', 'Open & Unpaid Tickets')">📋 OPEN TICKETS</button>
                 <button class="btn-save-unpaid" onclick="openSaveUnpaidModal()">💾 SAVE (UNPAID)</button>
               </div>
             </div>
@@ -1277,8 +1277,31 @@ function updateUnpaidBadgeCount() {
     return o.isUnpaid === true && !['VOIDED','CANCELLED','REFUNDED','DECLINED'].includes(s);
   }).length;
 
+  // 1. Update the sidebar badge
   const badgeEl = document.getElementById('sidebarUnpaidBadge');
   if (badgeEl) badgeEl.textContent = unpaidCount;
+
+  // 2. Update and toggle the POS Open Tickets Button dynamically
+  const posOpenBtn = document.getElementById('btnOpenTicketsPos');
+  if (posOpenBtn) {
+    if (unpaidCount > 0) {
+      // Prominent & Clickable
+      posOpenBtn.style.background = '#1e3a5f';
+      posOpenBtn.style.color = '#fff';
+      posOpenBtn.style.opacity = '1';
+      posOpenBtn.style.cursor = 'pointer';
+      posOpenBtn.disabled = false;
+      posOpenBtn.textContent = `📋 OPEN TICKETS (${unpaidCount})`;
+    } else {
+      // Greyed out & Disabled
+      posOpenBtn.style.background = '#e2e8f0';
+      posOpenBtn.style.color = '#94a3b8';
+      posOpenBtn.style.opacity = '0.8';
+      posOpenBtn.style.cursor = 'not-allowed';
+      posOpenBtn.disabled = true;
+      posOpenBtn.textContent = `📋 OPEN TICKETS (0)`;
+    }
+  }
 }
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
