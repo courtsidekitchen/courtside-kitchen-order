@@ -519,7 +519,10 @@ window.toggleSidebar = () => {
   document.getElementById('sidebarOverlay').classList.toggle('active');
 };
 
-window.navigateTo = (tabId, label) => {
+window.navigateTo = (tabId, label, preserveDrawer = false) => {
+  sessionStorage.setItem('active_portal_tab', tabId);
+  sessionStorage.setItem('active_portal_label', label);
+
   if (tabId !== 'pos-discounts' && tabId !== 'revenue') {
     lockManagerPin();
   }
@@ -534,9 +537,16 @@ window.navigateTo = (tabId, label) => {
   if (targetMenu) targetMenu.classList.add('active');
 
   document.getElementById('currentViewLabel').textContent = label;
-  toggleSidebar();
+  
+  if (!preserveDrawer) {
+    const drawer = document.getElementById('sidebarDrawer');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (drawer) drawer.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+  }
 
   if (tabId === 'pos-history') renderPosHistory();
+  if (tabId === 'orders') renderOrdersBoard();
   
   if (tabId === 'revenue') {
     if (isPinUnlocked) {
@@ -658,6 +668,12 @@ onAuthStateChanged(auth, user => {
       document.getElementById('enableNotifBtn').style.display = 'none';
     }
     renderPagerDropdown();
+    
+    // Restore Saved Active Tab on Page Refresh
+    const savedTab = sessionStorage.getItem('active_portal_tab') || 'pos';
+    const savedLabel = sessionStorage.getItem('active_portal_label') || 'POS Register';
+    navigateTo(savedTab, savedLabel, true);
+
     initLiveListeners();
   } else {
     document.getElementById('loginBox').style.display = 'block';
@@ -978,7 +994,7 @@ window.printCurrentReportPDF = () => {
 
 window.renderOrdersBoard = () => {
   const query = (document.getElementById('searchOrdersInput')?.value || '').trim().toLowerCase();
-  let p='', r='', pr='', re='', rd='', h='';
+  let p='', r='', pr='', re='', rd='';
 
   const filteredOrders = hist.filter(o => {
     if (!query) return true;
@@ -1000,14 +1016,33 @@ window.renderOrdersBoard = () => {
     else if (statusUpper === 'COMPLETED') re += orderCardHtml;
   });
 
-  document.getElementById('pending').innerHTML = p;
-  document.getElementById('received').innerHTML = r;
-  document.getElementById('preparing').innerHTML = pr;
-  document.getElementById('ready').innerHTML = rd;
-  document.getElementById('completed').innerHTML = re;
+  const pEl = document.getElementById('pending');
+  const rEl = document.getElementById('received');
+  const prEl = document.getElementById('preparing');
+  const rdEl = document.getElementById('ready');
+  const reEl = document.getElementById('completed');
+
+  if (pEl) pEl.innerHTML = p;
+  if (rEl) rEl.innerHTML = r;
+  if (prEl) prEl.innerHTML = pr;
+  if (rdEl) rdEl.innerHTML = rd;
+  if (reEl) reEl.innerHTML = re;
 
   initDragDrop();
 };
+
+// 1-Second Auto Countdown & Background Tick
+setInterval(() => {
+  if (document.getElementById('orders')?.classList.contains('active')) {
+    document.querySelectorAll('.pending-timer').forEach(el => {
+      const createdStr = el.getAttribute('data-created');
+      if (createdStr) {
+        const d = Math.max(0, 30 - Math.floor((Date.now() - parseOrderDate(createdStr)) / 1000));
+        el.textContent = `Pending: ${d}s`;
+      }
+    });
+  }
+}, 1000);
 
 function initLiveListeners() {
   onSnapshot(doc(db, 'settings', 'security'), snap => {
@@ -1101,7 +1136,7 @@ function card(id, o = {}) {
         <div>${unpaidBadge}${pagerBadge}</div>
       </div>
       Customer: ${customer} ${o.customerPhone ? `<small>(${o.customerPhone})</small>` : ''}<br>
-      ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
+      ${rawStatus === 'PENDING' ? `<span class="pending-timer" data-created="${o.createdAt}">Pending: ${remain(o.createdAt)}</span><br>` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total} (${o.paymentMethod || 'Cash'})<br>
       ${o.discountType && o.discountType !== 'NONE' ? `<small style="color:#0f2b48;font-weight:bold;">Discount: ${o.discountType} (-₱${o.discountAmount||0})</small><br>` : ''}
@@ -1276,7 +1311,7 @@ function renderCustomDiscountsList() {
   let h = '';
   discounts.forEach(d => {
     h += `
-      <div class="discount-card">
+      <div class="discount-card" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <b>${d.name}</b> <span style="color:#0f2b48;font-weight:bold;">(${d.percentage}% OFF)</span><br>
           <small style="color:#64748b;">${d.description || 'No special conditions'}</small>
@@ -1566,7 +1601,6 @@ window.printThermalReceipt = (o) => {
     `;
   });
 
-  // Extract pure pager number / label (e.g. "Pager 3" -> "3")
   const rawPager = (o.pagerNumber || '').trim();
   const hasPager = rawPager && rawPager !== 'NONE';
   const pagerNumOnly = hasPager ? rawPager.replace(/[^0-9]/g, '') || rawPager : '';
@@ -1972,7 +2006,7 @@ window.renderProducts = () => {
         <input id="p_${p.id}" value="${p.price||0}">
         <input id="q_${p.id}" value="${p.qty||0}">
         <input id="i_${p.id}" value="${p.image||''}">
-        <button onclick="saveProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;margin-top:4px;font-size:12px;">Save</button>
+        <button onclick="saveProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;margin-top:4px;font-size:12px;">Save</button>
       </div>
     </div>
     `;
