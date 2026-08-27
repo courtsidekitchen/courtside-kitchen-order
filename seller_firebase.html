@@ -65,6 +65,30 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 .pin-box{max-width:320px;margin:20px auto;background:#fff;padding:20px;border-radius:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .discount-card{background:#fdfdfd;border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 
+/* Thermal 58mm Print Styles */
+#thermalReceiptArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #thermalReceiptArea, #thermalReceiptArea *{visibility:visible}
+  #thermalReceiptArea{
+    display:block !important;
+    position:absolute;
+    left:0;
+    top:0;
+    width:48mm;
+    margin:0;
+    padding:0;
+    font-family:'Courier New',Courier,monospace;
+    font-size:11px;
+    line-height:1.2;
+    color:#000;
+  }
+  .receipt-center{text-align:center}
+  .receipt-divider{border-top:1px dashed #000;margin:6px 0}
+  .receipt-row{display:flex;justify-content:space-between}
+  @page{size:58mm auto;margin:0}
+}
+
 @media(max-width:1024px){
   .board{grid-template-columns:repeat(2,1fr)}
   .pos-layout{grid-template-columns:1fr}
@@ -81,6 +105,9 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 </style>
 </head>
 <body>
+
+<!-- Hidden Area for 58mm Thermal Printing -->
+<div id="thermalReceiptArea"></div>
 
 <div id="loginBox" class="login-container">
   <img src="logo.png" alt="Courtside Kitchen" class="login-logo"><br>
@@ -101,7 +128,6 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   </div>
 </div>
 
-<!-- Dynamic Revenue Metrics & Payment Breakdown -->
 <div class="metrics">
   <div class="metric">
     Total Revenue
@@ -233,7 +259,6 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 
   <!-- Discounts & Promos (PIN Locked) Sub-view -->
   <div id="posDiscountsView" style="display:none;">
-    <!-- PIN Verification Box -->
     <div id="pinLockBox" class="pin-box">
       <h3 style="margin-top:0;">🔒 Manager Access</h3>
       <p style="color:#666;font-size:13px;">Enter Manager PIN to access Discounts & Promos</p>
@@ -241,7 +266,6 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
       <button onclick="verifyManagerPin()" style="width:100%;margin-top:8px;">Unlock</button>
     </div>
 
-    <!-- Manager Panel (Shown after PIN unlock) -->
     <div id="pinUnlockedPanel" style="display:none;">
       <div class="card">
         <h3 style="margin:0;">🏷️ Custom Discounts & Promotions</h3>
@@ -1017,6 +1041,73 @@ async function getNextPosOrderNumber() {
   return n;
 }
 
+// 58mm Thermal Receipt Generator & Printer Engine
+window.printThermalReceipt = (o) => {
+  const printArea = document.getElementById('thermalReceiptArea');
+  if (!printArea) return;
+
+  const dateStr = parseOrderDate(o.createdAt).toLocaleString();
+  let itemsLines = '';
+  (o.items || []).forEach(i => {
+    const name = typeof i === 'string' ? i : i.name;
+    const qty = i.qty || 1;
+    const price = i.price || 0;
+    const bobaText = i.boba ? ' (+Boba)' : '';
+    itemsLines += `
+      <div class="receipt-row">
+        <span>${qty}x ${name}${bobaText}</span>
+        <span>₱${(price * qty) + (i.boba ? 5 * qty : 0)}</span>
+      </div>
+    `;
+  });
+
+  printArea.innerHTML = `
+    <div class="receipt-center">
+      <b style="font-size:13px;">COURTSIDE KITCHEN</b><br>
+      <span>Order Ticket / Receipt</span><br>
+      <b>${o.orderNumber || o.id}</b>
+    </div>
+    <div class="receipt-divider"></div>
+    <div>Date: ${dateStr}</div>
+    <div>Customer: <b>${o.customerName || 'Walk-in'}</b></div>
+    <div>Payment: <b>${o.paymentMethod || 'Cash'}</b></div>
+    ${o.notes ? `<div>Note: ${o.notes}</div>` : ''}
+    <div class="receipt-divider"></div>
+    <div><b>ITEMS:</b></div>
+    ${itemsLines}
+    <div class="receipt-divider"></div>
+    <div class="receipt-row"><span>Subtotal:</span><span>₱${o.subtotal || o.total || 0}</span></div>
+    ${o.discountType && o.discountType !== 'NONE' ? `
+      <div class="receipt-row"><span>Disc (${o.discountType}):</span><span>-₱${o.discountAmount || 0}</span></div>
+    ` : ''}
+    <div class="receipt-row" style="font-size:13px;font-weight:bold;margin-top:4px;">
+      <span>TOTAL:</span><span>₱${o.total || 0}</span>
+    </div>
+    ${o.paymentMethod === 'Cash' && o.cashTendered ? `
+      <div class="receipt-row"><span>Cash:</span><span>₱${o.cashTendered}</span></div>
+      <div class="receipt-row"><span>Change:</span><span>₱${o.changeGiven || 0}</span></div>
+    ` : ''}
+    <div class="receipt-divider"></div>
+    <div class="receipt-center" style="font-size:10px;margin-top:6px;">
+      Thank you for dining with us!<br>
+      Please claim your order when called.
+    </div>
+  `;
+
+  setTimeout(() => {
+    window.print();
+  }, 100);
+};
+
+window.printFromHistory = (orderId) => {
+  const o = hist.find(x => x.id === orderId || x.orderNumber === orderId);
+  if (o) {
+    window.printThermalReceipt(o);
+  } else {
+    alert('Ticket not found');
+  }
+};
+
 window.submitPosOrder = async () => {
   const items = [];
   let subtotal = 0;
@@ -1056,7 +1147,7 @@ window.submitPosOrder = async () => {
 
   const btn = document.getElementById('posSubmitBtn');
   btn.disabled = true;
-  btn.textContent = 'Submitting...';
+  btn.textContent = 'Submitting & Printing...';
 
   try {
     const n = await getNextPosOrderNumber();
@@ -1084,11 +1175,8 @@ window.submitPosOrder = async () => {
 
     await setDoc(doc(db, 'orders', formattedOrderNo), orderData);
     
-    if (paymentMethod === 'Cash') {
-      alert(`Order ${formattedOrderNo} charged successfully!\nChange to return: ₱${changeGiven}`);
-    } else {
-      alert(`Order ${formattedOrderNo} charged and sent to kitchen!`);
-    }
+    // Trigger 58mm Thermal Print
+    window.printThermalReceipt(orderData);
 
     posCart = {};
     posBobaMap = {};
@@ -1184,13 +1272,14 @@ window.renderPosHistory = () => {
         ${o.voidReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Void Reason: ${o.voidReason}</div>` : ''}
         ${o.cancelReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
         ${o.refundReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Refund Reason: ${o.refundReason}</div>` : ''}
-        ${!isInactive ? `
-          <div class="history-ticket-actions">
+        <div class="history-ticket-actions">
+          <button onclick="printFromHistory('${o.id}')" style="background:#0066cc;">🖨️ Print Receipt</button>
+          ${!isInactive ? `
             <button onclick="posVoidTicket('${o.id}')" style="background:#555;">🚫 Void Ticket</button>
             <button onclick="posCancelTicket('${o.id}')" style="background:#f44336;">❌ Cancel Order</button>
             <button onclick="posRefundTicket('${o.id}')" style="background:#e65100;">💸 Refund</button>
-          </div>
-        ` : ''}
+          ` : ''}
+        </div>
       </div>
     `;
   });
