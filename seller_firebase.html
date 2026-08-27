@@ -50,11 +50,16 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 .pos-item:active{transform:scale(0.97)}
 .pos-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;line-height:1.2}
 .pos-item-price{color:#0066cc;font-weight:bold;font-size:13px}
-.cart-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.cart-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .qty-ctrl{display:flex;gap:4px;align-items:center}
 .qty-ctrl button{padding:4px 8px;font-size:12px}
 .pos-summary-line{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
 .pos-total-line{font-size:20px;font-weight:bold;border-top:2px solid #333;margin-top:6px;padding-top:6px}
+
+/* Add-ons Selector in POS */
+.addon-pill-box{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.addon-pill{font-size:11px;padding:3px 6px;background:#eee;border-radius:12px;cursor:pointer;user-select:none}
+.addon-pill.active{background:#ff9800;color:#fff;font-weight:bold}
 
 /* POS History & Ticket Management */
 .history-ticket-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px}
@@ -106,7 +111,6 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
 </head>
 <body>
 
-<!-- Hidden Area for 58mm Thermal Printing -->
 <div id="thermalReceiptArea"></div>
 
 <div id="loginBox" class="login-container">
@@ -205,7 +209,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
   <!-- Register Sub-view -->
   <div id="posRegisterView" class="pos-layout">
     <div class="card">
-      <input id="posSearch" placeholder="🔍 Search menu item..." oninput="filterPosCatalog()">
+      <input id="posSearch" placeholder="🔍 Search menu item or add-on..." oninput="filterPosCatalog()">
       <div id="posCatFilter" class="category-filter"></div>
       <div id="posCatalog" class="pos-grid"></div>
     </div>
@@ -225,7 +229,7 @@ input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #c
       <label><b>Discount / Promotion:</b></label>
       <select id="posDiscountType" onchange="renderPosCart()"></select>
 
-      <div id="posCartList" style="max-height:180px;overflow-y:auto;margin:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">
+      <div id="posCartList" style="max-height:220px;overflow-y:auto;margin:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;">
         <div style="text-align:center;color:#888;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>
       </div>
 
@@ -344,8 +348,19 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Standard Add-on Definitions
+const ADDON_DEFS = {
+  fries: { name: 'Plain fries', price: 50 },
+  rice: { name: 'Extra Rice', price: 35 },
+  egg: { name: 'Extra Egg', price: 20 },
+  sauce: { name: 'Extra Sauce', price: 30 },
+  boba: { name: 'Extra Boba', price: 10 }
+};
+
 let hist=[]; let products=[]; let discounts=[];
-let posCart={}; let posBobaMap={}; let posSelectedCategory='ALL';
+let posCart={}; // Key: productId -> Quantity
+let posItemAddons={}; // Key: productId -> { fries: true, rice: true, ... }
+let posSelectedCategory='ALL';
 let currentFinalTotal = 0;
 let knownOrderIds = new Set(); 
 let isInitialLoad = true;
@@ -643,8 +658,13 @@ function itemsHtml(items = []) {
     if (typeof i === 'string') return i;
     const name = i.name || i.title || 'Item';
     const qty = i.qty || i.quantity || 1;
-    const boba = i.boba ? ' + Boba' : '';
-    return `${name} x${qty}${boba}`;
+    let addText = '';
+    if (i.addons && i.addons.length > 0) {
+      addText = ` <small style="color:#e65100;">[+${i.addons.join(', ')}]</small>`;
+    } else if (i.boba) {
+      addText = ` <small style="color:#e65100;">[+Extra Boba]</small>`;
+    }
+    return `${name} x${qty}${addText}`;
   }).join('<br>');
 }
 
@@ -885,7 +905,8 @@ function populatePosDiscountDropdown() {
 }
 
 function renderPosCategoryPills() {
-  const cats = ['ALL', ...new Set(products.map(p => p.category || 'Other'))];
+  const customCats = products.map(p => p.category || 'Other');
+  const cats = ['ALL', ...new Set(customCats), 'Add-ons'];
   const container = document.getElementById('posCatFilter');
   if(!container) return;
   container.innerHTML = cats.map(c => `
@@ -904,30 +925,56 @@ window.filterPosCatalog = () => {
   const catalogEl = document.getElementById('posCatalog');
   if(!catalogEl) return;
   
+  let h = '';
+
+  // Show Add-ons directly when Add-ons category or ALL is selected
+  if (posSelectedCategory === 'Add-ons' || posSelectedCategory === 'ALL') {
+    Object.entries(ADDON_DEFS).forEach(([k, item]) => {
+      if (!q || item.name.toLowerCase().includes(q)) {
+        h += `
+          <div class="pos-item" style="border:1px dashed #ff9800;background:#fff8e1;" onclick="posAddStandaloneAddon('${k}')">
+            <div class="pos-item-name">${item.name}</div>
+            <div class="pos-item-price">₱${item.price}</div>
+            <small style="color:#e65100;font-weight:bold;">Side Add-on</small>
+          </div>
+        `;
+      }
+    });
+  }
+
   let filtered = products;
-  if (posSelectedCategory !== 'ALL') {
+  if (posSelectedCategory !== 'ALL' && posSelectedCategory !== 'Add-ons') {
     filtered = filtered.filter(p => (p.category || 'Other') === posSelectedCategory);
   }
   if (q) {
     filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(q));
   }
 
-  let h = '';
-  filtered.forEach(p => {
-    const isOut = (p.qty || 0) <= 0;
-    h += `
-      <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${p.id}')">
-        <div class="pos-item-name">${p.name}</div>
-        <div class="pos-item-price">₱${p.price || 0}</div>
-        ${isOut ? '<small style="color:red;font-weight:bold;">Out of stock</small>' : ''}
-      </div>
-    `;
-  });
+  if (posSelectedCategory !== 'Add-ons') {
+    filtered.forEach(p => {
+      const isOut = (p.qty || 0) <= 0;
+      h += `
+        <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${p.id}')">
+          <div class="pos-item-name">${p.name}</div>
+          <div class="pos-item-price">₱${p.price || 0}</div>
+          ${isOut ? '<small style="color:red;font-weight:bold;">Out of stock</small>' : ''}
+        </div>
+      `;
+    });
+  }
+
   catalogEl.innerHTML = h || '<div style="grid-column:1/-1;text-align:center;color:#888;padding:20px;">No items match</div>';
 };
 
 window.posAddToCart = (id) => {
   posCart[id] = (posCart[id] || 0) + 1;
+  if (!posItemAddons[id]) posItemAddons[id] = {};
+  renderPosCart();
+};
+
+window.posAddStandaloneAddon = (k) => {
+  const fakeId = `addon_${k}`;
+  posCart[fakeId] = (posCart[fakeId] || 0) + 1;
   renderPosCart();
 };
 
@@ -935,42 +982,15 @@ window.posChangeQty = (id, delta) => {
   posCart[id] = Math.max(0, (posCart[id] || 0) + delta);
   if (posCart[id] === 0) {
     delete posCart[id];
-    delete posBobaMap[id];
+    delete posItemAddons[id];
   }
   renderPosCart();
 };
 
-window.posToggleBoba = (id) => {
-  posBobaMap[id] = !posBobaMap[id];
+window.posToggleItemAddon = (itemId, addonKey) => {
+  if (!posItemAddons[itemId]) posItemAddons[itemId] = {};
+  posItemAddons[itemId][addonKey] = !posItemAddons[itemId][addonKey];
   renderPosCart();
-};
-
-window.toggleCashInput = () => {
-  const method = document.getElementById('posPayment').value;
-  const cashBox = document.getElementById('cashCalcSection');
-  if (method === 'Cash') {
-    cashBox.style.display = 'block';
-    calculateChange();
-  } else {
-    cashBox.style.display = 'none';
-    document.getElementById('posCashTendered').value = '';
-    document.getElementById('posChangeVal').textContent = '0';
-  }
-};
-
-window.calculateChange = () => {
-  const tendered = Number(document.getElementById('posCashTendered')?.value || 0);
-  const changeEl = document.getElementById('posChangeVal');
-  if (!changeEl) return;
-  
-  if (tendered > 0 && currentFinalTotal > 0) {
-    const change = tendered - currentFinalTotal;
-    changeEl.textContent = change >= 0 ? change.toLocaleString() : `(Short ₱${Math.abs(change).toLocaleString()})`;
-    changeEl.style.color = change >= 0 ? '#0066cc' : 'red';
-  } else {
-    changeEl.textContent = '0';
-    changeEl.style.color = '#0066cc';
-  }
 };
 
 function renderPosCart() {
@@ -991,18 +1011,57 @@ function renderPosCart() {
 
   let h = '';
   entries.forEach(([id, qty]) => {
+    // Standalone Add-on row
+    if (id.startsWith('addon_')) {
+      const addonKey = id.replace('addon_', '');
+      const addon = ADDON_DEFS[addonKey];
+      if (!addon) return;
+      const itemTotal = addon.price * qty;
+      subtotal += itemTotal;
+
+      h += `
+        <div class="cart-row">
+          <div>
+            <b>${addon.name}</b> (₱${addon.price})
+            <br><small style="color:#e65100;">Standalone Add-on</small>
+          </div>
+          <div class="qty-ctrl">
+            <button onclick="posChangeQty('${id}', -1)">-</button>
+            <span><b>${qty}</b></span>
+            <button onclick="posChangeQty('${id}', 1)">+</button>
+            <span style="min-width:50px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Standard Product with Add-on Pills
     const p = products.find(x => x.id === id);
     if (!p) return;
-    const isMilkTea = (p.category || '').toLowerCase() === 'milk tea';
-    const bobaActive = !!posBobaMap[id];
-    const itemTotal = (p.price * qty) + (bobaActive ? (5 * qty) : 0);
+
+    let addonCostPerItem = 0;
+    const selectedAddons = posItemAddons[id] || {};
+    Object.entries(selectedAddons).forEach(([k, active]) => {
+      if (active && ADDON_DEFS[k]) {
+        addonCostPerItem += ADDON_DEFS[k].price;
+      }
+    });
+
+    const itemTotal = (p.price + addonCostPerItem) * qty;
     subtotal += itemTotal;
+
+    // Render interactive addon pills for this item
+    let pillsHtml = Object.entries(ADDON_DEFS).map(([k, ad]) => {
+      const active = !!selectedAddons[k];
+      return `<span class="addon-pill ${active ? 'active' : ''}" onclick="posToggleItemAddon('${id}', '${k}')">+${ad.name} (₱${ad.price})</span>`;
+    }).join('');
 
     h += `
       <div class="cart-row">
         <div>
           <b>${p.name}</b> (₱${p.price})
-          ${isMilkTea ? `<br><label style="font-size:12px;cursor:pointer;"><input type="checkbox" ${bobaActive ? 'checked' : ''} onchange="posToggleBoba('${id}')"> +Boba ₱5</label>` : ''}
+          <div class="addon-pill-box">${pillsHtml}</div>
         </div>
         <div class="qty-ctrl">
           <button onclick="posChangeQty('${id}', -1)">-</button>
@@ -1041,7 +1100,7 @@ async function getNextPosOrderNumber() {
   return n;
 }
 
-// 58mm Thermal Receipt Generator & Printer Engine
+// 58mm Thermal Receipt Generator
 window.printThermalReceipt = (o) => {
   const printArea = document.getElementById('thermalReceiptArea');
   if (!printArea) return;
@@ -1052,11 +1111,23 @@ window.printThermalReceipt = (o) => {
     const name = typeof i === 'string' ? i : i.name;
     const qty = i.qty || 1;
     const price = i.price || 0;
-    const bobaText = i.boba ? ' (+Boba)' : '';
+    let addText = '';
+    let addPrice = 0;
+
+    if (i.addons && i.addons.length > 0) {
+      addText = `<br>&nbsp;+ ${i.addons.join(', ')}`;
+      i.addons.forEach(an => {
+        const found = Object.values(ADDON_DEFS).find(x => x.name === an);
+        if (found) addPrice += found.price;
+      });
+    }
+
+    const lineTotal = (price + addPrice) * qty;
+
     itemsLines += `
       <div class="receipt-row">
-        <span>${qty}x ${name}${bobaText}</span>
-        <span>₱${(price * qty) + (i.boba ? 5 * qty : 0)}</span>
+        <span>${qty}x ${name}${addText}</span>
+        <span>₱${lineTotal}</span>
       </div>
     `;
   });
@@ -1073,7 +1144,7 @@ window.printThermalReceipt = (o) => {
     <div>Payment: <b>${o.paymentMethod || 'Cash'}</b></div>
     ${o.notes ? `<div>Note: ${o.notes}</div>` : ''}
     <div class="receipt-divider"></div>
-    <div><b>ITEMS:</b></div>
+    <div><b>ITEMS & ADD-ONS:</b></div>
     ${itemsLines}
     <div class="receipt-divider"></div>
     <div class="receipt-row"><span>Subtotal:</span><span>₱${o.subtotal || o.total || 0}</span></div>
@@ -1113,16 +1184,40 @@ window.submitPosOrder = async () => {
   let subtotal = 0;
 
   Object.entries(posCart).forEach(([id, qty]) => {
+    if (id.startsWith('addon_')) {
+      const addonKey = id.replace('addon_', '');
+      const addon = ADDON_DEFS[addonKey];
+      if (!addon) return;
+      subtotal += addon.price * qty;
+      items.push({
+        name: addon.name,
+        qty: qty,
+        price: addon.price,
+        addons: []
+      });
+      return;
+    }
+
     const p = products.find(x => x.id === id);
     if (!p) return;
-    const boba = !!posBobaMap[id];
-    const itemTotal = (p.price * qty) + (boba ? (5 * qty) : 0);
-    subtotal += itemTotal;
+
+    let addonCostPerItem = 0;
+    const attachedAddons = [];
+    const selectedAddons = posItemAddons[id] || {};
+
+    Object.entries(selectedAddons).forEach(([k, active]) => {
+      if (active && ADDON_DEFS[k]) {
+        addonCostPerItem += ADDON_DEFS[k].price;
+        attachedAddons.push(ADDON_DEFS[k].name);
+      }
+    });
+
+    subtotal += (p.price + addonCostPerItem) * qty;
     items.push({
       name: p.name,
       qty: qty,
       price: p.price || 0,
-      boba: boba
+      addons: attachedAddons
     });
   });
 
@@ -1179,7 +1274,7 @@ window.submitPosOrder = async () => {
     window.printThermalReceipt(orderData);
 
     posCart = {};
-    posBobaMap = {};
+    posItemAddons = {};
     document.getElementById('posCustomer').value = 'Walk-in';
     document.getElementById('posNotes').value = '';
     document.getElementById('posDiscountType').value = 'NONE';
