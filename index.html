@@ -294,6 +294,17 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
+// XSS Sanitizer Utility
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return str.toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const STORE_WHATSAPP_NUMBER = '639171234567';
 
 // Payment Account Configurations & Downloadable QR Codes
@@ -437,7 +448,7 @@ function renderCatalog() {
       if (hasBoba) extraCost += 5;
       if (hasNutella) extraCost += 30;
 
-      const displayedPrice = (p.price || 0) + extraCost;
+      const displayedPrice = Number(p.price || 0) + extraCost;
       let displayName = p.name;
       if (hasBoba) displayName += ' with Boba';
       if (hasNutella) displayName = 'Banana Nutella';
@@ -445,25 +456,25 @@ function renderCatalog() {
       h += `
         <div class="menu-item-card" style="${isOut ? 'opacity:0.45;pointer-events:none;' : ''}">
           <div>
-            ${p.image ? `<img src="${p.image}" style="max-width:100%;height:85px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : ''}
-            <div class="menu-item-name">${displayName}</div>
+            ${p.image ? `<img src="${escapeHTML(p.image)}" style="max-width:100%;height:85px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : ''}
+            <div class="menu-item-name">${escapeHTML(displayName)}</div>
             <div class="menu-item-price">₱${displayedPrice}</div>
 
             ${isMilkTea ? `
-              <div class="slide-toggle-wrapper ${hasBoba ? 'active' : ''}" onclick="toggleCardModifier('${p.id}', 'boba')">
+              <div class="slide-toggle-wrapper ${hasBoba ? 'active' : ''}" onclick="toggleCardModifier('${escapeHTML(p.id)}', 'boba')">
                 <span class="slide-toggle-label">+ Boba (+₱5)</span>
                 <span class="slide-switch"><span class="slide-slider"></span></span>
               </div>
             ` : ''}
 
             ${isBananaServe ? `
-              <div class="slide-toggle-wrapper ${hasNutella ? 'active' : ''}" onclick="toggleCardModifier('${p.id}', 'nutella')">
+              <div class="slide-toggle-wrapper ${hasNutella ? 'active' : ''}" onclick="toggleCardModifier('${escapeHTML(p.id)}', 'nutella')">
                 <span class="slide-toggle-label">+ Nutella (+₱30)</span>
                 <span class="slide-switch"><span class="slide-slider"></span></span>
               </div>
             ` : ''}
           </div>
-          <button class="btn-add" onclick="addCustomizedToCart('${p.id}')">${isOut ? 'Out of Stock' : '➕ Add to Cart'}</button>
+          <button class="btn-add" onclick="addCustomizedToCart('${escapeHTML(p.id)}')">${isOut ? 'Out of Stock' : '➕ Add to Cart'}</button>
         </div>
       `;
     });
@@ -471,10 +482,11 @@ function renderCatalog() {
 
   if (selectedCategory === 'Add-ons' || selectedCategory === 'ALL') {
     Object.entries(ADDON_DEFS).forEach(([k, item]) => {
+      if (!item) return;
       h += `
         <div class="menu-item-card" style="border:1px dashed #0f2b48;background:#f8fafc;">
           <div>
-            <div class="menu-item-name">${item.name}</div>
+            <div class="menu-item-name">${escapeHTML(item.name)}</div>
             <div class="menu-item-price">₱${item.price}</div>
             <small style="color:#0f2b48;font-weight:bold;">Side Add-on</small>
           </div>
@@ -544,12 +556,12 @@ window.handlePaymentMethodChange = () => {
   if (cfg) {
     infoBox.style.display = 'block';
     infoBox.innerHTML = `
-      <div style="font-weight:bold;font-size:13px;margin-bottom:4px;">${cfg.title}</div>
-      <div style="color:#475569;">Account Name: <b>${cfg.accountName}</b></div>
-      <div style="color:#475569;">Account Number: <b style="letter-spacing:0.5px;">${cfg.accountNumber}</b></div>
-      <img src="${cfg.qrImage}" alt="${cfg.title}" class="payment-qr-img" onerror="this.style.display='none'">
+      <div style="font-weight:bold;font-size:13px;margin-bottom:4px;">${escapeHTML(cfg.title)}</div>
+      <div style="color:#475569;">Account Name: <b>${escapeHTML(cfg.accountName)}</b></div>
+      <div style="color:#475569;">Account Number: <b style="letter-spacing:0.5px;">${escapeHTML(cfg.accountNumber)}</b></div>
+      <img src="${escapeHTML(cfg.qrImage)}" alt="${escapeHTML(cfg.title)}" class="payment-qr-img" onerror="this.style.display='none'">
       <div>
-        <a href="${cfg.qrImage}" download="${cfg.fileName}" class="btn-download-qr">
+        <a href="${escapeHTML(cfg.qrImage)}" download="${escapeHTML(cfg.fileName)}" class="btn-download-qr">
           ⬇️ Save / Download QR Code
         </a>
       </div>
@@ -589,7 +601,7 @@ function renderCartModal() {
       const p = products.find(x => x.id === prodId);
       if (!p) return;
 
-      itemPrice = p.price || 0;
+      itemPrice = Number(p.price || 0);
       if (hasBoba) {
         itemName = `${p.name} with Boba`;
         itemPrice += 5;
@@ -607,7 +619,7 @@ function renderCartModal() {
     h += `
       <div class="cart-row">
         <div>
-          <b style="font-size:13px;color:#0f2b48;">${itemName}</b>
+          <b style="font-size:13px;color:#0f2b48;">${escapeHTML(itemName)}</b>
           <div style="font-size:12px;color:#64748b;">₱${itemPrice} each</div>
         </div>
         <div class="qty-ctrl">
@@ -666,7 +678,7 @@ window.submitCustomerOrder = async () => {
     const p = products.find(x => x.id === prodId);
     if (!p) return;
 
-    let unitPrice = p.price || 0;
+    let unitPrice = Number(p.price || 0);
     let displayTitle = p.name;
     const attachedAddons = [];
 
@@ -776,7 +788,7 @@ function showLiveTracker(orderId) {
   document.getElementById('cartBtn').style.display = 'none';
   document.getElementById('trackerScreen').style.display = 'block';
 
-  document.getElementById('trackerOrderBadge').textContent = orderId;
+  document.getElementById('trackerOrderBadge').textContent = escapeHTML(orderId);
 
   if (trackerUnsubscribe) trackerUnsubscribe();
 
@@ -789,7 +801,7 @@ function showLiveTracker(orderId) {
     const pagerBadge = document.getElementById('trackerPagerBadge');
     if (rawPager && rawPager !== 'NONE') {
       pagerBadge.style.display = 'inline-block';
-      pagerBadge.textContent = `📟 CUSTOMER # ${rawPager.replace(/[^0-9]/g, '') || rawPager}`;
+      pagerBadge.textContent = `📟 CUSTOMER # ${escapeHTML(rawPager.replace(/[^0-9]/g, '') || rawPager)}`;
     } else {
       pagerBadge.style.display = 'none';
     }
@@ -797,15 +809,17 @@ function showLiveTracker(orderId) {
     let itemsHtml = '';
     let waItemsText = '';
     (data.items || []).forEach(i => {
-      const name = typeof i === 'string' ? i : i.name;
-      const qty = i.qty || 1;
-      const price = i.price || 0;
-      let addonText = (i.addons && i.addons.length && !name.includes('with Boba') && !name.includes('Nutella')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
+      const name = escapeHTML(typeof i === 'string' ? i : i.name);
+      const qty = Number(i.qty || 1);
+      const price = Number(i.price || 0);
+      let addonText = (i.addons && i.addons.length && !name.includes('with Boba') && !name.includes('Nutella')) 
+        ? `<br><small style="color:#0f2b48;">+ ${i.addons.map(a => escapeHTML(a)).join(', ')}</small>` 
+        : '';
       itemsHtml += `<div class="item-row"><div><b>${name} x${qty}</b>${addonText}</div><div>₱${price * qty}</div></div>`;
       waItemsText += `• ${qty}x ${name} - ₱${price * qty}\n`;
     });
     document.getElementById('trackerItemsContainer').innerHTML = itemsHtml;
-    document.getElementById('trackerTotal').textContent = `₱${data.total || 0}`;
+    document.getElementById('trackerTotal').textContent = `₱${Number(data.total || 0).toLocaleString()}`;
 
     // Reconstruct WhatsApp URL if page is reloaded
     if (!currentWaUrl) {
