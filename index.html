@@ -85,7 +85,6 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
 
 /* Payment & WhatsApp Confirmation Instructions */
 .payment-info-box{background:#f8fafc;border:1px dashed #0f2b48;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#0f2b48;display:block}
-.whatsapp-reminder-box{background:#ecfdf5;border:1px solid #10b981;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#065f46;text-align:center;line-height:1.35}
 
 /* Live Tracker View */
 #trackerScreen{display:none;max-width:500px;margin:20px auto;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
@@ -162,11 +161,6 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
 
       <div id="paymentInfoBox" class="payment-info-box"></div>
 
-      <!-- Reminder to send confirmation via WhatsApp -->
-      <div class="whatsapp-reminder-box">
-        💬 <b>Reminder:</b> After tapping Place Order, please send your payment confirmation screenshot via WhatsApp to start preparation.
-      </div>
-
       <div class="summary-line"><span>Subtotal:</span><span>₱<span id="cartSub">0</span></span></div>
       <div class="summary-line total-line"><span>Total:</span><span>₱<span id="cartTot">0</span></span></div>
 
@@ -204,7 +198,12 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
     </div>
   </div>
 
-  <button onclick="startNewOrder()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:14px;width:100%;">
+  <!-- WhatsApp Confirmation Re-send Button on Tracker -->
+  <button id="sendWaConfirmBtn" onclick="openWhatsAppConfirmation()" style="width:100%;background:#25d366;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;">
+    📲 Send Payment Confirmation via WhatsApp
+  </button>
+
+  <button onclick="startNewOrder()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:8px;width:100%;">
     ➕ Order More / New Order
   </button>
 </div>
@@ -247,6 +246,7 @@ let customerCart = {};
 let milkTeaBobaSelection = {};
 let selectedCategory = 'ALL';
 let activeOrderId = null;
+let currentWaUrl = '';
 let trackerUnsubscribe = null;
 let alarmInterval = null;
 let currentAlarmAudio = null;
@@ -569,7 +569,7 @@ window.submitCustomerOrder = async () => {
     customerCart = {};
     updateCartBadge();
 
-    // Prepare WhatsApp Message
+    // Prepare WhatsApp Message & URL
     const waMessage = 
       `*🛒 COURTSIDE KITCHEN ORDER*\n` +
       `*Order #:* ${formattedOrderNo}\n` +
@@ -582,15 +582,25 @@ window.submitCustomerOrder = async () => {
       `*TOTAL: ₱${subtotal.toLocaleString()}*\n\n` +
       `📍 Track live status:\n${window.location.origin}/track_rc1.html?order=${formattedOrderNo}`;
 
-    const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
-    window.open(waUrl, '_blank');
-
+    currentWaUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
+    
+    // Automatically launch WhatsApp and move directly to Live Tracker
+    window.open(currentWaUrl, '_blank');
     showLiveTracker(formattedOrderNo);
   } catch (e) {
     alert('Error submitting order: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '🚀 Place Order';
+  }
+};
+
+window.openWhatsAppConfirmation = () => {
+  if (currentWaUrl) {
+    window.open(currentWaUrl, '_blank');
+  } else if (activeOrderId) {
+    const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hello Courtside Kitchen, sending payment confirmation for order ${activeOrderId}`)}`;
+    window.open(waUrl, '_blank');
   }
 };
 
@@ -632,15 +642,33 @@ function showLiveTracker(orderId) {
     }
 
     let itemsHtml = '';
+    let waItemsText = '';
     (data.items || []).forEach(i => {
       const name = typeof i === 'string' ? i : i.name;
       const qty = i.qty || 1;
       const price = i.price || 0;
       let addonText = (i.addons && i.addons.length && !name.includes('with Boba')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
       itemsHtml += `<div class="item-row"><div><b>${name} x${qty}</b>${addonText}</div><div>₱${price * qty}</div></div>`;
+      waItemsText += `• ${qty}x ${name} - ₱${price * qty}\n`;
     });
     document.getElementById('trackerItemsContainer').innerHTML = itemsHtml;
     document.getElementById('trackerTotal').textContent = `₱${data.total || 0}`;
+
+    // Reconstruct WhatsApp URL if page is reloaded
+    if (!currentWaUrl) {
+      const waMessage = 
+        `*🛒 COURTSIDE KITCHEN ORDER*\n` +
+        `*Order #:* ${data.orderNumber || orderId}\n` +
+        `*Customer:* ${data.customerName || 'Customer'}\n` +
+        `*Payment:* ${data.paymentMethod || 'Online'}\n` +
+        (data.notes ? `*Notes:* ${data.notes}\n` : '') +
+        `--------------------------\n` +
+        waItemsText +
+        `--------------------------\n` +
+        `*TOTAL: ₱${Number(data.total || 0).toLocaleString()}*\n\n` +
+        `📍 Track live status:\n${window.location.origin}/track_rc1.html?order=${data.orderNumber || orderId}`;
+      currentWaUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
+    }
 
     const sRec = document.getElementById('step-rec');
     const sPrep = document.getElementById('step-prep');
