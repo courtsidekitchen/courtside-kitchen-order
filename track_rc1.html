@@ -1,21 +1,281 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Track RC1</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Track Your Order - Courtside Kitchen</title>
 <style>
-body{font-family:Arial;background:#ececec;max-width:900px;margin:auto;padding:20px;box-sizing:border-box}.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-sizing:border-box}.track-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.track-input{flex:1;min-width:220px;padding:14px 16px;font-size:18px;font-weight:bold;border:2px solid #ccc;border-radius:8px;box-sizing:border-box}.track-btn{padding:14px 28px;font-size:18px;font-weight:bold;background:#0066cc;color:#fff;border:none;border-radius:8px;cursor:pointer;transition:background 0.2s}.track-btn:hover{background:#0052a3}.pill{display:inline-block;background:#163a70;color:#fff;padding:6px 12px;border-radius:20px}.done{color:green;font-weight:bold}.active{color:#d97706;font-weight:bold}.items{background:#f4f4f4;padding:8px;border-radius:8px}.bad{color:#b71c1c}
-</style></head><body>
-<div class='card'>
-  <h1 style='margin-top:0;'>🔎 Track Order</h1>
-  <div class='track-form'>
-    <input id='orderNo' class='track-input' placeholder='e.g. CK-0001'>
-    <button class='track-btn' onclick='track()'>Track Order</button>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f4f8;margin:0;padding:16px;color:#1e293b;display:flex;justify-content:center}
+.tracker-container{width:100%;max-width:480px;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
+.logo{height:80px;max-width:100%;object-fit:contain;margin-bottom:12px}
+.order-num-badge{background:#0f2b48;color:#ffffff;padding:6px 14px;border-radius:20px;display:inline-block;font-weight:bold;font-size:16px;margin-bottom:14px;letter-spacing:1px}
+.pager-badge{background:#d97706;color:#ffffff;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:bold;margin-bottom:12px;display:inline-block}
+
+/* Live Status Pulse & Cards */
+.status-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:16px;margin:12px 0;transition:all 0.3s}
+.status-title{font-size:18px;font-weight:900;letter-spacing:0.5px;margin:0;color:#0f2b48}
+.status-desc{font-size:13px;color:#64748b;margin:6px 0 0 0}
+
+/* Status States */
+.status-ready{background:#fffbeb !important;border-color:#f59e0b !important;animation:pulseReady 1.5s infinite}
+.status-ready .status-title{color:#b45309 !important;font-size:20px !important}
+.status-completed{background:#f0fdf4 !important;border-color:#22c55e !important}
+.status-completed .status-title{color:#15803d !important}
+
+@keyframes pulseReady {
+  0%{transform:scale(1);box-shadow:0 0 0 0 rgba(245,158,11,0.4)}
+  70%{transform:scale(1.02);box-shadow:0 0 0 12px rgba(245,158,11,0)}
+  100%{transform:scale(1);box-shadow:0 0 0 0 rgba(245,158,11,0)}
+}
+
+/* Timeline */
+.timeline{display:flex;justify-content:space-between;position:relative;margin:24px 0 16px 0}
+.timeline::before{content:"";position:absolute;top:14px;left:10%;right:10%;height:3px;background:#e2e8f0;z-index:1}
+.timeline-step{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:25%}
+.step-circle{width:30px;height:30px;border-radius:50%;background:#cbd5e1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;transition:all 0.3s}
+.step-circle.active{background:#0f2b48}
+.step-circle.ready{background:#f59e0b}
+.step-circle.done{background:#22c55e}
+.step-label{font-size:10px;font-weight:bold;margin-top:6px;color:#64748b;text-align:center;line-height:1.2}
+
+/* Order Item Breakdown */
+.items-list{background:#f8fafc;border-radius:10px;padding:12px;text-align:left;font-size:13px;border:1px solid #e2e8f0;margin-top:14px}
+.item-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9}
+.item-row:last-child{border-bottom:none}
+.total-row{display:flex;justify-content:space-between;font-weight:bold;font-size:15px;color:#0f2b48;border-top:2px solid #e2e8f0;padding-top:6px;margin-top:6px}
+
+.alarm-banner{display:none;background:#f59e0b;color:#fff;font-weight:bold;font-size:13px;padding:8px;border-radius:8px;margin-bottom:10px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="tracker-container">
+  <img src="logo.png" alt="Courtside Kitchen" class="logo"><br>
+  
+  <div id="alarmBanner" class="alarm-banner" onclick="unlockAudio()">
+    🔔 Tap here to enable sound alerts for your order!
+  </div>
+
+  <div id="orderBadge" class="order-num-badge">CK-0000</div>
+  <div id="pagerBadge" class="pager-badge" style="display:none;">📟 CUSTOMER # 0</div>
+
+  <!-- Live Status Card -->
+  <div id="statusBox" class="status-card">
+    <h2 id="statusTitle" class="status-title">Order Received</h2>
+    <p id="statusDesc" class="status-desc">Your order has been sent to the kitchen.</p>
+  </div>
+
+  <!-- Timeline Steps -->
+  <div class="timeline">
+    <div class="timeline-step">
+      <div id="step-received" class="step-circle active">1</div>
+      <div class="step-label">Received</div>
+    </div>
+    <div class="timeline-step">
+      <div id="step-prep" class="step-circle">2</div>
+      <div class="step-label">Preparing</div>
+    </div>
+    <div class="timeline-step">
+      <div id="step-ready" class="step-circle">3</div>
+      <div class="step-label">Ready</div>
+    </div>
+    <div class="timeline-step">
+      <div id="step-done" class="step-circle">4</div>
+      <div class="step-label">Claimed</div>
+    </div>
+  </div>
+
+  <!-- Order Items & Receipt -->
+  <div class="items-list">
+    <div style="font-weight:bold;margin-bottom:6px;color:#0f2b48;">Order Details</div>
+    <div id="itemsContainer"></div>
+    <div class="total-row">
+      <span>Total Amount:</span>
+      <span id="orderTotal">₱0</span>
+    </div>
   </div>
 </div>
-<div id='out'></div>
-<script type='module'>
+
+<script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getFirestore,doc,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let unsub=null;const flow=['PENDING','ORDER_RECEIVED','PREPARING','COMPLETED'];
-window.track=()=>{const id=orderNo.value.trim().toUpperCase();if(!id)return;if(unsub)unsub();unsub=onSnapshot(doc(db,'orders',id),s=>{if(!s.exists()){out.innerHTML='<div class="card">Order not found.</div>';return;}const o=s.data();const idx=Math.max(0,flow.indexOf(o.status));let tl='';flow.forEach((x,i)=>tl+=`<div class='${i<idx?'done':i===idx?'active':''}'>${i<=idx?'✅':'⚪'} ${x}</div>`);const items=(o.items||[]).map(i=>`${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('<br>')||'No items';let eta=o.status==='COMPLETED'?'Completed':'In Progress';out.innerHTML=`<div class='card'><span class='pill'>${o.status||''}</span><h2>${o.orderNumber||id}</h2><p><b>Customer:</b> ${o.customerName||''}</p><div class='items'><b>Items Ordered</b><br>${items}</div><p><b>Discount:</b> ${o.discountType||'None'}</p><p><b>Discount Amount:</b> ₱${o.discountAmount||0}</p><p><b>Total:</b> ₱${o.total||0}</p><p><b>Notes:</b> ${o.notes||'-'}</p><p><b>ETA:</b> ${eta}</p>${o.cancelledBy?`<p class='bad'><b>Cancelled By:</b> ${o.cancelledBy}</p>`:''}${o.declineReason?`<p class='bad'><b>Decline Reason:</b> ${o.declineReason}</p>`:''}<h3>Timeline</h3>${tl}</div>`;});};
-const q=new URLSearchParams(location.search).get('order');if(q){orderNo.value=q;track();}
-</script></body></html>
+import {getFirestore, doc, onSnapshot} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
+  authDomain: 'courtside-kitchen.firebaseapp.com',
+  projectId: 'courtside-kitchen',
+  storageBucket: 'courtside-kitchen.appspot.com',
+  messagingSenderId: '1062967764463',
+  appId: '1:1062967764463:web:0b6dbbfec0904d0f0c05a1'
+});
+const db = getFirestore(app);
+
+// Parse Order ID from URL parameter (e.g. track_rc1.html?order=CK-0001)
+const urlParams = new URLSearchParams(window.location.search);
+const orderId = urlParams.get('order') || urlParams.get('id');
+
+let alarmInterval = null;
+let currentAlarmAudio = null;
+let audioUnlocked = false;
+
+function unlockAudio() {
+  audioUnlocked = true;
+  document.getElementById('alarmBanner').style.display = 'none';
+  try {
+    const snd = new Audio('sms_jackpot.mp3');
+    snd.volume = 0.01;
+    snd.play().then(() => snd.pause()).catch(() => {});
+  } catch (e) {}
+
+  if ('Notification' in window && Notification.permission !== 'granted') {
+    Notification.requestPermission();
+  }
+}
+
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
+function playAlarmTone() {
+  try {
+    if (currentAlarmAudio) {
+      currentAlarmAudio.pause();
+      currentAlarmAudio.currentTime = 0;
+    }
+    currentAlarmAudio = new Audio('sms_jackpot.mp3?t=' + Date.now());
+    currentAlarmAudio.volume = 1.0;
+    currentAlarmAudio.play().catch(() => {});
+  } catch (e) {}
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('🚨 Order Ready for Pick Up!', {
+      body: `Your order is ready to claim at the counter.`,
+      icon: 'logo.png',
+      badge: 'logo.png',
+      vibrate: [300, 100, 300, 100, 300],
+      tag: 'ready-pickup'
+    });
+  }
+}
+
+function startContinuousReadyAlarm() {
+  if (alarmInterval) return; // Already looping
+  playAlarmTone();
+  // Repeat alarm every 4.5 seconds until marked COMPLETED
+  alarmInterval = setInterval(playAlarmTone, 4500);
+}
+
+function stopContinuousAlarm() {
+  if (alarmInterval) {
+    clearInterval(alarmInterval);
+    alarmInterval = null;
+  }
+  if (currentAlarmAudio) {
+    currentAlarmAudio.pause();
+    currentAlarmAudio.currentTime = 0;
+    currentAlarmAudio = null;
+  }
+}
+
+if (!orderId) {
+  document.getElementById('statusTitle').textContent = 'Invalid Order Link';
+  document.getElementById('statusDesc').textContent = 'Please scan your receipt QR code or open your order tracker link again.';
+} else {
+  document.getElementById('orderBadge').textContent = orderId;
+
+  // Real-time Firestore Listener
+  onSnapshot(doc(db, 'orders', orderId), snap => {
+    if (!snap.exists()) {
+      document.getElementById('statusTitle').textContent = 'Order Not Found';
+      document.getElementById('statusDesc').textContent = 'This ticket has either expired or does not exist.';
+      stopContinuousAlarm();
+      return;
+    }
+
+    const data = snap.data();
+    const rawStatus = (data.status || 'PENDING').toString().toUpperCase();
+
+    // Pager display
+    const rawPager = (data.pagerNumber || '').trim();
+    if (rawPager && rawPager !== 'NONE') {
+      const pagerBadge = document.getElementById('pagerBadge');
+      pagerBadge.style.display = 'inline-block';
+      pagerBadge.textContent = `📟 CUSTOMER # ${rawPager.replace(/[^0-9]/g, '') || rawPager}`;
+    }
+
+    // Render items breakdown
+    let itemsHtml = '';
+    (data.items || []).forEach(i => {
+      const name = typeof i === 'string' ? i : i.name;
+      const qty = i.qty || 1;
+      const price = i.price || 0;
+      let addonText = '';
+      if (i.addons && i.addons.length > 0) {
+        addonText = `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>`;
+      }
+      itemsHtml += `
+        <div class="item-row">
+          <div><b>${name} x${qty}</b>${addonText}</div>
+          <div>₱${price * qty}</div>
+        </div>
+      `;
+    });
+    document.getElementById('itemsContainer').innerHTML = itemsHtml;
+    document.getElementById('orderTotal').textContent = `₱${data.total || 0}`;
+
+    // Reset Timeline Nodes
+    const sRec = document.getElementById('step-received');
+    const sPrep = document.getElementById('step-prep');
+    const sReady = document.getElementById('step-ready');
+    const sDone = document.getElementById('step-done');
+    const sBox = document.getElementById('statusBox');
+    const sTitle = document.getElementById('statusTitle');
+    const sDesc = document.getElementById('statusDesc');
+
+    sBox.className = 'status-card';
+    sRec.className = 'step-circle';
+    sPrep.className = 'step-circle';
+    sReady.className = 'step-circle';
+    sDone.className = 'step-circle';
+
+    if (rawStatus === 'PENDING' || rawStatus === 'ORDER_RECEIVED') {
+      stopContinuousAlarm();
+      sRec.className = 'step-circle active';
+      sTitle.textContent = 'Order Received';
+      sDesc.textContent = 'Your order is queued and being sent to the kitchen line.';
+    } else if (rawStatus === 'PREPARING') {
+      stopContinuousAlarm();
+      sRec.className = 'step-circle active';
+      sPrep.className = 'step-circle active';
+      sTitle.textContent = 'Preparing Your Food';
+      sDesc.textContent = 'Our kitchen team is now preparing your delicious meal!';
+    } else if (rawStatus === 'READY_FOR_PICKUP' || rawStatus === 'READY FOR PICK UP' || rawStatus === 'READY') {
+      // Trigger continuous loop notification
+      startContinuousReadyAlarm();
+      sBox.className = 'status-card status-ready';
+      sRec.className = 'step-circle active';
+      sPrep.className = 'step-circle active';
+      sReady.className = 'step-circle ready';
+      sTitle.textContent = 'READY FOR PICK UP!';
+      sDesc.textContent = 'Your order is hot and ready! Please claim it at the pickup counter.';
+    } else if (rawStatus === 'COMPLETED') {
+      // Cease continuous loop alarm
+      stopContinuousAlarm();
+      sBox.className = 'status-card status-completed';
+      sRec.className = 'step-circle done';
+      sPrep.className = 'step-circle done';
+      sReady.className = 'step-circle done';
+      sDone.className = 'step-circle done';
+      sTitle.textContent = 'Order Claimed';
+      sDesc.textContent = 'Thank you for dining at Courtside Kitchen! Enjoy your meal.';
+    } else if (['VOIDED', 'CANCELLED', 'DECLINED'].includes(rawStatus)) {
+      stopContinuousAlarm();
+      sTitle.textContent = `Order ${rawStatus}`;
+      sTitle.style.color = '#dc2626';
+      sDesc.textContent = data.voidReason || data.cancelReason || data.declineReason || 'Please speak to the counter cashier.';
+    }
+  });
+}
+</script>
+</body>
+</html>
