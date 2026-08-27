@@ -126,10 +126,10 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
 .report-table th, .report-table td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:left}
 .report-table th{background:#f8fafc;color:#0f2b48;font-weight:bold}
 
-/* Kanban Board */
-.board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:100%}
+/* 5-Column Kanban Board */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;height:100%}
 .col{background:#ffffff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;display:flex;flex-direction:column;height:100%;overflow:hidden}
-.col h3{margin-top:0;font-size:13px;border-bottom:2px solid #f1f5f9;padding-bottom:4px;color:#0f2b48;font-weight:800}
+.col h3{margin-top:0;font-size:12px;border-bottom:2px solid #f1f5f9;padding-bottom:4px;color:#0f2b48;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dropzone{flex:1;overflow-y:auto}
 .ticket-card{background:#ffffff;padding:10px;border-radius:6px;margin:6px 0;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(15,43,72,0.05);cursor:grab;font-size:12.5px}
 
@@ -347,7 +347,7 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
       </div>
     </div>
 
-    <!-- ORDERS BOARD TAB -->
+    <!-- ORDERS BOARD TAB (5-Column Kanban) -->
     <div id="orders" class="tab">
       <div style="margin-bottom:6px;">
         <input id="searchOrdersInput" placeholder="🔎 Search orders..." oninput="renderOrdersBoard()" style="margin:0;padding:6px 10px;">
@@ -356,6 +356,7 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
         <div class="col"><h3>PENDING</h3><div id="pending" class="dropzone" data-status="PENDING"></div></div>
         <div class="col"><h3>ORDER_RECEIVED</h3><div id="received" class="dropzone" data-status="ORDER_RECEIVED"></div></div>
         <div class="col"><h3>PREPARING</h3><div id="preparing" class="dropzone" data-status="PREPARING"></div></div>
+        <div class="col"><h3>READY FOR PICK UP</h3><div id="ready" class="dropzone" data-status="READY_FOR_PICKUP"></div></div>
         <div class="col"><h3>COMPLETED</h3><div id="completed" class="dropzone" data-status="COMPLETED"></div></div>
       </div>
     </div>
@@ -977,7 +978,7 @@ window.printCurrentReportPDF = () => {
 
 window.renderOrdersBoard = () => {
   const query = (document.getElementById('searchOrdersInput')?.value || '').trim().toLowerCase();
-  let p='', r='', pr='', re='', h='';
+  let p='', r='', pr='', re='', rd='', h='';
 
   const filteredOrders = hist.filter(o => {
     if (!query) return true;
@@ -995,12 +996,14 @@ window.renderOrdersBoard = () => {
     if (statusUpper === 'PENDING') p += orderCardHtml;
     else if (statusUpper === 'ORDER_RECEIVED') r += orderCardHtml;
     else if (statusUpper === 'PREPARING') pr += orderCardHtml;
+    else if (statusUpper === 'READY_FOR_PICKUP' || statusUpper === 'READY FOR PICK UP' || statusUpper === 'READY') rd += orderCardHtml;
     else if (statusUpper === 'COMPLETED') re += orderCardHtml;
   });
 
   document.getElementById('pending').innerHTML = p;
   document.getElementById('received').innerHTML = r;
   document.getElementById('preparing').innerHTML = pr;
+  document.getElementById('ready').innerHTML = rd;
   document.getElementById('completed').innerHTML = re;
 
   initDragDrop();
