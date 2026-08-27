@@ -111,7 +111,6 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-// Parse Order ID from URL parameter (e.g. track_rc1.html?order=CK-0001)
 const urlParams = new URLSearchParams(window.location.search);
 const orderId = urlParams.get('order') || urlParams.get('id');
 
@@ -159,9 +158,8 @@ function playAlarmTone() {
 }
 
 function startContinuousReadyAlarm() {
-  if (alarmInterval) return; // Already looping
+  if (alarmInterval) return;
   playAlarmTone();
-  // Repeat alarm every 4.5 seconds until marked COMPLETED
   alarmInterval = setInterval(playAlarmTone, 4500);
 }
 
@@ -183,7 +181,6 @@ if (!orderId) {
 } else {
   document.getElementById('orderBadge').textContent = orderId;
 
-  // Real-time Firestore Listener
   onSnapshot(doc(db, 'orders', orderId), snap => {
     if (!snap.exists()) {
       document.getElementById('statusTitle').textContent = 'Order Not Found';
@@ -195,7 +192,6 @@ if (!orderId) {
     const data = snap.data();
     const rawStatus = (data.status || 'PENDING').toString().toUpperCase();
 
-    // Pager display
     const rawPager = (data.pagerNumber || '').trim();
     if (rawPager && rawPager !== 'NONE') {
       const pagerBadge = document.getElementById('pagerBadge');
@@ -203,7 +199,6 @@ if (!orderId) {
       pagerBadge.textContent = `📟 CUSTOMER # ${rawPager.replace(/[^0-9]/g, '') || rawPager}`;
     }
 
-    // Render items breakdown
     let itemsHtml = '';
     (data.items || []).forEach(i => {
       const name = typeof i === 'string' ? i : i.name;
@@ -223,7 +218,6 @@ if (!orderId) {
     document.getElementById('itemsContainer').innerHTML = itemsHtml;
     document.getElementById('orderTotal').textContent = `₱${data.total || 0}`;
 
-    // Reset Timeline Nodes
     const sRec = document.getElementById('step-received');
     const sPrep = document.getElementById('step-prep');
     const sReady = document.getElementById('step-ready');
@@ -247,19 +241,17 @@ if (!orderId) {
       stopContinuousAlarm();
       sRec.className = 'step-circle active';
       sPrep.className = 'step-circle active';
-      sTitle.textContent = 'Preparing Your Food';
-      sDesc.textContent = 'Our kitchen team is now preparing your delicious meal!';
+      sTitle.textContent = 'Preparing Your Order';
+      sDesc.textContent = 'Our kitchen team is now preparing your delicious items!';
     } else if (rawStatus === 'READY_FOR_PICKUP' || rawStatus === 'READY FOR PICK UP' || rawStatus === 'READY') {
-      // Trigger continuous loop notification
       startContinuousReadyAlarm();
       sBox.className = 'status-card status-ready';
       sRec.className = 'step-circle active';
       sPrep.className = 'step-circle active';
       sReady.className = 'step-circle ready';
       sTitle.textContent = 'READY FOR PICK UP!';
-      sDesc.textContent = 'Your order is hot and ready! Please claim it at the pickup counter.';
+      sDesc.textContent = 'Your order is freshly prepared and ready! Please claim it at the pickup counter.';
     } else if (rawStatus === 'COMPLETED') {
-      // Cease continuous loop alarm
       stopContinuousAlarm();
       sBox.className = 'status-card status-completed';
       sRec.className = 'step-circle done';
