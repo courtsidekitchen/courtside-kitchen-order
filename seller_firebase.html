@@ -367,9 +367,12 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
     <!-- TICKET HISTORY & ACTIONS TAB -->
     <div id="pos-history" class="tab">
       <div class="scroll-view" style="background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
           <h3 style="margin:0;color:#0f2b48;font-size:15px;">🎫 Ticket Management & Audit Log</h3>
-          <button onclick="exportCsv()" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">📥 Export Tickets CSV</button>
+          <div style="display:flex;gap:6px;">
+            <button onclick="exportCsv()" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">📥 Export Tickets CSV</button>
+            <button onclick="clearCompletedTicketsWithPin()" style="background:#dc2626;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">🗑️ Clear Completed Tickets</button>
+          </div>
         </div>
         <input id="posHistorySearch" placeholder="🔍 Search ticket by #, customer, or status..." oninput="renderPosHistory()" style="padding:6px 10px;">
         <div id="posHistoryList" style="margin-top:8px;"></div>
@@ -1199,6 +1202,36 @@ function initLiveListeners() {
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
 window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
 window.exportCsv=()=>{let rows=['Order,Customer,Phone,Pager,Status,GrossSubtotal,DiscountType,DiscountCategory,DiscountAmount,NetTotal,PaymentMethod'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.customerPhone||''},${o.pagerNumber||''},${o.status},${o.subtotal||o.total||0},${o.discountType||'None'},${o.discountCategory||'None'},${o.discountAmount||0},${o.total||0},${o.paymentMethod||'Cash'}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+
+// PIN Protected Bulk Cleanup for Inactive / Completed Tickets
+window.clearCompletedTicketsWithPin = async () => {
+  const enteredPin = prompt('🔒 Enter Manager PIN to clear completed/closed tickets:');
+  if (enteredPin !== currentManagerPin) {
+    return alert('Incorrect Manager PIN. Action cancelled.');
+  }
+
+  const inactiveTickets = hist.filter(o => {
+    const s = (o.status || '').toString().toUpperCase();
+    return ['COMPLETED', 'VOIDED', 'CANCELLED', 'REFUNDED', 'DECLINED'].includes(s);
+  });
+
+  if (!inactiveTickets.length) {
+    return alert('No completed or closed tickets to clear.');
+  }
+
+  if (confirm(`Are you sure you want to permanently delete ${inactiveTickets.length} completed/closed ticket(s)?\n\n(Active orders will NOT be deleted)`)) {
+    let deletedCount = 0;
+    for (const t of inactiveTickets) {
+      try {
+        await deleteDoc(doc(db, 'orders', t.id));
+        deletedCount++;
+      } catch (e) {
+        console.error('Error deleting ticket:', t.id, e);
+      }
+    }
+    alert(`Successfully cleared ${deletedCount} ticket(s) from Firestore!`);
+  }
+};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
