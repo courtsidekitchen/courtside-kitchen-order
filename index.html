@@ -1,217 +1,629 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Courtside Kitchen RC2</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Courtside Kitchen - Online Ordering & Live Tracker</title>
 <style>
-body{font-family:Arial;background:#ececec;margin:0}.container{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;padding:14px;border-radius:14px;margin-bottom:12px}.category{background:#f5f5f5;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;display:flex;justify-content:space-between}.content{display:none;padding-top:10px}.content.open{display:block}.item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee}.item-info{flex:1}.item-name{font-weight:bold}.item-boba{font-size:12px;color:#666;display:block;margin-top:4px}.item-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.item-price{color:#0066cc;font-weight:bold}.item-qty{display:flex;gap:6px;align-items:center}.item-qty button{padding:4px 8px;background:#0066cc;color:#fff;border:none;border-radius:4px;cursor:pointer}.item-qty input{width:40px;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px}.cart{background:#0066cc;color:#fff;padding:12px;border-radius:12px;margin:12px 0}.cart>div{padding:4px;display:flex;justify-content:space-between}.cart-total{font-size:24px;font-weight:bold;padding:8px 0;border-top:2px solid #fff}.btn{width:100%;padding:12px;background:#4caf50;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}.btn:disabled{background:#ccc;cursor:not-allowed}.payment-details{background:#f0f0f0;padding:12px;border-radius:8px;margin-top:12px;border-left:4px solid #0066cc}.payment-details-title{font-weight:bold;margin-bottom:8px}.payment-details-item{padding:6px 0;font-size:14px}.payment-details-item label{font-weight:bold;color:#333}.payment-details-item span{color:#666}.payment-toggle{margin-top:12px;padding:12px;background:#fff3cd;border-radius:8px;border-left:4px solid #ff9800}.payment-toggle-label{font-weight:bold;margin-bottom:8px;display:block}.toggle-container{display:flex;gap:10px;align-items:center}.toggle-btn{padding:8px 16px;background:#ddd;border:none;border-radius:4px;cursor:pointer;font-weight:bold;transition:all 0.3s}.toggle-btn.active{background:#4caf50;color:#fff}.toggle-status{font-size:14px;margin-left:10px}
-.header{text-align:center;padding:12px 0;display:flex;justify-content:center;align-items:center}
-.header img{max-width:100%;width:98%;height:auto;object-fit:contain;mix-blend-mode:multiply}
-.qr-download-link{display:inline-block;text-decoration:none;margin-top:8px}
-.qr-download-link small{color:#0066cc;font-weight:bold;display:block;margin-top:4px}
-.track-btn{display:inline-block;width:100%;padding:12px;background:#0066cc;color:#fff;text-align:center;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:12px;box-sizing:border-box}
-.cancel-btn{display:inline-block;width:100%;padding:12px;background:#f44336;color:#fff;text-align:center;border:none;border-radius:8px;font-weight:bold;margin-top:8px;cursor:pointer;font-size:14px}
-</style></head><body>
-<div class='container' id='mainContainer'>
-<div class="header">
-  <img src="Courtside Kitchen - Colored.png" alt="Courtside Kitchen Logo" onerror="this.src='logo.png'">
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f4f8;color:#1e293b}
+
+/* App Header */
+.app-header{display:flex;justify-content:space-between;align-items:center;background:#ffffff;padding:8px 16px;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(15,43,72,0.04);position:sticky;top:0;z-index:100}
+.brand-logo-header{height:45px;max-width:140px;object-fit:contain}
+.cart-badge-btn{background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:20px;font-weight:bold;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px}
+
+/* Category Filter Bar */
+.category-filter{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:#ffffff;border-bottom:1px solid #e2e8f0;position:sticky;top:61px;z-index:90}
+.category-filter button{padding:6px 14px;background:#e2e8f0;border:none;border-radius:20px;font-size:12.5px;font-weight:bold;cursor:pointer;white-space:nowrap;color:#475569}
+.category-filter button.active{background:#0f2b48;color:#ffffff}
+
+/* Container & Grids */
+.container{max-width:800px;margin:0 auto;padding:12px 14px 80px 14px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.menu-item-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(15,43,72,0.04);display:flex;flex-direction:column;justify-content:space-between}
+.menu-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;color:#0f2b48}
+.menu-item-price{color:#0f2b48;font-weight:bold;font-size:13px;margin-bottom:8px}
+.btn-add{background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
+
+/* Add-ons Selector in Cart */
+.addon-pill-box{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px}
+.addon-pill{font-size:10px;padding:2px 6px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;cursor:pointer;user-select:none;color:#475569}
+.addon-pill.active{background:#0f2b48;color:#ffffff;font-weight:bold;border-color:#0f2b48}
+
+/* Cart Modal Drawer */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,43,72,0.5);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.cart-drawer{background:#ffffff;width:100%;max-width:500px;max-height:85vh;border-radius:16px 16px 0 0;padding:18px;display:flex;flex-direction:column;box-shadow:0 -4px 20px rgba(0,0,0,0.15)}
+.cart-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:10px}
+.cart-items-box{flex:1;overflow-y:auto;margin-bottom:10px}
+.cart-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9}
+.qty-ctrl{display:flex;gap:4px;align-items:center}
+.qty-ctrl button{padding:2px 8px;font-size:12px;border:none;background:#0f2b48;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold}
+.summary-line{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;color:#475569}
+.total-line{font-size:18px;font-weight:bold;color:#0f2b48;border-top:2px solid #0f2b48;margin-top:6px;padding-top:6px}
+input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#f8fafc}
+
+/* Live Tracker View (Preserved on Refresh) */
+#trackerScreen{display:none;max-width:500px;margin:20px auto;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
+.order-num-badge{background:#0f2b48;color:#ffffff;padding:6px 14px;border-radius:20px;display:inline-block;font-weight:bold;font-size:16px;margin-bottom:10px;letter-spacing:1px}
+.pager-badge{background:#d97706;color:#ffffff;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:bold;margin-bottom:12px;display:inline-block}
+
+.status-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:16px;margin:12px 0;transition:all 0.3s}
+.status-title{font-size:18px;font-weight:900;margin:0;color:#0f2b48}
+.status-desc{font-size:13px;color:#64748b;margin:6px 0 0 0}
+.status-ready{background:#fffbeb !important;border-color:#f59e0b !important;animation:pulseReady 1.5s infinite}
+.status-ready .status-title{color:#b45309 !important;font-size:20px !important}
+.status-completed{background:#f0fdf4 !important;border-color:#22c55e !important}
+.status-completed .status-title{color:#15803d !important}
+
+@keyframes pulseReady{
+  0%{transform:scale(1);box-shadow:0 0 0 0 rgba(245,158,11,0.4)}
+  70%{transform:scale(1.02);box-shadow:0 0 0 12px rgba(245,158,11,0)}
+  100%{transform:scale(1);box-shadow:0 0 0 0 rgba(245,158,11,0)}
+}
+
+/* Timeline */
+.timeline{display:flex;justify-content:space-between;position:relative;margin:24px 0 16px 0}
+.timeline::before{content:"";position:absolute;top:14px;left:10%;right:10%;height:3px;background:#e2e8f0;z-index:1}
+.timeline-step{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:25%}
+.step-circle{width:30px;height:30px;border-radius:50%;background:#cbd5e1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold}
+.step-circle.active{background:#0f2b48}
+.step-circle.ready{background:#f59e0b}
+.step-circle.done{background:#22c55e}
+.step-label{font-size:10px;font-weight:bold;margin-top:6px;color:#64748b;text-align:center}
+
+.items-list{background:#f8fafc;border-radius:10px;padding:12px;text-align:left;font-size:13px;border:1px solid #e2e8f0;margin-top:14px}
+.item-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9}
+</style>
+</head>
+<body>
+
+<!-- Hidden Area for Audio / Permissions -->
+<div class="app-header">
+  <img src="logo.png" alt="Courtside Kitchen" class="brand-logo-header">
+  <button id="cartBtn" class="cart-badge-btn" onclick="openCartModal()">
+    🛒 View Cart (<span id="cartCount">0</span>)
+  </button>
 </div>
-<div id='menu'></div>
-<div class='card'>
-<input id='customerName' placeholder='Name' style='width:100%;padding:10px'><br><br>
-<textarea id='notes' placeholder='Special requests' style='width:100%;height:70px'></textarea><br><br>
-<select id='paymentMethod' onchange='updatePaymentInfo()' style='width:100%;padding:10px'>
-<option value='GCash'>GCash</option><option value='BPI'>BPI</option></select>
-<br><br>
-<a id='paymentDownloadLink' href='GCASH.jpg' download='Payment_QR.jpg' class='qr-download-link'>
-  <img id='paymentImage' src='GCASH.jpg' style='max-width:250px;width:100%;border-radius:12px;cursor:pointer'>
-  <small>📥 Tap image to download QR code</small>
-</a>
-<div class='payment-details'>
-<div class='payment-details-title' id='paymentMethodTitle'>GCash Payment Details</div>
-<div class='payment-details-item'>
-<label>Account Name:</label>
-<span id='accountName'>PA****K NI**O L.</span>
+
+<!-- Category Filters -->
+<div id="categoryFilterBar" class="category-filter"></div>
+
+<!-- Main Menu Section -->
+<div id="menuContainer" class="container">
+  <div id="menuCatalog" class="menu-grid"></div>
 </div>
-<div class='payment-details-item'>
-<label>Mobile Number:</label>
-<span id='accountNumber'>09178512376</span>
+
+<!-- Customer Cart Modal Drawer -->
+<div id="cartModal" class="modal-overlay">
+  <div class="cart-drawer">
+    <div class="cart-header">
+      <h3 style="margin:0;color:#0f2b48;">🛒 Your Order Cart</h3>
+      <button onclick="closeCartModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+
+    <div id="cartList" class="cart-items-box">
+      <div style="text-align:center;color:#94a3b8;padding:20px;">Cart is empty.</div>
+    </div>
+
+    <div>
+      <input id="custName" placeholder="Your Name (Required) *">
+      <input id="custPhone" type="tel" placeholder="Mobile Number (09xxxxxxxxx) *">
+      <textarea id="custNotes" placeholder="Special cooking / prep requests..." style="height:40px;"></textarea>
+
+      <div class="summary-line"><span>Subtotal:</span><span>₱<span id="cartSub">0</span></span></div>
+      <div class="summary-line total-line"><span>Total:</span><span>₱<span id="cartTot">0</span></span></div>
+
+      <button id="placeOrderBtn" onclick="submitCustomerOrder()" style="width:100%;background:#0f2b48;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;">
+        🚀 Place Order
+      </button>
+    </div>
+  </div>
 </div>
+
+<!-- Live Order Tracker Screen (Restores automatically upon refresh) -->
+<div id="trackerScreen">
+  <img src="logo.png" alt="Courtside Kitchen" class="brand-logo-header" style="height:60px;margin-bottom:8px;"><br>
+  <div id="trackerOrderBadge" class="order-num-badge">CK-0000</div><br>
+  <div id="trackerPagerBadge" class="pager-badge" style="display:none;">📟 CUSTOMER # 0</div>
+
+  <div id="statusBox" class="status-card">
+    <h2 id="statusTitle" class="status-title">Order Received</h2>
+    <p id="statusDesc" class="status-desc">Your order has been sent to the kitchen.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-step"><div id="step-rec" class="step-circle active">1</div><div class="step-label">Received</div></div>
+    <div class="timeline-step"><div id="step-prep" class="step-circle">2</div><div class="step-label">Preparing</div></div>
+    <div class="timeline-step"><div id="step-ready" class="step-circle">3</div><div class="step-label">Ready</div></div>
+    <div class="timeline-step"><div id="step-done" class="step-circle">4</div><div class="step-label">Claimed</div></div>
+  </div>
+
+  <div class="items-list">
+    <div style="font-weight:bold;margin-bottom:6px;color:#0f2b48;">Order Summary</div>
+    <div id="trackerItemsContainer"></div>
+    <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:15px;color:#0f2b48;border-top:2px solid #e2e8f0;padding-top:6px;margin-top:6px;">
+      <span>Total Paid:</span>
+      <span id="trackerTotal">₱0</span>
+    </div>
+  </div>
+
+  <button onclick="startNewOrder()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:14px;width:100%;">
+    ➕ Order More / New Order
+  </button>
 </div>
-<div class='payment-toggle'>
-<label class='payment-toggle-label'>💳 Payment Made?</label>
-<div class='toggle-container'>
-<button class='toggle-btn' id='paymentYes' onclick='setPaymentStatus(true)'>✓ Yes</button>
-<button class='toggle-btn active' id='paymentNo' onclick='setPaymentStatus(false)'>✗ No</button>
-<span class='toggle-status' id='paymentStatus'>Awaiting payment...</span>
-</div>
-</div>
-</div>
-<div class='cart'><div id='summary'>No items selected</div><div>Subtotal ₱<span id='sub'>0</span></div><div class='cart-total'>Total ₱<span id='tot'>0</span></div><button id='placeOrderBtn'
-class='btn'
-disabled
-onclick='placeOrder()'>
-🍽️ PLACE ORDER
-</button>
-</div><div id='success'></div></div>
-<script type='module'>
+
+<script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getFirestore,collection,onSnapshot,doc,runTransaction,setDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const app=initializeApp({apiKey:'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',authDomain:'courtside-kitchen.firebaseapp.com',projectId:'courtside-kitchen'});const db=getFirestore(app);
-let products=[],cart={},bobaMap={},openCats=new Set(),paymentMade=false;
-const paymentMethods={
-GCash:{
-title:'GCash Payment Details',
-image:'GCASH.jpg',
-accountName:'PA****K NI**O L.',
-accountNumber:'09178512376'
-},
-BPI:{
-title:'BPI Payment Details',
-image:'BPI.jpg',
-accountName:'PA****K NI**O LA***O.',
-accountNumber:'0846454643'
-}
-};
-window.updatePaymentInfo=()=>{
-const method=document.getElementById('paymentMethod').value;
-const paymentInfo=paymentMethods[method];
-document.getElementById('paymentImage').src=paymentInfo.image;
-document.getElementById('paymentDownloadLink').href=paymentInfo.image;
-document.getElementById('paymentMethodTitle').textContent=paymentInfo.title;
-document.getElementById('accountName').textContent=paymentInfo.accountName;
-document.getElementById('accountNumber').textContent=paymentInfo.accountNumber;
-};
-window.setPaymentStatus=(status)=>{
-paymentMade=status;
-const btnYes=document.getElementById('paymentYes');
-const btnNo=document.getElementById('paymentNo');
-const statusText=document.getElementById('paymentStatus');
-const placeOrderBtn=document.getElementById('placeOrderBtn');
-if(status){
-btnYes.classList.add('active');
-btnNo.classList.remove('active');
-statusText.textContent='Payment sent ✓';
-placeOrderBtn.disabled=false;
-}else{
-btnNo.classList.add('active');
-btnYes.classList.remove('active');
-statusText.textContent='Awaiting payment...';
-placeOrderBtn.disabled=true;
-}
-};
-window.toggleCat=id=>{openCats.has(id)?openCats.delete(id):openCats.add(id);document.getElementById(id)?.classList.toggle('open');};
-window.q=(id,n)=>{cart[id]=Math.max(0,(cart[id]||0)+n);calc();render();};
-window.tb=id=>{bobaMap[id]=!bobaMap[id];calc();render();};
-function buildItems(){const items=[];products.forEach(p=>{const q=cart[p.id]||0;if(q)items.push({name:p.name,qty:q,price:p.price||0,boba:!!bobaMap[p.id]})});return items;}
-function calc(){let s=0,t='';products.forEach(p=>{let q=cart[p.id]||0;if(q){let itemTotal=q*(p.price||0);if(bobaMap[p.id])itemTotal+=q*5;s+=itemTotal;t+=`${p.name} x${q}${bobaMap[p.id]?' + Boba':''}\n`;}});sub.textContent=s;tot.textContent=s;summary.textContent=t||'No items selected';}
-function render(){
- 
-let g={},h='';
- 
-products.forEach(
-p => {
-  let cat = p.category || 'Other';
-  if(cat === 'Quick Points') cat = 'Quick Points (Snacks)';
-  if(cat === 'Power Plays') cat = 'Power Plays (Rice Bowls)';
-  (g[cat] ??= []).push(p);
-}
-);
- 
-const categoryOrder = [
-'Fruit Shakes',
-'Fruit Sodas',
-'Milk Tea',
-'Quick Points (Snacks)',
-'Power Plays (Rice Bowls)'
-];
- 
-const orderedCategories = [
-...categoryOrder.filter(c => g[c]),
-...Object.keys(g).filter(
-c => !categoryOrder.includes(c)
-)
-];
- 
-for(const c of orderedCategories){
- 
-let id =
-c.toLowerCase()
-.replace(/[^a-z0-9]+/g,'-');
+import {getFirestore, collection, onSnapshot, doc, setDoc, runTransaction} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-let isMilkTea = c.toLowerCase() === 'milk tea';
- 
-h+=`<div class='card'><div class='category' onclick="toggleCat('${id}')"><span>${c}</span><span>${g[c].length}</span></div><div id='${id}' class='content ${openCats.has(id)?'open':''}'>`;g[c].forEach(p=>{h+=`<div class='item'><div class='item-info'><div class='item-name'>${p.name}</div>${isMilkTea ? `<label class='item-boba'><input type='checkbox' ${bobaMap[p.id]?'checked':''} onchange="tb('${p.id}')"> Boba +₱5</label>` : ''}</div><div class='item-right'><div class='item-price'>₱${p.price}</div><div class='item-qty'><button onclick="q('${p.id}',-1)">-</button><input type='number' value='${cart[p.id]||0}' readonly><button onclick="q('${p.id}',1)">+</button></div></div></div>`});h+='</div></div>';}
-menu.innerHTML=h;
-}
-async function nextOrder(){const ref=doc(db,'counters','orders');let n=0;await runTransaction(db,async tx=>{const s=await tx.get(ref);n=(s.data()?.lastOrderNumber||0)+1;tx.update(ref,{lastOrderNumber:n});});return n;}
-window.placeOrder=async()=>{
- 
-if(!paymentMade){
-alert('Please confirm payment has been made before placing order');
-return;
-}
- 
-document.getElementById('placeOrderBtn').style.display='none';
- 
-if(!customerName.value)
-return alert('Enter name');const items=buildItems();if(!items.length)return alert('Select items');const orderNo=await nextOrder();const formattedOrderNo=`CK-${String(orderNo).padStart(4,'0')}`;const track=`track_rc1.html?order=${formattedOrderNo}`;
-const paymentMethodVal = document.getElementById('paymentMethod').value;
-const notesVal = notes.value || '';
+const app = initializeApp({
+  apiKey: 'AIzaSyDRCXXhgQrMNan2lK-5WN1f5fcXBdzHj2I',
+  authDomain: 'courtside-kitchen.firebaseapp.com',
+  projectId: 'courtside-kitchen',
+  storageBucket: 'courtside-kitchen.appspot.com',
+  messagingSenderId: '1062967764463',
+  appId: '1:1062967764463:web:0b6dbbfec0904d0f0c05a1'
+});
+const db = getFirestore(app);
 
-let totalVal = 0;
-items.forEach(i => {
-  totalVal += (i.price * i.qty);
-  if(i.boba) totalVal += (5 * i.qty);
+const ADDON_DEFS = {
+  fries: { name: 'Plain fries', price: 50 },
+  rice: { name: 'Extra Rice', price: 35 },
+  egg: { name: 'Extra Egg', price: 20 },
+  sauce: { name: 'Extra Sauce', price: 30 },
+  boba: { name: 'Extra Boba', price: 10 }
+};
+
+const PREFERRED_CAT_ORDER = [
+  'Fruit Shakes',
+  'Fruit Sodas',
+  'Milk Tea',
+  'Quick Points',
+  'Power Plays',
+  'Add-ons'
+];
+
+let products = [];
+let customerCart = {}; // ProductId -> Qty
+let itemAddons = {};   // ProductId -> { addonKey: true }
+let selectedCategory = 'ALL';
+let activeOrderId = null;
+let trackerUnsubscribe = null;
+let alarmInterval = null;
+let currentAlarmAudio = null;
+
+// Check URL param or local storage for persistent order memory
+const urlParams = new URLSearchParams(window.location.search);
+const orderParam = urlParams.get('order') || urlParams.get('id');
+const storedOrderId = localStorage.getItem('ck_active_order_id');
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (orderParam) {
+    showLiveTracker(orderParam);
+  } else if (storedOrderId) {
+    showLiveTracker(storedOrderId);
+  } else {
+    initCatalogListener();
+  }
 });
 
-const itemsListStr = items.map(i => `${i.name} x${i.qty}${i.boba?' + Boba':''}`).join('\n');
+function initCatalogListener() {
+  onSnapshot(collection(db, 'products'), snap => {
+    products = [];
+    snap.forEach(d => products.push({ id: d.id, ...d.data() }));
+    renderCategoryPills();
+    renderCatalog();
+  });
+}
 
-const summaryFormatted = `Order Number:${formattedOrderNo}
-Payment Method:${paymentMethodVal}
-Items:
-${itemsListStr}
+function normalizeCategoryName(rawCat = '') {
+  const lower = rawCat.trim().toLowerCase();
+  if (lower.includes('shake')) return 'Fruit Shakes';
+  if (lower.includes('soda')) return 'Fruit Sodas';
+  if (lower.includes('tea')) return 'Milk Tea';
+  if (lower.includes('point')) return 'Quick Points';
+  if (lower.includes('power') || lower.includes('play')) return 'Power Plays';
+  return rawCat.trim() || 'Other';
+}
 
-Discount:No Discount
-Total: ₱${totalVal}
-Notes:${notesVal}`;
+function getCategoryRank(catName) {
+  const norm = normalizeCategoryName(catName);
+  const idx = PREFERRED_CAT_ORDER.indexOf(norm);
+  return idx === -1 ? 99 : idx;
+}
 
-const order={orderNumber:formattedOrderNo,customerName:customerName.value,notes:notesVal,items:items,paymentMethod:paymentMethodVal,total:totalVal,status:'PENDING',createdAt:new Date().toISOString(),trackingLink:track};await setDoc(doc(db,'orders',formattedOrderNo),order);
+function renderCategoryPills() {
+  const presentCats = new Set(products.map(p => normalizeCategoryName(p.category)));
+  const sortedCats = PREFERRED_CAT_ORDER.filter(c => c === 'Add-ons' || presentCats.has(c));
+  presentCats.forEach(c => { if (!sortedCats.includes(c)) sortedCats.push(c); });
 
-const wa=`${summaryFormatted}\n\nPayment confirmation will be attached below.`;const whatsappUrl=
-`https://wa.me/639178512376?text=${encodeURIComponent(wa)}`;
- 
-window.location.href = whatsappUrl;
+  const allTabs = ['ALL', ...sortedCats];
+  const container = document.getElementById('categoryFilterBar');
+  if (!container) return;
+  container.innerHTML = allTabs.map(c => `
+    <button class="${c === selectedCategory ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</button>
+  `).join('');
+}
 
-document.getElementById('mainContainer').innerHTML = `
-<div class="header">
-  <img src="Courtside Kitchen - Colored.png" alt="Courtside Kitchen Logo" onerror="this.src='logo.png'">
-</div>
-<div class='card' style='white-space:pre-wrap;font-family:monospace;font-size:14px;line-height:1.5'>${summaryFormatted}</div>
-<div id='cancelSection' class='card' style='text-align:center;'>
-  <p style='margin:4px 0;'>Cancel window: <b id='timer'>30</b>s</p>
-  <button id='cancelOrderBtn' class='cancel-btn' onclick="cancelOrder('${formattedOrderNo}')">Cancel Order</button>
-</div>
-<a href='${track}' class='track-btn'>📍 Track Order</a>
-`;
-
-let seconds = 30;
-const timerInterval = setInterval(() => {
-  seconds--;
-  const timerEl = document.getElementById('timer');
-  if (timerEl) timerEl.textContent = seconds;
-  if (seconds <= 0) {
-    clearInterval(timerInterval);
-    const cancelSec = document.getElementById('cancelSection');
-    if (cancelSec) cancelSec.style.display = 'none';
-  }
-}, 1000);
+window.selectCategory = (c) => {
+  selectedCategory = c;
+  renderCategoryPills();
+  renderCatalog();
 };
 
-window.cancelOrder=async(id)=>{
-  await updateDoc(doc(db,'orders',id),{status:'CANCELLED',cancelledBy:'CUSTOMER'});
-  alert('Order Cancelled');
-  const cancelSec = document.getElementById('cancelSection');
-  if (cancelSec) {
-    cancelSec.innerHTML = "<b style='color:red;'>Order has been cancelled.</b>";
+function renderCatalog() {
+  const catalogEl = document.getElementById('menuCatalog');
+  if (!catalogEl) return;
+  let h = '';
+
+  let filtered = products.filter(p => {
+    if (selectedCategory !== 'ALL' && selectedCategory !== 'Add-ons') {
+      return normalizeCategoryName(p.category) === selectedCategory;
+    }
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    const rankA = getCategoryRank(a.category);
+    const rankB = getCategoryRank(b.category);
+    if (rankA !== rankB) return rankA - rankB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  if (selectedCategory !== 'Add-ons') {
+    filtered.forEach(p => {
+      const isOut = (p.qty || 0) <= 0;
+      h += `
+        <div class="menu-item-card" style="${isOut ? 'opacity:0.45;pointer-events:none;' : ''}">
+          <div>
+            ${p.image ? `<img src="${p.image}" style="max-width:100%;height:85px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : ''}
+            <div class="menu-item-name">${p.name}</div>
+            <div class="menu-item-price">₱${p.price || 0}</div>
+          </div>
+          <button class="btn-add" onclick="addToCart('${p.id}')">${isOut ? 'Out of Stock' : '➕ Add to Cart'}</button>
+        </div>
+      `;
+    });
+  }
+
+  if (selectedCategory === 'Add-ons' || selectedCategory === 'ALL') {
+    Object.entries(ADDON_DEFS).forEach(([k, item]) => {
+      h += `
+        <div class="menu-item-card" style="border:1px dashed #0f2b48;background:#f8fafc;">
+          <div>
+            <div class="menu-item-name">${item.name}</div>
+            <div class="menu-item-price">₱${item.price}</div>
+            <small style="color:#0f2b48;font-weight:bold;">Side Add-on</small>
+          </div>
+          <button class="btn-add" style="margin-top:8px;" onclick="addStandaloneAddon('${k}')">➕ Add</button>
+        </div>
+      `;
+    });
+  }
+
+  catalogEl.innerHTML = h;
+}
+
+window.addToCart = (id) => {
+  customerCart[id] = (customerCart[id] || 0) + 1;
+  if (!itemAddons[id]) itemAddons[id] = {};
+  updateCartBadge();
+  renderCartModal();
+};
+
+window.addStandaloneAddon = (k) => {
+  const fakeId = `addon_${k}`;
+  customerCart[fakeId] = (customerCart[fakeId] || 0) + 1;
+  updateCartBadge();
+  renderCartModal();
+};
+
+window.changeCartQty = (id, delta) => {
+  customerCart[id] = Math.max(0, (customerCart[id] || 0) + delta);
+  if (customerCart[id] === 0) {
+    delete customerCart[id];
+    delete itemAddons[id];
+  }
+  updateCartBadge();
+  renderCartModal();
+};
+
+window.toggleItemAddon = (itemId, addonKey) => {
+  if (!itemAddons[itemId]) itemAddons[itemId] = {};
+  itemAddons[itemId][addonKey] = !itemAddons[itemId][addonKey];
+  renderCartModal();
+};
+
+function updateCartBadge() {
+  const totalItems = Object.values(customerCart).reduce((a, b) => a + b, 0);
+  document.getElementById('cartCount').textContent = totalItems;
+}
+
+window.openCartModal = () => {
+  renderCartModal();
+  document.getElementById('cartModal').classList.add('active');
+};
+
+window.closeCartModal = () => {
+  document.getElementById('cartModal').classList.remove('active');
+};
+
+function renderCartModal() {
+  const list = document.getElementById('cartList');
+  const entries = Object.entries(customerCart);
+  let subtotal = 0;
+
+  if (!entries.length) {
+    list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;">Cart is empty.</div>';
+    document.getElementById('cartSub').textContent = '0';
+    document.getElementById('cartTot').textContent = '0';
+    return;
+  }
+
+  let h = '';
+  entries.forEach(([id, qty]) => {
+    if (id.startsWith('addon_')) {
+      const addonKey = id.replace('addon_', '');
+      const addon = ADDON_DEFS[addonKey];
+      if (!addon) return;
+      const itemTotal = addon.price * qty;
+      subtotal += itemTotal;
+
+      h += `
+        <div class="cart-row">
+          <div>
+            <b>${addon.name}</b> (₱${addon.price})
+            <br><small style="color:#0f2b48;">Side Add-on</small>
+          </div>
+          <div class="qty-ctrl">
+            <button onclick="changeCartQty('${id}', -1)">-</button>
+            <span><b>${qty}</b></span>
+            <button onclick="changeCartQty('${id}', 1)">+</button>
+            <span style="min-width:40px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    let addonCostPerItem = 0;
+    const selectedAddons = itemAddons[id] || {};
+    Object.entries(selectedAddons).forEach(([k, active]) => {
+      if (active && ADDON_DEFS[k]) addonCostPerItem += ADDON_DEFS[k].price;
+    });
+
+    const itemTotal = (p.price + addonCostPerItem) * qty;
+    subtotal += itemTotal;
+
+    let pillsHtml = Object.entries(ADDON_DEFS).map(([k, ad]) => {
+      const active = !!selectedAddons[k];
+      return `<span class="addon-pill ${active ? 'active' : ''}" onclick="toggleItemAddon('${id}', '${k}')">+${ad.name} (₱${ad.price})</span>`;
+    }).join('');
+
+    h += `
+      <div class="cart-row">
+        <div>
+          <b>${p.name}</b> (₱${p.price})
+          <div class="addon-pill-box">${pillsHtml}</div>
+        </div>
+        <div class="qty-ctrl">
+          <button onclick="changeCartQty('${id}', -1)">-</button>
+          <span><b>${qty}</b></span>
+          <button onclick="changeCartQty('${id}', 1)">+</button>
+          <span style="min-width:40px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  list.innerHTML = h;
+  document.getElementById('cartSub').textContent = subtotal.toLocaleString();
+  document.getElementById('cartTot').textContent = subtotal.toLocaleString();
+}
+
+async function getNextOrderNumber() {
+  const ref = doc(db, 'counters', 'orders');
+  let n = 0;
+  await runTransaction(db, async tx => {
+    const s = await tx.get(ref);
+    n = (s.data()?.lastOrderNumber || 0) + 1;
+    tx.update(ref, { lastOrderNumber: n });
+  });
+  return n;
+}
+
+window.submitCustomerOrder = async () => {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const notes = document.getElementById('custNotes').value.trim();
+
+  if (!name) return alert('Please enter your name.');
+  if (!phone) return alert('Please enter your phone number.');
+  if (!Object.keys(customerCart).length) return alert('Your cart is empty.');
+
+  const items = [];
+  let subtotal = 0;
+
+  Object.entries(customerCart).forEach(([id, qty]) => {
+    if (id.startsWith('addon_')) {
+      const addonKey = id.replace('addon_', '');
+      const addon = ADDON_DEFS[addonKey];
+      if (!addon) return;
+      subtotal += addon.price * qty;
+      items.push({ name: addon.name, qty: qty, price: addon.price, addons: [] });
+      return;
+    }
+
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    let addonCost = 0;
+    const attachedAddons = [];
+    const selected = itemAddons[id] || {};
+    Object.entries(selected).forEach(([k, active]) => {
+      if (active && ADDON_DEFS[k]) {
+        addonCost += ADDON_DEFS[k].price;
+        attachedAddons.push(ADDON_DEFS[k].name);
+      }
+    });
+
+    subtotal += (p.price + addonCost) * qty;
+    items.push({ name: p.name, qty: qty, price: p.price, addons: attachedAddons });
+  });
+
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting Order...';
+
+  try {
+    const n = await getNextOrderNumber();
+    const formattedOrderNo = `CK-${String(n).padStart(4, '0')}`;
+    const track = `track_rc1.html?order=${formattedOrderNo}`;
+
+    const orderData = {
+      orderNumber: formattedOrderNo,
+      customerName: name,
+      customerPhone: phone,
+      pagerNumber: 'NONE',
+      notes: notes,
+      items: items,
+      paymentMethod: 'Online / Counter',
+      subtotal: subtotal,
+      total: subtotal,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+      trackingLink: track
+    };
+
+    await setDoc(doc(db, 'orders', formattedOrderNo), orderData);
+
+    // Save Active Order Memory in browser LocalStorage
+    localStorage.setItem('ck_active_order_id', formattedOrderNo);
+    closeCartModal();
+    customerCart = {};
+    itemAddons = {};
+    updateCartBadge();
+
+    showLiveTracker(formattedOrderNo);
+  } catch (e) {
+    alert('Error submitting order: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Place Order';
   }
 };
-onSnapshot(collection(db,'products'),s=>{products=[];s.forEach(d=>products.push({id:d.id,...d.data()}));render();calc();});
-</script></body></html>
+
+function playPickupAlarm() {
+  try {
+    if (currentAlarmAudio) {
+      currentAlarmAudio.pause();
+      currentAlarmAudio.currentTime = 0;
+    }
+    currentAlarmAudio = new Audio('sms_jackpot.mp3?t=' + Date.now());
+    currentAlarmAudio.volume = 1.0;
+    currentAlarmAudio.play().catch(() => {});
+  } catch (e) {}
+}
+
+function showLiveTracker(orderId) {
+  activeOrderId = orderId;
+  document.getElementById('menuContainer').style.display = 'none';
+  document.getElementById('categoryFilterBar').style.display = 'none';
+  document.getElementById('cartBtn').style.display = 'none';
+  document.getElementById('trackerScreen').style.display = 'block';
+
+  document.getElementById('trackerOrderBadge').textContent = orderId;
+
+  if (trackerUnsubscribe) trackerUnsubscribe();
+
+  trackerUnsubscribe = onSnapshot(doc(db, 'orders', orderId), snap => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const rawStatus = (data.status || 'PENDING').toString().toUpperCase();
+
+    // Pager display
+    const rawPager = (data.pagerNumber || '').trim();
+    const pagerBadge = document.getElementById('trackerPagerBadge');
+    if (rawPager && rawPager !== 'NONE') {
+      pagerBadge.style.display = 'inline-block';
+      pagerBadge.textContent = `📟 CUSTOMER # ${rawPager.replace(/[^0-9]/g, '') || rawPager}`;
+    } else {
+      pagerBadge.style.display = 'none';
+    }
+
+    // Render items breakdown
+    let itemsHtml = '';
+    (data.items || []).forEach(i => {
+      const name = typeof i === 'string' ? i : i.name;
+      const qty = i.qty || 1;
+      const price = i.price || 0;
+      let addonText = (i.addons && i.addons.length) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
+      itemsHtml += `<div class="item-row"><div><b>${name} x${qty}</b>${addonText}</div><div>₱${price * qty}</div></div>`;
+    });
+    document.getElementById('trackerItemsContainer').innerHTML = itemsHtml;
+    document.getElementById('trackerTotal').textContent = `₱${data.total || 0}`;
+
+    const sRec = document.getElementById('step-rec');
+    const sPrep = document.getElementById('step-prep');
+    const sReady = document.getElementById('step-ready');
+    const sDone = document.getElementById('step-done');
+    const sBox = document.getElementById('statusBox');
+    const sTitle = document.getElementById('statusTitle');
+    const sDesc = document.getElementById('statusDesc');
+
+    sBox.className = 'status-card';
+    sRec.className = 'step-circle';
+    sPrep.className = 'step-circle';
+    sReady.className = 'step-circle';
+    sDone.className = 'step-circle';
+
+    if (rawStatus === 'PENDING' || rawStatus === 'ORDER_RECEIVED') {
+      clearInterval(alarmInterval); alarmInterval = null;
+      sRec.className = 'step-circle active';
+      sTitle.textContent = 'Order Received';
+      sDesc.textContent = 'Your order is queued and being sent to the kitchen.';
+    } else if (rawStatus === 'PREPARING') {
+      clearInterval(alarmInterval); alarmInterval = null;
+      sRec.className = 'step-circle active';
+      sPrep.className = 'step-circle active';
+      sTitle.textContent = 'Preparing Your Order';
+      sDesc.textContent = 'Our kitchen team is now preparing your delicious items!';
+    } else if (rawStatus === 'READY_FOR_PICKUP' || rawStatus === 'READY FOR PICK UP' || rawStatus === 'READY') {
+      if (!alarmInterval) {
+        playPickupAlarm();
+        alarmInterval = setInterval(playPickupAlarm, 4500);
+      }
+      sBox.className = 'status-card status-ready';
+      sRec.className = 'step-circle active';
+      sPrep.className = 'step-circle active';
+      sReady.className = 'step-circle ready';
+      sTitle.textContent = 'READY FOR PICK UP!';
+      sDesc.textContent = 'Your order is freshly prepared and ready! Please claim it at the pickup counter.';
+    } else if (rawStatus === 'COMPLETED') {
+      clearInterval(alarmInterval); alarmInterval = null;
+      sBox.className = 'status-card status-completed';
+      sRec.className = 'step-circle done';
+      sPrep.className = 'step-circle done';
+      sReady.className = 'step-circle done';
+      sDone.className = 'step-circle done';
+      sTitle.textContent = 'Order Claimed';
+      sDesc.textContent = 'Thank you for dining at Courtside Kitchen! Enjoy your meal.';
+    }
+  });
+}
+
+window.startNewOrder = () => {
+  localStorage.removeItem('ck_active_order_id');
+  if (trackerUnsubscribe) trackerUnsubscribe();
+  clearInterval(alarmInterval);
+  alarmInterval = null;
+  window.location.href = 'index.html';
+};
+</script>
+</body>
+</html>
