@@ -13,14 +13,37 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 .brand-logo-header{height:45px;max-width:140px;object-fit:contain}
 .cart-badge-btn{background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:20px;font-weight:bold;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px}
 
-/* Category Filter Bar */
-.category-filter{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:#ffffff;border-bottom:1px solid #e2e8f0;position:sticky;top:61px;z-index:90}
-.category-filter button{padding:6px 14px;background:#e2e8f0;border:none;border-radius:20px;font-size:12.5px;font-weight:bold;cursor:pointer;white-space:nowrap;color:#475569}
+/* Category Filter Bar - Single Page Fit (No Scroll) */
+.category-filter{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  padding:8px 10px;
+  background:#ffffff;
+  border-bottom:1px solid #e2e8f0;
+  position:sticky;
+  top:61px;
+  z-index:90;
+}
+.category-filter button{
+  flex:1 1 calc(25% - 5px);
+  min-width:75px;
+  padding:6px 6px;
+  background:#e2e8f0;
+  border:none;
+  border-radius:14px;
+  font-size:11.5px;
+  font-weight:bold;
+  cursor:pointer;
+  text-align:center;
+  color:#475569;
+  transition:all 0.15s;
+}
 .category-filter button.active{background:#0f2b48;color:#ffffff}
 
 /* Container & Grids */
 .container{max-width:800px;margin:0 auto;padding:12px 14px 80px 14px}
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .menu-item-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(15,43,72,0.04);display:flex;flex-direction:column;justify-content:space-between}
 .menu-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;color:#0f2b48}
 .menu-item-price{color:#0f2b48;font-weight:bold;font-size:13px;margin-bottom:6px}
@@ -34,7 +57,7 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
   background:#f8fafc;
   border:1px solid #cbd5e1;
   border-radius:14px;
-  padding:3px 8px;
+  padding:4px 8px;
   font-size:11px;
   font-weight:bold;
   color:#475569;
@@ -60,8 +83,9 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 .total-line{font-size:18px;font-weight:bold;color:#0f2b48;border-top:2px solid #0f2b48;margin-top:6px;padding-top:6px}
 input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#f8fafc}
 
-/* Payment Instructions Box */
-.payment-info-box{background:#f8fafc;border:1px dashed #0f2b48;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#0f2b48;display:none}
+/* Payment & WhatsApp Confirmation Instructions */
+.payment-info-box{background:#f8fafc;border:1px dashed #0f2b48;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#0f2b48;display:block}
+.whatsapp-reminder-box{background:#ecfdf5;border:1px solid #10b981;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#065f46;text-align:center;line-height:1.35}
 
 /* Live Tracker View */
 #trackerScreen{display:none;max-width:500px;margin:20px auto;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
@@ -105,7 +129,7 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
   </button>
 </div>
 
-<!-- Category Filters -->
+<!-- Category Filters (1-Page Wrap Fit) -->
 <div id="categoryFilterBar" class="category-filter"></div>
 
 <!-- Main Menu Section -->
@@ -126,24 +150,28 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
     </div>
 
     <div>
-      <input id="custName" placeholder="Your Name or Table / Order Note *">
+      <input id="custName" placeholder="Your Name">
       <textarea id="custNotes" placeholder="Special cooking / prep requests..." style="height:38px;"></textarea>
 
-      <!-- Payment Method Selection -->
-      <label style="font-size:11.5px;font-weight:bold;color:#475569;">Payment Method:</label>
+      <!-- Upfront Payment Method Selection Only -->
+      <label style="font-size:11.5px;font-weight:bold;color:#475569;">Payment Method (Upfront Payment Required):</label>
       <select id="custPaymentMethod" onchange="handlePaymentMethodChange()">
-        <option value="Cash">Cash (Pay at Counter)</option>
         <option value="GCash">GCash (E-Wallet)</option>
         <option value="BPI">BPI (Online Transfer)</option>
       </select>
 
       <div id="paymentInfoBox" class="payment-info-box"></div>
 
+      <!-- Reminder to send confirmation via WhatsApp -->
+      <div class="whatsapp-reminder-box">
+        💬 <b>Reminder:</b> After tapping Place Order, please send your payment confirmation screenshot via WhatsApp to start preparation.
+      </div>
+
       <div class="summary-line"><span>Subtotal:</span><span>₱<span id="cartSub">0</span></span></div>
       <div class="summary-line total-line"><span>Total:</span><span>₱<span id="cartTot">0</span></span></div>
 
-      <button id="placeOrderBtn" onclick="submitCustomerOrder()" style="width:100%;background:#25d366;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
-        🚀 Place Order via WhatsApp
+      <button id="placeOrderBtn" onclick="submitCustomerOrder()" style="width:100%;background:#0f2b48;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        🚀 Place Order
       </button>
     </div>
   </div>
@@ -215,8 +243,8 @@ const PREFERRED_CAT_ORDER = [
 ];
 
 let products = [];
-let customerCart = {}; // Key: "prodId" OR "prodId_boba" -> Qty
-let milkTeaBobaSelection = {}; // prodId -> true/false (on catalog card before adding)
+let customerCart = {};
+let milkTeaBobaSelection = {};
 let selectedCategory = 'ALL';
 let activeOrderId = null;
 let trackerUnsubscribe = null;
@@ -310,13 +338,14 @@ function renderCatalog() {
       const isOut = (p.qty || 0) <= 0;
       const isMilkTea = normalizeCategoryName(p.category) === 'Milk Tea';
       const hasBoba = !!milkTeaBobaSelection[p.id];
+      const displayedPrice = (p.price || 0) + (isMilkTea && hasBoba ? 5 : 0);
 
       h += `
         <div class="menu-item-card" style="${isOut ? 'opacity:0.45;pointer-events:none;' : ''}">
           <div>
             ${p.image ? `<img src="${p.image}" style="max-width:100%;height:85px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : ''}
-            <div class="menu-item-name">${p.name}</div>
-            <div class="menu-item-price">₱${p.price || 0}</div>
+            <div class="menu-item-name">${p.name}${isMilkTea && hasBoba ? ' with Boba' : ''}</div>
+            <div class="menu-item-price">₱${displayedPrice}</div>
             ${isMilkTea ? `
               <div class="boba-toggle-btn ${hasBoba ? 'active' : ''}" onclick="toggleMilkTeaBobaOnCard('${p.id}')">
                 ${hasBoba ? '✓ With Boba (+₱5)' : '+ Add Boba (+₱5)'}
@@ -391,10 +420,10 @@ window.handlePaymentMethodChange = () => {
 
   if (method === 'GCash') {
     infoBox.style.display = 'block';
-    infoBox.innerHTML = '📱 <b>GCash Payment:</b> Please send payment upon counter verification or via WhatsApp confirmation.';
+    infoBox.innerHTML = '📱 <b>GCash Payment:</b> Please attach or send your GCash payment confirmation screenshot via WhatsApp right after submitting.';
   } else if (method === 'BPI') {
     infoBox.style.display = 'block';
-    infoBox.innerHTML = '🏦 <b>BPI Online:</b> Please transfer upon counter verification or via WhatsApp confirmation.';
+    infoBox.innerHTML = '🏦 <b>BPI Online:</b> Please transfer and send your BPI transfer confirmation screenshot via WhatsApp right after submitting.';
   } else {
     infoBox.style.display = 'none';
   }
@@ -428,7 +457,7 @@ function renderCartModal() {
       const prodId = hasBoba ? key.replace('__boba', '') : key;
       const p = products.find(x => x.id === prodId);
       if (!p) return;
-      itemName = hasBoba ? `${p.name} (+Boba)` : p.name;
+      itemName = hasBoba ? `${p.name} with Boba` : p.name;
       itemPrice = (p.price || 0) + (hasBoba ? 5 : 0);
     }
 
@@ -472,7 +501,7 @@ window.submitCustomerOrder = async () => {
   const notes = document.getElementById('custNotes').value.trim();
   const paymentMethod = document.getElementById('custPaymentMethod').value;
 
-  if (!name) return alert('Please enter your name or table note.');
+  if (!name) return alert('Please enter your name.');
   if (!Object.keys(customerCart).length) return alert('Your cart is empty.');
 
   const items = [];
@@ -500,7 +529,7 @@ window.submitCustomerOrder = async () => {
     const lineCost = unitPrice * qty;
     subtotal += lineCost;
     
-    const displayTitle = hasBoba ? `${p.name} (+Boba)` : p.name;
+    const displayTitle = hasBoba ? `${p.name} with Boba` : p.name;
     items.push({ 
       name: displayTitle, 
       qty: qty, 
@@ -540,7 +569,7 @@ window.submitCustomerOrder = async () => {
     customerCart = {};
     updateCartBadge();
 
-    // WhatsApp Message Dispatch
+    // Prepare WhatsApp Message
     const waMessage = 
       `*🛒 COURTSIDE KITCHEN ORDER*\n` +
       `*Order #:* ${formattedOrderNo}\n` +
@@ -561,7 +590,7 @@ window.submitCustomerOrder = async () => {
     alert('Error submitting order: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = '🚀 Place Order via WhatsApp';
+    btn.textContent = '🚀 Place Order';
   }
 };
 
@@ -607,7 +636,7 @@ function showLiveTracker(orderId) {
       const name = typeof i === 'string' ? i : i.name;
       const qty = i.qty || 1;
       const price = i.price || 0;
-      let addonText = (i.addons && i.addons.length && !name.includes('(+Boba)')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
+      let addonText = (i.addons && i.addons.length && !name.includes('with Boba')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
       itemsHtml += `<div class="item-row"><div><b>${name} x${qty}</b>${addonText}</div><div>₱${price * qty}</div></div>`;
     });
     document.getElementById('trackerItemsContainer').innerHTML = itemsHtml;
