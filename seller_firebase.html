@@ -6,133 +6,190 @@
 <title>Courtside Kitchen - POS & Seller Portal</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f4f8;margin:0;padding:0;color:#1e293b}
+html, body{height:100%;margin:0;padding:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f4f8;color:#1e293b}
 
 /* Login View */
-.login-container{display:none;max-width:380px;margin:50px auto;background:#fff;padding:30px 24px;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.1);text-align:center}
-.login-logo{height:95px;max-width:100%;object-fit:contain;margin-bottom:12px}
-.login-container input{width:100%;padding:12px;margin:8px 0;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;background:#f8fafc}
-.login-container button{width:100%;padding:13px;background:#0f2b48;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px;transition:background 0.2s}
-.login-container button:hover{background:#1a3d64}
-.error-msg{color:#ef4444;font-size:14px;margin-top:10px;display:none}
+.login-container{display:none;max-width:360px;margin:40px auto;background:#fff;padding:26px 20px;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.1);text-align:center}
+.login-logo{height:85px;max-width:100%;object-fit:contain;margin-bottom:10px}
+.login-container input{width:100%;padding:10px;margin:6px 0;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#f8fafc}
+.login-container button{width:100%;padding:12px;background:#0f2b48;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:8px}
+.error-msg{color:#ef4444;font-size:13px;margin-top:8px;display:none}
 
-#dashboard{display:none}
+#dashboard{display:none;height:100vh;display:flex;flex-direction:column}
 
 /* Top App Bar */
-.app-header{display:flex;justify-content:space-between;align-items:center;background:#ffffff;padding:8px 18px;border-bottom:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(15,43,72,0.04);position:sticky;top:0;z-index:100}
-.header-left{display:flex;align-items:center;gap:14px}
-.menu-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#0f2b48;padding:4px 8px;line-height:1}
-.brand-logo-header{height:52px;max-width:160px;object-fit:contain}
-.view-title{font-weight:bold;font-size:16px;color:#0f2b48;letter-spacing:-0.2px}
-.header-actions{display:flex;gap:8px;align-items:center}
-.header-actions button{padding:7px 14px;font-size:12px;border:none;border-radius:6px;color:#fff;font-weight:bold;cursor:pointer;transition:opacity 0.2s}
-.header-actions button:hover{opacity:0.9}
+.app-header{display:flex;justify-content:space-between;align-items:center;background:#ffffff;padding:6px 14px;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(15,43,72,0.04);height:50px;flex-shrink:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:10px}
+.menu-btn{background:none;border:none;font-size:22px;cursor:pointer;color:#0f2b48;padding:2px 6px;line-height:1}
+.brand-logo-header{height:40px;max-width:140px;object-fit:contain}
+.view-title{font-weight:bold;font-size:15px;color:#0f2b48}
+.header-actions{display:flex;gap:6px;align-items:center}
+.header-actions button{padding:6px 12px;font-size:11px;border:none;border-radius:6px;color:#fff;font-weight:bold;cursor:pointer}
 
 /* Slide-out Sidebar Drawer */
 .sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,43,72,0.45);z-index:999;backdrop-filter:blur(2px)}
 .sidebar-overlay.active{display:block}
 .sidebar-drawer{position:fixed;top:0;left:-280px;width:280px;height:100%;background:#ffffff;box-shadow:4px 0 20px rgba(15,43,72,0.15);z-index:1000;transition:left 0.25s ease;display:flex;flex-direction:column}
 .sidebar-drawer.active{left:0}
-.sidebar-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc}
-.sidebar-header img{height:45px;object-fit:contain}
-.sidebar-close{background:none;border:none;font-size:22px;cursor:pointer;color:#64748b}
-.sidebar-menu{padding:10px 0;flex:1;overflow-y:auto}
-.sidebar-item{display:flex;align-items:center;gap:12px;padding:14px 22px;font-size:15px;font-weight:bold;color:#475569;cursor:pointer;border-left:4px solid transparent;transition:all 0.15s}
+.sidebar-header{padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc}
+.sidebar-header img{height:38px;object-fit:contain}
+.sidebar-close{background:none;border:none;font-size:20px;cursor:pointer;color:#64748b}
+.sidebar-menu{padding:8px 0;flex:1;overflow-y:auto}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:12px 18px;font-size:14px;font-weight:bold;color:#475569;cursor:pointer;border-left:4px solid transparent;transition:all 0.15s}
 .sidebar-item:hover{background:#f1f5f9;color:#0f2b48}
 .sidebar-item.active{background:#e8eff7;color:#0f2b48;border-left-color:#0f2b48}
 
-/* Content Viewport */
-.content-body{padding:14px}
-.tab{display:none}
-.tab.active{display:block}
+/* Content Body */
+.content-body{flex:1;padding:8px 10px;overflow:hidden;display:flex;flex-direction:column}
+.tab{display:none;height:100%}
+.tab.active{display:flex;flex-direction:column}
 
-/* Revenue & Metrics Analytics Box */
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
-.metric-card{background:#ffffff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(15,43,72,0.06);border:1px solid #e2e8f0}
-.metric-card span{display:block;font-size:13px;color:#64748b;font-weight:bold}
-.metric-card b{display:block;font-size:22px;margin-top:6px;color:#0f2b48}
-.filter-card{background:#ffffff;padding:14px 18px;border-radius:10px;box-shadow:0 1px 4px rgba(15,43,72,0.06);border:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-
-/* POS Layout */
-.pos-layout{display:grid;grid-template-columns:1.65fr 1.15fr;gap:14px;align-items:start}
-.category-filter{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
-.category-filter button{padding:6px 14px;background:#e2e8f0;border:none;border-radius:20px;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;color:#475569;transition:all 0.15s}
+/* 11-inch Optimized POS Layout */
+.pos-layout{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;height:100%;align-items:stretch;overflow:hidden}
+.pos-catalog-card{background:#ffffff;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,43,72,0.04);display:flex;flex-direction:column;height:100%;overflow:hidden}
+.category-filter{display:flex;gap:5px;overflow-x:auto;padding-bottom:5px;margin-bottom:6px;flex-shrink:0}
+.category-filter button{padding:5px 11px;background:#e2e8f0;border:none;border-radius:16px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;color:#475569}
 .category-filter button.active{background:#0f2b48;color:#ffffff}
-.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:calc(100vh - 160px);overflow-y:auto;padding-right:4px}
-.pos-item{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none;box-shadow:0 1px 3px rgba(15,43,72,0.03);transition:transform 0.1s, border-color 0.1s}
+
+/* Scaled Grid for 11" Screen */
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:6px;flex:1;overflow-y:auto;padding-right:2px}
+.pos-item{background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;user-select:none;display:flex;flex-direction:column;justify-content:center;min-height:58px}
 .pos-item:active{transform:scale(0.97);border-color:#0f2b48}
-.pos-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;line-height:1.2;color:#1e293b}
-.pos-item-price{color:#0f2b48;font-weight:bold;font-size:13px}
+.pos-item-name{font-weight:bold;font-size:11.5px;margin-bottom:2px;line-height:1.15;color:#1e293b}
+.pos-item-price{color:#0f2b48;font-weight:bold;font-size:12px}
 
-/* Ticket Cart */
-.card{background:#ffffff;padding:16px;border-radius:10px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(15,43,72,0.04)}
-.cart-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f1f5f9}
-.qty-ctrl{display:flex;gap:4px;align-items:center}
-.qty-ctrl button{padding:3px 8px;font-size:12px;border:none;background:#0f2b48;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold}
-.pos-summary-line{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;color:#475569}
-.pos-total-line{font-size:19px;font-weight:bold;border-top:2px solid #0f2b48;margin-top:6px;padding-top:6px;color:#0f2b48}
+/* Walk-in Ticket Drawer */
+.pos-ticket-card{background:#ffffff;padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,43,72,0.04);display:flex;flex-direction:column;height:100%;overflow:hidden}
+.ticket-header-section{flex-shrink:0}
 
-/* Navy Action Buttons */
-.pos-action-strip{display:flex;gap:8px;margin-top:12px}
-.pos-action-strip button{flex:1;padding:14px;font-size:15px;font-weight:bold;border:none;border-radius:8px;cursor:pointer;color:#fff;transition:background 0.2s}
+/* Dedicated Inner Cart Scroll Container */
+#posCartList{
+  flex:1;
+  min-height:80px;
+  max-height:120px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  margin:4px 0;
+  padding-right:4px;
+  border-top:1px solid #f1f5f9;
+  border-bottom:1px solid #f1f5f9;
+}
+#posCartList::-webkit-scrollbar{width:5px}
+#posCartList::-webkit-scrollbar-track{background:#f8fafc;border-radius:4px}
+#posCartList::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+
+.cart-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f8fafc}
+.qty-ctrl{display:flex;gap:3px;align-items:center}
+.qty-ctrl button{padding:2px 7px;font-size:11px;border:none;background:#0f2b48;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold}
+.ticket-footer-section{flex-shrink:0}
+.pos-summary-line{display:flex;justify-content:space-between;padding:2px 0;font-size:13px;color:#475569}
+.pos-total-line{font-size:16px;font-weight:bold;border-top:1.5px solid #0f2b48;margin-top:3px;padding-top:3px;color:#0f2b48}
+
+/* Charge & Save/Open Action Buttons */
+.pos-action-strip{display:flex;flex-direction:column;gap:5px;margin-top:6px;flex-shrink:0}
+.pos-action-strip button{padding:10px;font-size:13.5px;font-weight:bold;border:none;border-radius:6px;cursor:pointer;color:#fff}
+.pos-action-subrow{display:flex;gap:5px}
+.pos-action-subrow button{flex:1;padding:8px 6px;font-size:12.5px}
+.btn-charge{background:#0f2b48;width:100%}
 .btn-open-tickets{background:#1e3a5f}
-.btn-open-tickets:hover{background:#152943}
-.btn-charge{background:#0f2b48}
-.btn-charge:hover{background:#0a1c30}
+.btn-save-unpaid{background:#d97706}
 
-/* Add-ons Selector in POS */
-.addon-pill-box{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
-.addon-pill{font-size:11px;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer;user-select:none;color:#475569}
+/* Modal Popup for Save Unpaid Client Info */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,43,72,0.5);z-index:2000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#ffffff;padding:20px;border-radius:12px;width:90%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
+
+/* Add-ons Selector */
+.addon-pill-box{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
+.addon-pill{font-size:10px;padding:2px 5px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;user-select:none;color:#475569}
 .addon-pill.active{background:#0f2b48;color:#ffffff;font-weight:bold;border-color:#0f2b48}
 
-/* Kanban Orders Board */
-.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.col{background:#ffffff;padding:12px;border-radius:10px;box-shadow:0 1px 4px rgba(15,43,72,0.04);border:1px solid #e2e8f0;min-height:300px;display:flex;flex-direction:column}
-.col h3{margin-top:0;font-size:14px;border-bottom:2px solid #f1f5f9;padding-bottom:6px;color:#0f2b48;font-weight:800}
-.dropzone{flex:1;min-height:150px;border-radius:6px}
-.dropzone.drag-over{background:#e8eff7;border:2px dashed #0f2b48}
-.ticket-card{background:#ffffff;padding:12px;border-radius:8px;margin:8px 0;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,43,72,0.06);cursor:grab;user-select:none}
-.items{background:#f8fafc;padding:8px;border-radius:6px;margin:8px 0;font-size:13px;border:1px solid #f1f5f9}
-
-/* PIN Modal & Inputs */
-.pin-box{max-width:340px;margin:40px auto;background:#ffffff;padding:26px;border-radius:12px;text-align:center;box-shadow:0 4px 16px rgba(15,43,72,0.08);border:1px solid #e2e8f0}
-.discount-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-input, textarea, select{width:100%;padding:10px;margin:6px 0;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;background:#f8fafc}
+/* Universal Inputs */
+input, textarea, select{width:100%;padding:7px 9px;margin:3px 0;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#f8fafc}
 input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;background:#ffffff}
 
-/* Thermal 58mm Print Styles */
+/* Scrollable Views */
+.scroll-view{height:100%;overflow-y:auto;padding-right:4px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}
+.metric-card{background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0}
+.metric-card span{display:block;font-size:12px;color:#64748b;font-weight:bold}
+.metric-card b{display:block;font-size:18px;margin-top:4px;color:#0f2b48}
+.filter-card{background:#ffffff;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Reports Center Styles */
+.reports-layout{display:grid;grid-template-columns:220px 1fr;gap:10px;align-items:start;margin-top:10px}
+.report-menu{background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden}
+.report-menu-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:13px;font-weight:600;color:#475569;display:flex;justify-content:space-between}
+.report-menu-item.active{background:#e8eff7;color:#0f2b48;font-weight:bold}
+.report-content{background:#ffffff;padding:14px;border-radius:8px;border:1px solid #e2e8f0}
+.report-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+.report-table th, .report-table td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:left}
+.report-table th{background:#f8fafc;color:#0f2b48;font-weight:bold}
+
+/* Kanban Board */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:100%}
+.col{background:#ffffff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;display:flex;flex-direction:column;height:100%;overflow:hidden}
+.col h3{margin-top:0;font-size:13px;border-bottom:2px solid #f1f5f9;padding-bottom:4px;color:#0f2b48;font-weight:800}
+.dropzone{flex:1;overflow-y:auto}
+.ticket-card{background:#ffffff;padding:10px;border-radius:6px;margin:6px 0;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(15,43,72,0.05);cursor:grab;font-size:12.5px}
+
+/* Thermal & PDF Print Engine */
 #thermalReceiptArea{display:none}
+#pdfPrintArea{display:none}
 @media print{
   body *{visibility:hidden}
-  #thermalReceiptArea, #thermalReceiptArea *{visibility:visible}
-  #thermalReceiptArea{display:block !important;position:absolute;left:0;top:0;width:48mm;margin:0;padding:0;font-family:'Courier New',Courier,monospace;font-size:11px;line-height:1.2;color:#000}
+  body.printing-pdf #pdfPrintArea, body.printing-pdf #pdfPrintArea *{visibility:visible}
+  body.printing-pdf #pdfPrintArea{display:block !important;position:absolute;left:0;top:0;width:100%;padding:14px;font-family:sans-serif;color:#000}
+  body.printing-receipt #thermalReceiptArea, body.printing-receipt #thermalReceiptArea *{visibility:visible}
+  body.printing-receipt #thermalReceiptArea{display:block !important;position:absolute;left:0;top:0;width:48mm;margin:0;padding:0;font-family:'Courier New',Courier,monospace;font-size:11px;line-height:1.2;color:#000}
   .receipt-center{text-align:center}
   .receipt-divider{border-top:1px dashed #000;margin:6px 0}
   .receipt-row{display:flex;justify-content:space-between}
-  @page{size:58mm auto;margin:0}
-}
-
-@media(max-width:900px){
-  .pos-layout{grid-template-columns:1fr}
-  .board{grid-template-columns:1fr}
+  .receipt-pager-banner{
+    border:2px solid #000;
+    margin:6px 0;
+    padding:4px 2px;
+    text-align:center;
+    font-size:15px;
+    font-weight:900;
+    letter-spacing:1px;
+    line-height:1.2;
+  }
 }
 </style>
 </head>
-<body>
+<body class="printing-receipt">
 
 <div id="thermalReceiptArea"></div>
+<div id="pdfPrintArea"></div>
+
+<!-- Modal Dialog for Saving Unpaid Orders -->
+<div id="saveUnpaidModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 style="margin-top:0;color:#0f2b48;font-size:15px;">💾 Save Unpaid Ticket</h3>
+    <p style="font-size:12px;color:#64748b;margin:0 0 8px 0;">Enter client details for safety & follow-up:</p>
+    <label style="font-size:11px;font-weight:bold;color:#475569;">Client Name *</label>
+    <input id="unpaidClientName" placeholder="Client Name">
+    <label style="font-size:11px;font-weight:bold;color:#475569;">Mobile Number *</label>
+    <input id="unpaidClientPhone" type="tel" placeholder="09xxxxxxxxx">
+    <div style="display:flex;gap:6px;margin-top:10px;">
+      <button onclick="closeSaveUnpaidModal()" style="flex:1;background:#64748b;color:#fff;border:none;padding:9px;border-radius:6px;font-weight:bold;cursor:pointer;">Cancel</button>
+      <button onclick="confirmSaveUnpaidOrder()" style="flex:1;background:#d97706;color:#fff;border:none;padding:9px;border-radius:6px;font-weight:bold;cursor:pointer;">Confirm Save</button>
+    </div>
+  </div>
+</div>
 
 <div id="loginBox" class="login-container">
   <img src="logo.png" alt="Courtside Kitchen" class="login-logo"><br>
-  <p style="color:#64748b;font-size:14px;margin-top:0;">Seller Portal Login</p>
-  <input id="loginEmail" type="email" placeholder="Email Address">
-  <input id="loginPassword" type="password" placeholder="Password">
+  <p style="color:#64748b;font-size:13px;margin-top:0;">Seller Portal Login</p>
+  <input id="loginEmail" type="email" placeholder="Email Address" onkeydown="if(event.key==='Enter')login()">
+  <input id="loginPassword" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
   <button id="loginBtn" onclick="login()">🔒 Log In</button>
   <div id="loginError" class="error-msg"></div>
 </div>
 
 <div id="dashboard">
-  <!-- Top App Bar -->
+  <!-- Top Bar -->
   <div class="app-header">
     <div class="header-left">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
@@ -146,7 +203,7 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
     </div>
   </div>
 
-  <!-- Slide-out Navigation Drawer -->
+  <!-- Sidebar Menu -->
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div id="sidebarDrawer" class="sidebar-drawer">
     <div class="sidebar-header">
@@ -156,10 +213,9 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
     <div class="sidebar-menu">
       <div class="sidebar-item active" id="menu-pos" onclick="navigateTo('pos', 'POS Register')">🛒 POS Register</div>
       <div class="sidebar-item" id="menu-orders" onclick="navigateTo('orders', 'Kitchen Orders Board')">📋 Kitchen Orders</div>
-      <div class="sidebar-item" id="menu-pos-history" onclick="navigateTo('pos-history', 'Ticket History & Actions')">🎫 Ticket History</div>
-      <div class="sidebar-item" id="menu-revenue" onclick="navigateTo('revenue', 'Revenue & Analytics')">📊 Revenue & Analytics (PIN)</div>
+      <div class="sidebar-item" id="menu-pos-history" onclick="navigateTo('pos-history', 'Ticket History & Actions')">🎫 Ticket History & Actions</div>
+      <div class="sidebar-item" id="menu-revenue" onclick="navigateTo('revenue', 'Revenue & Reports')">📊 Revenue & Reports (PIN)</div>
       <div class="sidebar-item" id="menu-pos-discounts" onclick="navigateTo('pos-discounts', 'Discounts & Promos')">🔒 Discounts & Promos (PIN)</div>
-      <div class="sidebar-item" id="menu-history" onclick="navigateTo('history', 'Sales History Log')">📜 Sales History</div>
       <div class="sidebar-item" id="menu-products" onclick="navigateTo('products', 'Product Inventory')">📦 Inventory / Products</div>
     </div>
   </div>
@@ -168,94 +224,124 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
     <!-- POS REGISTER TAB -->
     <div id="pos" class="tab active">
       <div class="pos-layout">
-        <div class="card" style="padding:12px;">
-          <input id="posSearch" placeholder="🔍 Search menu item or add-on..." oninput="filterPosCatalog()" style="margin:0 0 10px 0;">
+        <!-- Menu Catalog Grid -->
+        <div class="pos-catalog-card">
+          <input id="posSearch" placeholder="🔍 Search menu item or add-on..." oninput="filterPosCatalog()" style="margin:0 0 6px 0;padding:6px 8px;font-size:12.5px;">
           <div id="posCatFilter" class="category-filter"></div>
           <div id="posCatalog" class="pos-grid"></div>
         </div>
 
-        <div class="card">
-          <h3 style="margin-top:0;color:#0f2b48;">🛒 Walk-in Ticket</h3>
-          <input id="posCustomer" placeholder="Customer Name (e.g. Table 1 / Walk-in)" value="Walk-in">
-          <textarea id="posNotes" placeholder="Order notes / requests" style="height:40px;"></textarea>
-          
-          <label style="font-size:13px;color:#64748b;"><b>Payment:</b></label>
-          <select id="posPayment" onchange="toggleCashInput()">
-            <option value="Cash">Cash</option>
-            <option value="GCash">GCash</option>
-            <option value="BPI">BPI</option>
-          </select>
-
-          <label style="font-size:13px;color:#64748b;"><b>Discount:</b></label>
-          <select id="posDiscountType" onchange="renderPosCart()"></select>
-
-          <div id="posCartList" style="max-height:180px;overflow-y:auto;margin:8px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;">
-            <div style="text-align:center;color:#94a3b8;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>
-          </div>
-
-          <div class="pos-summary-line"><span>Subtotal:</span><span>₱<span id="posSub">0</span></span></div>
-          <div class="pos-summary-line" style="color:#0f2b48;"><span>Discount (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
-          <div class="pos-summary-line pos-total-line"><span>Total:</span><span>₱<span id="posTot">0</span></span></div>
-
-          <div id="cashCalcSection" style="margin-top:8px;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
-            <label style="font-size:13px;color:#64748b;"><b>Cash Tendered (₱):</b></label>
-            <input id="posCashTendered" type="number" placeholder="Amount received..." oninput="calculateChange()" style="font-weight:bold;font-size:15px;margin:2px 0;">
-            <div class="pos-summary-line" style="font-size:15px;font-weight:bold;">
-              <span>Change:</span>
-              <span style="color:#0f2b48;">₱<span id="posChangeVal">0</span></span>
+        <!-- Walk-in Ticket Panel -->
+        <div class="pos-ticket-card">
+          <div class="ticket-header-section">
+            <h3 style="margin:0 0 4px 0;color:#0f2b48;font-size:14px;">🛒 Walk-in Ticket</h3>
+            <input id="posCustomer" placeholder="Customer Name (e.g. Table 1 / Walk-in)" value="Walk-in" style="font-size:12.5px;padding:6px 8px;">
+            <textarea id="posNotes" placeholder="Order notes / requests" style="height:32px;font-size:12px;padding:4px 8px;"></textarea>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+              <div>
+                <label style="font-size:10.5px;color:#64748b;font-weight:bold;">Payment:</label>
+                <select id="posPayment" onchange="toggleCashInput()" style="font-size:11.5px;padding:4px 5px;">
+                  <option value="Cash">Cash</option>
+                  <option value="GCash">GCash</option>
+                  <option value="BPI">BPI</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10.5px;color:#64748b;font-weight:bold;">Discount:</label>
+                <select id="posDiscountType" onchange="renderPosCart()" style="font-size:11.5px;padding:4px 5px;"></select>
+              </div>
+              <div>
+                <label style="font-size:10.5px;color:#64748b;font-weight:bold;">📟 Pager #:</label>
+                <select id="posPagerSelect" onchange="handlePagerSelectionChange()" style="font-size:11.5px;padding:4px 5px;"></select>
+              </div>
             </div>
           </div>
 
-          <div class="pos-action-strip">
-            <button class="btn-open-tickets" onclick="navigateTo('orders', 'Kitchen Orders Board')">📋 OPEN TICKETS</button>
-            <button id="posSubmitBtn" class="btn-charge" onclick="submitPosOrder()">⚡ CHARGE</button>
+          <!-- Scrollable Cart Area -->
+          <div id="posCartList">
+            <div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:12px;">Cart is empty.<br>Tap items to add.</div>
+          </div>
+
+          <!-- Bottom Calculation & Action Area -->
+          <div class="ticket-footer-section">
+            <div class="pos-summary-line"><span>Subtotal:</span><span>₱<span id="posSub">0</span></span></div>
+            <div class="pos-summary-line" style="color:#0f2b48;"><span>Discount (<span id="posDiscLabel">0%</span>):</span><span>-₱<span id="posDiscVal">0</span></span></div>
+            <div class="pos-summary-line pos-total-line"><span>Total:</span><span>₱<span id="posTot">0</span></span></div>
+
+            <div id="cashCalcSection" style="margin-top:3px;background:#f8fafc;padding:5px 8px;border-radius:6px;border:1px solid #e2e8f0;">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input id="posCashTendered" type="number" placeholder="Cash Received..." oninput="calculateChange()" style="font-weight:bold;font-size:13px;padding:4px 8px;margin:0;">
+                <div style="font-size:12.5px;font-weight:bold;white-space:nowrap;">
+                  Change: <span style="color:#0f2b48;">₱<span id="posChangeVal">0</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pos-action-strip">
+              <button id="posSubmitBtn" class="btn-charge" onclick="submitPosOrder()">⚡ CHARGE</button>
+              <div class="pos-action-subrow">
+                <button class="btn-open-tickets" onclick="navigateTo('orders', 'Kitchen Orders Board')">📋 OPEN TICKETS</button>
+                <button class="btn-save-unpaid" onclick="openSaveUnpaidModal()">💾 SAVE (UNPAID)</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- REVENUE & ANALYTICS TAB (PIN LOCKED) -->
+    <!-- REVENUE, ANALYTICS & REPORTS TAB (PIN LOCKED) -->
     <div id="revenue" class="tab">
-      <div id="pinLockBoxRevenue" class="pin-box">
-        <h3 style="margin-top:0;color:#0f2b48;">🔒 Manager Access</h3>
-        <p style="color:#64748b;font-size:13px;">Enter Manager PIN to view Revenue & Sales Analytics</p>
-        <input id="posManagerPinInputRevenue" type="password" maxlength="6" placeholder="Enter PIN" style="text-align:center;font-size:18px;letter-spacing:4px;">
-        <button onclick="verifyManagerPinForRevenue()" style="width:100%;margin-top:8px;background:#0f2b48;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer;">Unlock Analytics</button>
-      </div>
-
-      <div id="pinUnlockedPanelRevenue" style="display:none;">
-        <div class="filter-card">
-          <label for="revFilter" style="color:#0f2b48;font-weight:bold;">Filter Time Range:</label>
-          <select id="revFilter" onchange="handleFilterChange()" style="width:auto;margin:0;">
-            <option value="daily">Today (Daily)</option>
-            <option value="weekly">This Week</option>
-            <option value="monthly">This Month</option>
-            <option value="all">All Time</option>
-            <option value="custom">Custom Range</option>
-          </select>
-          <div id="customDates" style="display:none;gap:6px;align-items:center;">
-            <input type="date" id="startDate" onchange="calculateRevenue()" style="width:auto;margin:0;">
-            <span>to</span>
-            <input type="date" id="endDate" onchange="calculateRevenue()" style="width:auto;margin:0;">
-          </div>
+      <div class="scroll-view">
+        <div id="pinLockBoxRevenue" class="pin-box" style="max-width:320px;margin:30px auto;background:#ffffff;padding:20px;border-radius:10px;text-align:center;border:1px solid #e2e8f0;">
+          <h3 style="margin-top:0;color:#0f2b48;font-size:15px;">🔒 Manager Access</h3>
+          <p style="color:#64748b;font-size:12px;">Enter Manager PIN to access Revenue & Analytics</p>
+          <input id="posManagerPinInputRevenue" type="password" maxlength="6" placeholder="Enter PIN" style="text-align:center;font-size:16px;letter-spacing:4px;" onkeydown="if(event.key==='Enter')verifyManagerPinForRevenue()">
+          <button onclick="verifyManagerPinForRevenue()" style="width:100%;margin-top:6px;background:#0f2b48;color:#fff;border:none;padding:9px;border-radius:6px;font-weight:bold;cursor:pointer;">Unlock Reports</button>
         </div>
 
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <span>TOTAL REVENUE</span>
-            <b style="color:#0f2b48;">₱<span id="rev">0</span></b>
+        <div id="pinUnlockedPanelRevenue" style="display:none;">
+          <div class="filter-card">
+            <label for="revFilter" style="color:#0f2b48;font-weight:bold;font-size:13px;">Date Range:</label>
+            <select id="revFilter" onchange="handleFilterChange()" style="width:auto;margin:0;font-size:12.5px;">
+              <option value="daily">Today (Daily)</option>
+              <option value="weekly">This Week</option>
+              <option value="monthly">This Month</option>
+              <option value="all">All Time</option>
+              <option value="custom">Custom Range</option>
+            </select>
+            <div id="customDates" style="display:none;gap:6px;align-items:center;">
+              <input type="date" id="startDate" onchange="calculateRevenue()" style="width:auto;margin:0;">
+              <span>to</span>
+              <input type="date" id="endDate" onchange="calculateRevenue()" style="width:auto;margin:0;">
+            </div>
           </div>
-          <div class="metric-card">
-            <span>💵 CASH REVENUE</span>
-            <b style="color:#0f2b48;">₱<span id="revCash">0</span></b>
+
+          <div class="metrics-grid">
+            <div class="metric-card"><span>TOTAL REVENUE</span><b style="color:#0f2b48;">₱<span id="rev">0</span></b></div>
+            <div class="metric-card"><span>💵 CASH REVENUE</span><b style="color:#0f2b48;">₱<span id="revCash">0</span></b></div>
+            <div class="metric-card"><span>📱 GCASH REVENUE</span><b style="color:#0f2b48;">₱<span id="revGcash">0</span></b></div>
+            <div class="metric-card"><span>🏦 BPI REVENUE</span><b style="color:#0f2b48;">₱<span id="revBpi">0</span></b></div>
           </div>
-          <div class="metric-card">
-            <span>📱 GCASH REVENUE</span>
-            <b style="color:#0f2b48;">₱<span id="revGcash">0</span></b>
-          </div>
-          <div class="metric-card">
-            <span>🏦 BPI REVENUE</span>
-            <b style="color:#0f2b48;">₱<span id="revBpi">0</span></b>
+
+          <div class="reports-layout">
+            <div class="report-menu">
+              <div class="report-menu-item active" onclick="selectReportType('summary', this)">Sales summary <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('items', this)">Sales by item <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('category', this)">Sales by category <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('payment', this)">Sales by payment type <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('receipts', this)">Receipts log <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('modifiers', this)">Sales by modifier (Add-ons) <span>➔</span></div>
+              <div class="report-menu-item" onclick="selectReportType('discounts', this)">Discounts & Promos <span>➔</span></div>
+            </div>
+
+            <div class="report-content">
+              <div style="display:flex;gap:6px;margin-bottom:10px;">
+                <button onclick="exportCurrentReportExcel()" style="background:#1e3a5f;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">📥 Export to Excel (CSV)</button>
+                <button onclick="printCurrentReportPDF()" style="background:#0f2b48;color:#fff;border:none;padding:7px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">📄 Print / Save as PDF</button>
+              </div>
+              <div id="reportDisplayArea"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -263,100 +349,85 @@ input:focus, textarea:focus, select:focus{outline:none;border-color:#0f2b48;back
 
     <!-- ORDERS BOARD TAB -->
     <div id="orders" class="tab">
-      <div class="search-card" style="margin-bottom:10px;">
-        <input id="searchOrdersInput" placeholder="🔎 Search orders..." oninput="renderOrdersBoard()" style="margin:0;">
+      <div style="margin-bottom:6px;">
+        <input id="searchOrdersInput" placeholder="🔎 Search orders..." oninput="renderOrdersBoard()" style="margin:0;padding:6px 10px;">
       </div>
       <div class="board">
-        <div class="col">
-          <h3>PENDING</h3>
-          <div id="pending" class="dropzone" data-status="PENDING"></div>
-        </div>
-        <div class="col">
-          <h3>ORDER_RECEIVED</h3>
-          <div id="received" class="dropzone" data-status="ORDER_RECEIVED"></div>
-        </div>
-        <div class="col">
-          <h3>PREPARING</h3>
-          <div id="preparing" class="dropzone" data-status="PREPARING"></div>
-        </div>
-        <div class="col">
-          <h3>COMPLETED</h3>
-          <div id="completed" class="dropzone" data-status="COMPLETED"></div>
-        </div>
+        <div class="col"><h3>PENDING</h3><div id="pending" class="dropzone" data-status="PENDING"></div></div>
+        <div class="col"><h3>ORDER_RECEIVED</h3><div id="received" class="dropzone" data-status="ORDER_RECEIVED"></div></div>
+        <div class="col"><h3>PREPARING</h3><div id="preparing" class="dropzone" data-status="PREPARING"></div></div>
+        <div class="col"><h3>COMPLETED</h3><div id="completed" class="dropzone" data-status="COMPLETED"></div></div>
       </div>
     </div>
 
-    <!-- TICKET HISTORY SUB-TAB -->
+    <!-- TICKET HISTORY & ACTIONS TAB -->
     <div id="pos-history" class="tab">
-      <div class="card">
-        <h3 style="margin-top:0;color:#0f2b48;">🎫 Ticket Management & Audit Log</h3>
-        <input id="posHistorySearch" placeholder="🔍 Search ticket by #, customer, or status..." oninput="renderPosHistory()">
-        <div id="posHistoryList"></div>
+      <div class="scroll-view" style="background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3 style="margin:0;color:#0f2b48;font-size:15px;">🎫 Ticket Management & Audit Log</h3>
+          <button onclick="exportCsv()" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:12px;">📥 Export Tickets CSV</button>
+        </div>
+        <input id="posHistorySearch" placeholder="🔍 Search ticket by #, customer, or status..." oninput="renderPosHistory()" style="padding:6px 10px;">
+        <div id="posHistoryList" style="margin-top:8px;"></div>
       </div>
     </div>
 
     <!-- DISCOUNTS & PROMOS SUB-TAB (PIN LOCKED) -->
     <div id="pos-discounts" class="tab">
-      <div id="pinLockBoxDiscounts" class="pin-box">
-        <h3 style="margin-top:0;color:#0f2b48;">🔒 Manager Access</h3>
-        <p style="color:#64748b;font-size:13px;">Enter Manager PIN to access Discounts & Promos</p>
-        <input id="posManagerPinInputDiscounts" type="password" maxlength="6" placeholder="Enter PIN" style="text-align:center;font-size:18px;letter-spacing:4px;">
-        <button onclick="verifyManagerPinForDiscounts()" style="width:100%;margin-top:8px;background:#0f2b48;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer;">Unlock Discounts</button>
-      </div>
+      <div class="scroll-view">
+        <div id="pinLockBoxDiscounts" class="pin-box" style="max-width:320px;margin:30px auto;background:#ffffff;padding:20px;border-radius:10px;text-align:center;border:1px solid #e2e8f0;">
+          <h3 style="margin-top:0;color:#0f2b48;font-size:15px;">🔒 Manager Access</h3>
+          <p style="color:#64748b;font-size:12px;">Enter Manager PIN to access Discounts & Promos</p>
+          <input id="posManagerPinInputDiscounts" type="password" maxlength="6" placeholder="Enter PIN" style="text-align:center;font-size:16px;letter-spacing:4px;" onkeydown="if(event.key==='Enter')verifyManagerPinForDiscounts()">
+          <button onclick="verifyManagerPinForDiscounts()" style="width:100%;margin-top:6px;background:#0f2b48;color:#fff;border:none;padding:9px;border-radius:6px;font-weight:bold;cursor:pointer;">Unlock Discounts</button>
+        </div>
 
-      <div id="pinUnlockedPanelDiscounts" style="display:none;">
-        <div class="card">
-          <h3 style="margin:0;color:#0f2b48;">🏷️ Custom Discounts & Promotions</h3>
-          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin:12px 0;border:1px solid #e2e8f0;">
-            <b>Add New Promotion Rule</b>
+        <div id="pinUnlockedPanelDiscounts" style="display:none;background:#ffffff;padding:14px;border-radius:8px;border:1px solid #e2e8f0;">
+          <h3 style="margin:0 0 8px 0;color:#0f2b48;font-size:15px;">🏷️ Custom Discounts & Promotions</h3>
+          <div style="background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:10px;">
+            <b style="font-size:13px;">Add New Promotion Rule</b>
             <input id="newPromoName" placeholder="Promotion Name (e.g. Student Disc)">
             <input id="newPromoPct" type="number" min="1" max="100" placeholder="Discount Percentage % (e.g. 15)">
             <input id="newPromoDesc" placeholder="Description / Conditions">
-            <button onclick="saveCustomDiscount()" style="background:#0f2b48;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:bold;margin-top:6px;width:100%;cursor:pointer;">💾 Save Promotion Rule</button>
+            <button onclick="saveCustomDiscount()" style="background:#0f2b48;color:#fff;border:none;padding:8px;border-radius:6px;font-weight:bold;margin-top:4px;width:100%;cursor:pointer;">💾 Save Promotion Rule</button>
           </div>
-          <b>Active Promotion List</b>
-          <div id="customDiscountsList" style="margin-top:10px;"></div>
-          <div style="margin-top:20px;border-top:2px solid #f1f5f9;padding-top:14px;">
-            <b>🔑 Change Manager PIN (Firebase Synced)</b>
-            <div style="display:flex;gap:8px;margin-top:6px;">
-              <input id="newManagerPinInput" type="password" maxlength="6" placeholder="New 4-6 digit PIN" style="margin:0;">
-              <button onclick="updateFirebasePin()" style="background:#0f2b48;color:#fff;border:none;padding:10px 14px;border-radius:6px;font-weight:bold;white-space:nowrap;cursor:pointer;">Update PIN</button>
+          <b style="font-size:13px;">Active Promotion List</b>
+          <div id="customDiscountsList" style="margin-top:8px;"></div>
+          <div style="margin-top:16px;border-top:2px solid #f1f5f9;padding-top:10px;">
+            <b style="font-size:13px;">🔑 Change Manager PIN (Firebase Synced)</b>
+            <div style="display:flex;gap:6px;margin-top:4px;">
+              <input id="newManagerPinInput" type="password" maxlength="6" placeholder="New 4-6 digit PIN" style="margin:0;" onkeydown="if(event.key==='Enter')updateFirebasePin()">
+              <button onclick="updateFirebasePin()" style="background:#0f2b48;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;white-space:nowrap;cursor:pointer;">Update PIN</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SALES HISTORY TAB -->
-    <div id="history" class="tab">
-      <div class="card">
-        <button onclick="exportCsv()" style="background:#0f2b48;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:bold;margin-bottom:10px;cursor:pointer;">Export CSV</button>
-        <div id="historyList"></div>
-      </div>
-    </div>
-
     <!-- PRODUCTS TAB -->
     <div id="products" class="tab">
-      <div class="metrics-grid" style="margin-bottom:12px;">
-        <div class="metric-card"><span>PRODUCTS</span><b style="color:#0f2b48;"><span id="prodCount">0</span></b></div>
-        <div class="metric-card"><span>OUT OF STOCK</span><b style="color:#dc2626;"><span id="outCount">0</span></b></div>
-        <div class="metric-card"><span>CATEGORIES</span><b style="color:#0f2b48;"><span id="catCount">0</span></b></div>
+      <div class="scroll-view">
+        <div class="metrics-grid" style="margin-bottom:8px;">
+          <div class="metric-card"><span>PRODUCTS</span><b style="color:#0f2b48;"><span id="prodCount">0</span></b></div>
+          <div class="metric-card"><span>OUT OF STOCK</span><b style="color:#dc2626;"><span id="outCount">0</span></b></div>
+          <div class="metric-card"><span>CATEGORIES</span><b style="color:#0f2b48;"><span id="catCount">0</span></b></div>
+        </div>
+        <div style="background:#ffffff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px;">
+          <input id="searchProducts" placeholder="Search products..." oninput="renderProducts()" style="margin:0 0 6px 0;">
+          <button onclick="toggleAdd()" style="background:#0f2b48;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;">➕ Add Product</button>
+        </div>
+        <div id="addBox" style="display:none;background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px;">
+          <h3 style="margin-top:0;font-size:14px;">Add Product</h3>
+          <input id="aCategory" placeholder="Category">
+          <input id="aName" placeholder="Product Name">
+          <input id="aDescription" placeholder="Description">
+          <input id="aPrice" type="number" placeholder="Price">
+          <input id="aQty" type="number" placeholder="Quantity">
+          <input id="aImage" placeholder="Image URL">
+          <button onclick="addProduct()" style="background:#0f2b48;color:#fff;border:none;padding:8px;border-radius:6px;font-weight:bold;width:100%;cursor:pointer;">Save Product</button>
+        </div>
+        <div id="productsList"></div>
       </div>
-      <div class="card">
-        <input id="searchProducts" placeholder="Search products..." oninput="renderProducts()">
-        <button onclick="toggleAdd()" style="background:#0f2b48;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:bold;margin-top:8px;cursor:pointer;">➕ Add Product</button>
-      </div>
-      <div id="addBox" class="card" style="display:none;margin-top:10px;">
-        <h3>Add Product</h3>
-        <input id="aCategory" placeholder="Category">
-        <input id="aName" placeholder="Product Name">
-        <input id="aDescription" placeholder="Description">
-        <input id="aPrice" type="number" placeholder="Price">
-        <input id="aQty" type="number" placeholder="Quantity">
-        <input id="aImage" placeholder="Image URL">
-        <button onclick="addProduct()" style="background:#0f2b48;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:bold;width:100%;cursor:pointer;">Save Product</button>
-      </div>
-      <div id="productsList" style="margin-top:10px;"></div>
     </div>
   </div>
 </div>
@@ -405,12 +476,42 @@ let draggedOrderId = null;
 let swRegistration = null;
 let isPinUnlocked = false;
 let currentManagerPin = '1234';
+let currentReportType = 'summary';
+let totalPagersCount = 16;
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg => {
     swRegistration = reg;
   }).catch(() => {});
 }
+
+function renderPagerDropdown() {
+  const select = document.getElementById('posPagerSelect');
+  if (!select) return;
+  const curr = select.value;
+  let h = `<option value="NONE">None</option>`;
+  for (let i = 1; i <= totalPagersCount; i++) {
+    h += `<option value="Pager ${i}">Pager ${i}</option>`;
+  }
+  h += `<option value="ADD_MORE">+ Add More Pagers...</option>`;
+  select.innerHTML = h;
+  if (curr && curr !== 'ADD_MORE') select.value = curr;
+}
+
+window.handlePagerSelectionChange = () => {
+  const select = document.getElementById('posPagerSelect');
+  if (select.value === 'ADD_MORE') {
+    const more = prompt('Enter new total number of pagers available (current: ' + totalPagersCount + '):', totalPagersCount + 4);
+    const parsed = parseInt(more, 10);
+    if (parsed && parsed > totalPagersCount) {
+      totalPagersCount = parsed;
+      renderPagerDropdown();
+      select.value = `Pager ${totalPagersCount}`;
+    } else {
+      select.value = 'NONE';
+    }
+  }
+};
 
 window.toggleSidebar = () => {
   document.getElementById('sidebarDrawer').classList.toggle('active');
@@ -441,6 +542,7 @@ window.navigateTo = (tabId, label) => {
       document.getElementById('pinLockBoxRevenue').style.display = 'none';
       document.getElementById('pinUnlockedPanelRevenue').style.display = 'block';
       calculateRevenue();
+      renderActiveReport();
     } else {
       document.getElementById('pinLockBoxRevenue').style.display = 'block';
       document.getElementById('pinUnlockedPanelRevenue').style.display = 'none';
@@ -550,10 +652,11 @@ window.logout = async () => {
 onAuthStateChanged(auth, user => {
   if (user) {
     document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'flex';
     if (window.Notification && Notification.permission === 'granted') {
       document.getElementById('enableNotifBtn').style.display = 'none';
     }
+    renderPagerDropdown();
     initLiveListeners();
   } else {
     document.getElementById('loginBox').style.display = 'block';
@@ -571,40 +674,25 @@ function parseOrderDate(created) {
   return isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
 
-window.handleFilterChange = () => {
-  const filterVal = document.getElementById('revFilter').value;
-  const customBox = document.getElementById('customDates');
-  customBox.style.display = filterVal === 'custom' ? 'flex' : 'none';
-  calculateRevenue();
-};
-
-window.calculateRevenue = () => {
+function getFilteredOrders() {
   const filterVal = document.getElementById('revFilter').value;
   const now = new Date();
-  let totalRev = 0;
-  let cashRev = 0;
-  let gcashRev = 0;
-  let bpiRev = 0;
 
-  hist.forEach(o => {
+  return hist.filter(o => {
     const statusUpper = (o.status || '').toString().toUpperCase();
-    if (statusUpper !== 'COMPLETED') return;
+    if (statusUpper !== 'COMPLETED') return false;
 
     const oDate = parseOrderDate(o.createdAt);
-    const amount = Number(o.total || o.totalPrice || 0);
-    const payment = (o.paymentMethod || 'Cash').toString().toUpperCase();
-
-    let inRange = false;
     if (filterVal === 'daily') {
-      if (oDate.toDateString() === now.toDateString()) inRange = true;
+      return oDate.toDateString() === now.toDateString();
     } else if (filterVal === 'weekly') {
       const oneWeekAgo = new Date(now);
       oneWeekAgo.setDate(now.getDate() - 7);
-      if (oDate >= oneWeekAgo && oDate <= now) inRange = true;
+      return oDate >= oneWeekAgo && oDate <= now;
     } else if (filterVal === 'monthly') {
-      if (oDate.getMonth() === now.getMonth() && oDate.getFullYear() === now.getFullYear()) inRange = true;
+      return oDate.getMonth() === now.getMonth() && oDate.getFullYear() === now.getFullYear();
     } else if (filterVal === 'all') {
-      inRange = true;
+      return true;
     } else if (filterVal === 'custom') {
       const startInput = document.getElementById('startDate').value;
       const endInput = document.getElementById('endDate').value;
@@ -613,26 +701,278 @@ window.calculateRevenue = () => {
         start.setHours(0,0,0,0);
         const end = new Date(endInput);
         end.setHours(23,59,59,999);
-        if (oDate >= start && oDate <= end) inRange = true;
+        return oDate >= start && oDate <= end;
       }
     }
+    return false;
+  });
+}
 
-    if (inRange) {
-      totalRev += amount;
-      if (payment === 'GCASH') {
-        gcashRev += amount;
-      } else if (payment === 'BPI') {
-        bpiRev += amount;
-      } else {
-        cashRev += amount;
-      }
-    }
+window.handleFilterChange = () => {
+  const filterVal = document.getElementById('revFilter').value;
+  const customBox = document.getElementById('customDates');
+  customBox.style.display = filterVal === 'custom' ? 'flex' : 'none';
+  calculateRevenue();
+  renderActiveReport();
+};
+
+window.calculateRevenue = () => {
+  const orders = getFilteredOrders();
+  let totalRev = 0, cashRev = 0, gcashRev = 0, bpiRev = 0;
+
+  orders.forEach(o => {
+    const amount = Number(o.total || o.totalPrice || 0);
+    const payment = (o.paymentMethod || 'Cash').toString().toUpperCase();
+
+    totalRev += amount;
+    if (payment === 'GCASH') gcashRev += amount;
+    else if (payment === 'BPI') bpiRev += amount;
+    else cashRev += amount;
   });
 
   document.getElementById('rev').textContent = totalRev.toLocaleString();
   document.getElementById('revCash').textContent = cashRev.toLocaleString();
   document.getElementById('revGcash').textContent = gcashRev.toLocaleString();
   document.getElementById('revBpi').textContent = bpiRev.toLocaleString();
+};
+
+// Report Selection & Renderers
+window.selectReportType = (type, el) => {
+  currentReportType = type;
+  document.querySelectorAll('.report-menu-item').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderActiveReport();
+};
+
+function renderActiveReport() {
+  const container = document.getElementById('reportDisplayArea');
+  if (!container) return;
+  const orders = getFilteredOrders();
+  let h = '';
+
+  if (currentReportType === 'summary') {
+    let gross = 0, totalDisc = 0, net = 0;
+    orders.forEach(o => {
+      gross += Number(o.subtotal || o.total || 0);
+      totalDisc += Number(o.discountAmount || 0);
+      net += Number(o.total || 0);
+    });
+    const avgTicket = orders.length ? Math.round(net / orders.length) : 0;
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Sales Summary</h3>
+      <table class="report-table">
+        <tr><th>Metric</th><th style="text-align:right;">Value</th></tr>
+        <tr><td>Gross Sales</td><td style="text-align:right;font-weight:bold;">₱${gross.toLocaleString()}</td></tr>
+        <tr><td>Discounts Applied</td><td style="text-align:right;color:#dc2626;">-₱${totalDisc.toLocaleString()}</td></tr>
+        <tr><td>Net Sales (Revenue)</td><td style="text-align:right;font-weight:bold;color:#0f2b48;">₱${net.toLocaleString()}</td></tr>
+        <tr><td>Completed Orders (Tickets)</td><td style="text-align:right;">${orders.length}</td></tr>
+        <tr><td>Average Ticket Size</td><td style="text-align:right;font-weight:bold;">₱${avgTicket.toLocaleString()}</td></tr>
+      </table>
+    `;
+  } else if (currentReportType === 'items') {
+    const itemMap = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(i => {
+        const name = typeof i === 'string' ? i : i.name;
+        const qty = Number(i.qty || 1);
+        const price = Number(i.price || 0);
+        if (!itemMap[name]) itemMap[name] = { qty: 0, sales: 0 };
+        itemMap[name].qty += qty;
+        itemMap[name].sales += (price * qty);
+      });
+    });
+
+    let rows = Object.entries(itemMap).map(([name, data]) => `
+      <tr><td><b>${name}</b></td><td style="text-align:center;">${data.qty}</td><td style="text-align:right;font-weight:bold;">₱${data.sales.toLocaleString()}</td></tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Sales by Item</h3>
+      <table class="report-table">
+        <tr><th>Item Name</th><th style="text-align:center;">Quantity Sold</th><th style="text-align:right;">Total Sales</th></tr>
+        ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No item sales in this period</td></tr>'}
+      </table>
+    `;
+  } else if (currentReportType === 'category') {
+    const catMap = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(i => {
+        const p = products.find(prod => prod.name === (i.name || i));
+        const cat = p ? (p.category || 'Other') : (i.name?.startsWith('Plain fries') || i.name?.startsWith('Extra') ? 'Add-ons' : 'Other');
+        const qty = Number(i.qty || 1);
+        const price = Number(i.price || 0);
+        if (!catMap[cat]) catMap[cat] = { qty: 0, sales: 0 };
+        catMap[cat].qty += qty;
+        catMap[cat].sales += (price * qty);
+      });
+    });
+
+    let rows = Object.entries(catMap).map(([cat, data]) => `
+      <tr><td><b>${cat}</b></td><td style="text-align:center;">${data.qty}</td><td style="text-align:right;font-weight:bold;">₱${data.sales.toLocaleString()}</td></tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Sales by Category</h3>
+      <table class="report-table">
+        <tr><th>Category</th><th style="text-align:center;">Quantity Sold</th><th style="text-align:right;">Total Sales</th></tr>
+        ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No sales recorded</td></tr>'}
+      </table>
+    `;
+  } else if (currentReportType === 'payment') {
+    let cash = 0, gcash = 0, bpi = 0;
+    let cashCount = 0, gcashCount = 0, bpiCount = 0;
+    orders.forEach(o => {
+      const p = (o.paymentMethod || 'Cash').toUpperCase();
+      const tot = Number(o.total || 0);
+      if (p === 'GCASH') { gcash += tot; gcashCount++; }
+      else if (p === 'BPI') { bpi += tot; bpiCount++; }
+      else { cash += tot; cashCount++; }
+    });
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Sales by Payment Type</h3>
+      <table class="report-table">
+        <tr><th>Payment Method</th><th style="text-align:center;">Transactions</th><th style="text-align:right;">Total Collected</th></tr>
+        <tr><td>💵 Cash</td><td style="text-align:center;">${cashCount}</td><td style="text-align:right;font-weight:bold;">₱${cash.toLocaleString()}</td></tr>
+        <tr><td>📱 GCash</td><td style="text-align:center;">${gcashCount}</td><td style="text-align:right;font-weight:bold;">₱${gcash.toLocaleString()}</td></tr>
+        <tr><td>🏦 BPI</td><td style="text-align:center;">${bpiCount}</td><td style="text-align:right;font-weight:bold;">₱${bpi.toLocaleString()}</td></tr>
+      </table>
+    `;
+  } else if (currentReportType === 'receipts') {
+    let rows = orders.map(o => `
+      <tr>
+        <td><b>${o.orderNumber || o.id}</b></td>
+        <td>${parseOrderDate(o.createdAt).toLocaleDateString()}</td>
+        <td>${o.customerName || 'Walk-in'}</td>
+        <td>${o.paymentMethod || 'Cash'}</td>
+        <td style="text-align:right;font-weight:bold;">₱${Number(o.total || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Receipts Audit Log</h3>
+      <table class="report-table">
+        <tr><th>Ticket #</th><th>Date</th><th>Customer</th><th>Payment</th><th style="text-align:right;">Total</th></tr>
+        ${rows || '<tr><td colspan="5" style="text-align:center;color:#888;">No completed receipts</td></tr>'}
+      </table>
+    `;
+  } else if (currentReportType === 'modifiers') {
+    const modMap = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(i => {
+        (i.addons || []).forEach(addonName => {
+          const found = Object.values(ADDON_DEFS).find(x => x.name === addonName);
+          const price = found ? found.price : 0;
+          if (!modMap[addonName]) modMap[addonName] = { qty: 0, sales: 0 };
+          modMap[addonName].qty += Number(i.qty || 1);
+          modMap[addonName].sales += (price * Number(i.qty || 1));
+        });
+        if (i.name?.startsWith('Plain fries') || i.name?.startsWith('Extra')) {
+          const price = Number(i.price || 0);
+          if (!modMap[i.name]) modMap[i.name] = { qty: 0, sales: 0 };
+          modMap[i.name].qty += Number(i.qty || 1);
+          modMap[i.name].sales += (price * Number(i.qty || 1));
+        }
+      });
+    });
+
+    let rows = Object.entries(modMap).map(([modName, data]) => `
+      <tr><td><b>${modName}</b></td><td style="text-align:center;">${data.qty}</td><td style="text-align:right;font-weight:bold;">₱${data.sales.toLocaleString()}</td></tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Sales by Modifier (Add-ons)</h3>
+      <table class="report-table">
+        <tr><th>Modifier / Add-on</th><th style="text-align:center;">Quantity Sold</th><th style="text-align:right;">Total Sales</th></tr>
+        ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No modifiers sold</td></tr>'}
+      </table>
+    `;
+  } else if (currentReportType === 'discounts') {
+    const discMap = {};
+    orders.forEach(o => {
+      if (o.discountType && o.discountType !== 'NONE' && Number(o.discountAmount) > 0) {
+        if (!discMap[o.discountType]) discMap[o.discountType] = { count: 0, amount: 0 };
+        discMap[o.discountType].count++;
+        discMap[o.discountType].amount += Number(o.discountAmount || 0);
+      }
+    });
+
+    let rows = Object.entries(discMap).map(([name, data]) => `
+      <tr><td><b>${name}</b></td><td style="text-align:center;">${data.count}</td><td style="text-align:right;color:#dc2626;font-weight:bold;">-₱${data.amount.toLocaleString()}</td></tr>
+    `).join('');
+
+    h = `
+      <h3 style="margin-top:0;color:#0f2b48;">Discounts & Promotions Audit</h3>
+      <table class="report-table">
+        <tr><th>Discount Type</th><th style="text-align:center;">Times Applied</th><th style="text-align:right;">Total Deducted</th></tr>
+        ${rows || '<tr><td colspan="3" style="text-align:center;color:#888;">No discounts claimed</td></tr>'}
+      </table>
+    `;
+  }
+
+  container.innerHTML = h;
+}
+
+window.exportCurrentReportExcel = () => {
+  const orders = getFilteredOrders();
+  let csvRows = [];
+
+  if (currentReportType === 'summary') {
+    let gross = 0, totalDisc = 0, net = 0;
+    orders.forEach(o => { gross += Number(o.subtotal || o.total || 0); totalDisc += Number(o.discountAmount || 0); net += Number(o.total || 0); });
+    csvRows.push('Metric,Value');
+    csvRows.push(`Gross Sales,${gross}`);
+    csvRows.push(`Discounts Applied,-${totalDisc}`);
+    csvRows.push(`Net Sales,${net}`);
+    csvRows.push(`Order Count,${orders.length}`);
+  } else if (currentReportType === 'items') {
+    const itemMap = {};
+    orders.forEach(o => (o.items || []).forEach(i => {
+      const name = typeof i === 'string' ? i : i.name;
+      const qty = Number(i.qty || 1);
+      const price = Number(i.price || 0);
+      if (!itemMap[name]) itemMap[name] = { qty: 0, sales: 0 };
+      itemMap[name].qty += qty;
+      itemMap[name].sales += (price * qty);
+    }));
+    csvRows.push('Item Name,Quantity Sold,Total Sales');
+    Object.entries(itemMap).forEach(([n, d]) => csvRows.push(`"${n}",${d.qty},${d.sales}`));
+  } else if (currentReportType === 'receipts') {
+    csvRows.push('Ticket,Date,Customer,Payment Method,Total,DiscountType,DiscountAmount');
+    orders.forEach(o => csvRows.push(`${o.orderNumber || o.id},${parseOrderDate(o.createdAt).toLocaleDateString()},"${o.customerName || 'Walk-in'}",${o.paymentMethod || 'Cash'},${o.total || 0},${o.discountType || 'None'},${o.discountAmount || 0}`));
+  } else {
+    csvRows.push('Category/Item,Total');
+    orders.forEach(o => csvRows.push(`${o.orderNumber},${o.total}`));
+  }
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `CourtsideKitchen_${currentReportType}_Report.csv`;
+  a.click();
+};
+
+window.printCurrentReportPDF = () => {
+  const content = document.getElementById('reportDisplayArea').innerHTML;
+  const filterVal = document.getElementById('revFilter').value;
+  const pdfArea = document.getElementById('pdfPrintArea');
+  
+  pdfArea.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f2b48;padding-bottom:10px;margin-bottom:14px;">
+      <div>
+        <h2 style="margin:0;color:#0f2b48;">COURTSIDE KITCHEN</h2>
+        <small style="color:#64748b;">Analytics & Sales Report (${filterVal.toUpperCase()})</small>
+      </div>
+      <div>Date: ${new Date().toLocaleDateString()}</div>
+    </div>
+    ${content}
+  `;
+
+  document.body.className = 'printing-pdf';
+  window.print();
+  setTimeout(() => { document.body.className = 'printing-receipt'; }, 500);
 };
 
 window.renderOrdersBoard = () => {
@@ -651,7 +991,6 @@ window.renderOrdersBoard = () => {
   filteredOrders.forEach(o => {
     const statusUpper = (o.status || 'PENDING').toString().toUpperCase();
     const orderCardHtml = card(o.id, o);
-    h += orderCardHtml;
 
     if (statusUpper === 'PENDING') p += orderCardHtml;
     else if (statusUpper === 'ORDER_RECEIVED') r += orderCardHtml;
@@ -663,7 +1002,6 @@ window.renderOrdersBoard = () => {
   document.getElementById('received').innerHTML = r;
   document.getElementById('preparing').innerHTML = pr;
   document.getElementById('completed').innerHTML = re;
-  document.getElementById('historyList').innerHTML = h;
 
   initDragDrop();
 };
@@ -721,12 +1059,13 @@ function initLiveListeners() {
     renderOrdersBoard();
     renderPosHistory();
     calculateRevenue();
+    renderActiveReport();
   });
 }
 
 window.move=async(id,s)=>{ await updateDoc(doc(db,'orders',id),{status:s}); };
 window.decline=async(id)=>{let r=prompt('Reason for declining:');if(r){ await updateDoc(doc(db,'orders',id),{status:'DECLINED',declineReason:r}); }};
-window.exportCsv=()=>{let rows=['Order,Customer,Status,Total,PaymentMethod,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.status},${o.total},${o.paymentMethod||'Cash'},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
+window.exportCsv=()=>{let rows=['Order,Customer,Phone,Pager,Status,Total,PaymentMethod,DiscountType,DiscountAmount'];hist.forEach(o=>rows.push(`${o.orderNumber},${o.customerName},${o.customerPhone||''},${o.pagerNumber||''},${o.status},${o.total},${o.paymentMethod||'Cash'},${o.discountType||'None'},${o.discountAmount||0}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='orders.csv';a.click()};
 
 function remain(created){if(!created)return '';const d=Math.max(0,30-Math.floor((Date.now()-parseOrderDate(created))/1000));return d+'s';}
 
@@ -749,11 +1088,16 @@ function card(id, o = {}) {
   const customer = o.customerName || o.name || 'Guest Customer';
   const total = o.total || o.totalPrice || 0;
   const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
+  const pagerBadge = o.pagerNumber && o.pagerNumber !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">📟 ${o.pagerNumber.toUpperCase().replace('PAGER', 'CUSTOMER #')}</span> ` : '';
+  const unpaidBadge = o.isUnpaid ? `<span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:bold;">UNPAID</span> ` : '';
 
   return `
     <div class='ticket-card' draggable="true" data-id="${id}">
-      <b style="color:#0f2b48;">${orderNum}</b><br>
-      Customer: ${customer}<br>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+        <b style="color:#0f2b48;">${orderNum}</b>
+        <div>${unpaidBadge}${pagerBadge}</div>
+      </div>
+      Customer: ${customer} ${o.customerPhone ? `<small>(${o.customerPhone})</small>` : ''}<br>
       ${rawStatus === 'PENDING' ? `Pending: ${remain(o.createdAt)}` : ''}
       <div class='items'>${itemsHtml(o.items)}</div>
       Total: ₱${total} (${o.paymentMethod || 'Cash'})<br>
@@ -825,7 +1169,7 @@ function initDragDrop() {
   });
 }
 
-// PIN Handlers for Revenue and Discounts
+// PIN Handlers
 window.verifyManagerPinForRevenue = () => {
   const entered = document.getElementById('posManagerPinInputRevenue').value;
   if (entered === currentManagerPin) {
@@ -834,6 +1178,7 @@ window.verifyManagerPinForRevenue = () => {
     document.getElementById('pinLockBoxRevenue').style.display = 'none';
     document.getElementById('pinUnlockedPanelRevenue').style.display = 'block';
     calculateRevenue();
+    renderActiveReport();
   } else {
     alert('Incorrect Manager PIN!');
     document.getElementById('posManagerPinInputRevenue').value = '';
@@ -1032,7 +1377,7 @@ window.filterPosCatalog = () => {
         <div class="pos-item" style="${isOut ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="posAddToCart('${p.id}')">
           <div class="pos-item-name">${p.name}</div>
           <div class="pos-item-price">₱${p.price || 0}</div>
-          ${isOut ? '<small style="color:red;font-weight:bold;">Out of stock</small>' : ''}
+          ${isOut ? '<small style="color:red;font-weight:bold;font-size:10px;">Out of stock</small>' : ''}
         </div>
       `;
     });
@@ -1045,14 +1390,14 @@ window.filterPosCatalog = () => {
           <div class="pos-item" style="border:1px dashed #0f2b48;background:#f0f4f8;" onclick="posAddStandaloneAddon('${k}')">
             <div class="pos-item-name">${item.name}</div>
             <div class="pos-item-price">₱${item.price}</div>
-            <small style="color:#0f2b48;font-weight:bold;">Side Add-on</small>
+            <small style="color:#0f2b48;font-weight:bold;font-size:10px;">Side Add-on</small>
           </div>
         `;
       }
     });
   }
 
-  catalogEl.innerHTML = h || '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:20px;">No items match</div>';
+  catalogEl.innerHTML = h || '<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:14px;font-size:12px;">No items match</div>';
 };
 
 window.posAddToCart = (id) => {
@@ -1088,7 +1433,7 @@ function renderPosCart() {
   let subtotal = 0;
 
   if (!entries.length) {
-    list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:14px 0;">Cart is empty.<br>Tap items to add.</div>';
+    list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:12px;">Cart is empty.<br>Tap items to add.</div>';
     document.getElementById('posSub').textContent = '0';
     document.getElementById('posDiscVal').textContent = '0';
     document.getElementById('posTot').textContent = '0';
@@ -1110,14 +1455,14 @@ function renderPosCart() {
       h += `
         <div class="cart-row">
           <div>
-            <b>${addon.name}</b> (₱${addon.price})
-            <br><small style="color:#0f2b48;font-weight:bold;">Standalone Add-on</small>
+            <b style="font-size:12px;">${addon.name}</b> (₱${addon.price})
+            <br><small style="color:#0f2b48;font-weight:bold;font-size:10px;">Standalone Add-on</small>
           </div>
           <div class="qty-ctrl">
             <button onclick="posChangeQty('${id}', -1)">-</button>
-            <span><b>${qty}</b></span>
+            <span style="font-size:12px;"><b>${qty}</b></span>
             <button onclick="posChangeQty('${id}', 1)">+</button>
-            <span style="min-width:50px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+            <span style="min-width:40px;text-align:right;font-weight:bold;font-size:12px;">₱${itemTotal}</span>
           </div>
         </div>
       `;
@@ -1146,14 +1491,14 @@ function renderPosCart() {
     h += `
       <div class="cart-row">
         <div>
-          <b>${p.name}</b> (₱${p.price})
+          <b style="font-size:12px;">${p.name}</b> (₱${p.price})
           <div class="addon-pill-box">${pillsHtml}</div>
         </div>
         <div class="qty-ctrl">
           <button onclick="posChangeQty('${id}', -1)">-</button>
-          <span><b>${qty}</b></span>
+          <span style="font-size:12px;"><b>${qty}</b></span>
           <button onclick="posChangeQty('${id}', 1)">+</button>
-          <span style="min-width:50px;text-align:right;font-weight:bold;">₱${itemTotal}</span>
+          <span style="min-width:40px;text-align:right;font-weight:bold;font-size:12px;">₱${itemTotal}</span>
         </div>
       </div>
     `;
@@ -1218,16 +1563,23 @@ window.printThermalReceipt = (o) => {
     `;
   });
 
+  // Extract pure pager number / label (e.g. "Pager 3" -> "3")
+  const rawPager = (o.pagerNumber || '').trim();
+  const hasPager = rawPager && rawPager !== 'NONE';
+  const pagerNumOnly = hasPager ? rawPager.replace(/[^0-9]/g, '') || rawPager : '';
+
   printArea.innerHTML = `
     <div class="receipt-center">
       <b style="font-size:13px;">COURTSIDE KITCHEN</b><br>
       <span>Order Ticket / Receipt</span><br>
       <b>${o.orderNumber || o.id}</b>
     </div>
+    ${hasPager ? `<div class="receipt-pager-banner">CUSTOMER # ${pagerNumOnly}</div>` : ''}
     <div class="receipt-divider"></div>
     <div>Date: ${dateStr}</div>
     <div>Customer: <b>${o.customerName || 'Walk-in'}</b></div>
-    <div>Payment: <b>${o.paymentMethod || 'Cash'}</b></div>
+    ${o.customerPhone ? `<div>Mobile: ${o.customerPhone}</div>` : ''}
+    <div>Payment: <b>${o.isUnpaid ? 'UNPAID / PENDING' : (o.paymentMethod || 'Cash')}</b></div>
     ${o.notes ? `<div>Note: ${o.notes}</div>` : ''}
     <div class="receipt-divider"></div>
     <div><b>ITEMS & ADD-ONS:</b></div>
@@ -1240,20 +1592,18 @@ window.printThermalReceipt = (o) => {
     <div class="receipt-row" style="font-size:13px;font-weight:bold;margin-top:4px;">
       <span>TOTAL:</span><span>₱${o.total || 0}</span>
     </div>
-    ${o.paymentMethod === 'Cash' && o.cashTendered ? `
+    ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
       <div class="receipt-row"><span>Cash:</span><span>₱${o.cashTendered}</span></div>
       <div class="receipt-row"><span>Change:</span><span>₱${o.changeGiven || 0}</span></div>
     ` : ''}
     <div class="receipt-divider"></div>
     <div class="receipt-center" style="font-size:10px;margin-top:6px;">
-      Thank you for dining with us!<br>
-      Please claim your order when called.
+      ${o.isUnpaid ? '⚠️ UNPAID ORDER - PLEASE SETTLE PAYMENT' : 'Thank you for dining with us!<br>Please claim your order when called.'}
     </div>
   `;
 
-  setTimeout(() => {
-    window.print();
-  }, 100);
+  document.body.className = 'printing-receipt';
+  setTimeout(() => { window.print(); }, 100);
 };
 
 window.printFromHistory = (orderId) => {
@@ -1265,7 +1615,41 @@ window.printFromHistory = (orderId) => {
   }
 };
 
+// Checkout & Save Unpaid Logic
+window.openSaveUnpaidModal = () => {
+  if (!Object.keys(posCart).length) {
+    return alert('Please select items before saving ticket.');
+  }
+  const currentCust = document.getElementById('posCustomer').value.trim();
+  document.getElementById('unpaidClientName').value = currentCust !== 'Walk-in' ? currentCust : '';
+  document.getElementById('unpaidClientPhone').value = '';
+  document.getElementById('saveUnpaidModal').classList.add('active');
+};
+
+window.closeSaveUnpaidModal = () => {
+  document.getElementById('saveUnpaidModal').classList.remove('active');
+};
+
+window.confirmSaveUnpaidOrder = async () => {
+  const clientName = document.getElementById('unpaidClientName').value.trim();
+  const clientPhone = document.getElementById('unpaidClientPhone').value.trim();
+
+  if (!clientName) {
+    return alert('Please enter client name for unpaid orders.');
+  }
+  if (!clientPhone) {
+    return alert('Please enter client mobile phone number for safety.');
+  }
+
+  closeSaveUnpaidModal();
+  await processOrderSubmission(true, clientName, clientPhone);
+};
+
 window.submitPosOrder = async () => {
+  await processOrderSubmission(false);
+};
+
+async function processOrderSubmission(isUnpaid = false, overrideName = null, overridePhone = null) {
   const items = [];
   let subtotal = 0;
 
@@ -1319,32 +1703,36 @@ window.submitPosOrder = async () => {
   const finalTotal = Math.max(0, subtotal - discountAmount);
   const paymentMethod = document.getElementById('posPayment').value;
   const cashTendered = Number(document.getElementById('posCashTendered')?.value || 0);
+  const pagerNo = document.getElementById('posPagerSelect')?.value || 'NONE';
 
-  if (paymentMethod === 'Cash' && cashTendered < finalTotal) {
+  if (!isUnpaid && paymentMethod === 'Cash' && cashTendered < finalTotal) {
     return alert(`Insufficient cash provided. Total is ₱${finalTotal}, but received ₱${cashTendered}.`);
   }
 
-  const changeGiven = paymentMethod === 'Cash' ? Math.max(0, cashTendered - finalTotal) : 0;
+  const changeGiven = (!isUnpaid && paymentMethod === 'Cash') ? Math.max(0, cashTendered - finalTotal) : 0;
 
   const btn = document.getElementById('posSubmitBtn');
   btn.disabled = true;
-  btn.textContent = 'Submitting & Printing...';
+  btn.textContent = isUnpaid ? 'Saving Ticket...' : 'Submitting...';
 
   try {
     const n = await getNextPosOrderNumber();
     const formattedOrderNo = `CK-${String(n).padStart(4, '0')}`;
-    const customer = document.getElementById('posCustomer').value.trim() || 'Walk-in';
+    const customer = overrideName || document.getElementById('posCustomer').value.trim() || 'Walk-in';
     const notes = document.getElementById('posNotes').value.trim();
     const track = `track_rc1.html?order=${formattedOrderNo}`;
 
     const orderData = {
       orderNumber: formattedOrderNo,
       customerName: customer,
+      customerPhone: overridePhone || null,
+      pagerNumber: pagerNo,
+      isUnpaid: isUnpaid,
       notes: notes,
       items: items,
-      paymentMethod: paymentMethod,
-      cashTendered: paymentMethod === 'Cash' ? cashTendered : null,
-      changeGiven: paymentMethod === 'Cash' ? changeGiven : null,
+      paymentMethod: isUnpaid ? 'UNPAID' : paymentMethod,
+      cashTendered: (!isUnpaid && paymentMethod === 'Cash') ? cashTendered : null,
+      changeGiven: (!isUnpaid && paymentMethod === 'Cash') ? changeGiven : null,
       subtotal: subtotal,
       discountType: discType,
       discountAmount: discountAmount,
@@ -1364,14 +1752,15 @@ window.submitPosOrder = async () => {
     document.getElementById('posNotes').value = '';
     document.getElementById('posDiscountType').value = 'NONE';
     document.getElementById('posCashTendered').value = '';
+    document.getElementById('posPagerSelect').value = 'NONE';
     renderPosCart();
   } catch (err) {
-    alert('Failed to submit order: ' + err.message);
+    alert('Failed to process order: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '⚡ CHARGE';
   }
-};
+}
 
 window.toggleCashInput = () => {
   const method = document.getElementById('posPayment').value;
@@ -1402,6 +1791,18 @@ window.calculateChange = () => {
 };
 
 // History Ticket Actions
+window.posMarkTicketPaid = async (id) => {
+  const method = prompt('Select payment method (Cash / GCash / BPI):', 'Cash');
+  if (method) {
+    await updateDoc(doc(db, 'orders', id), {
+      isUnpaid: false,
+      paymentMethod: method,
+      paidAt: new Date().toISOString()
+    });
+    alert(`Ticket ${id} marked as PAID via ${method}!`);
+  }
+};
+
 window.posVoidTicket = async (id) => {
   const r = prompt('Reason for VOIDING ticket:');
   if (r) {
@@ -1436,50 +1837,57 @@ window.renderPosHistory = () => {
     const num = (o.orderNumber || o.id || '').toString().toLowerCase();
     const name = (o.customerName || '').toLowerCase();
     const status = (o.status || '').toLowerCase();
-    return num.includes(q) || name.includes(q) || status.includes(q);
+    const pager = (o.pagerNumber || '').toLowerCase();
+    return num.includes(q) || name.includes(q) || status.includes(q) || pager.includes(q);
   });
 
   let h = '';
   filtered.forEach(o => {
     const rawStatus = (o.status || 'PENDING').toString().toUpperCase();
     const isInactive = ['VOIDED', 'CANCELLED', 'REFUNDED', 'DECLINED'].includes(rawStatus);
+    const pagerBadge = o.pagerNumber && o.pagerNumber !== 'NONE' ? `<span style="background:#0f2b48;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">📟 ${o.pagerNumber.toUpperCase().replace('PAGER', 'CUSTOMER #')}</span> ` : '';
+    const unpaidBadge = o.isUnpaid ? `<span style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">UNPAID</span> ` : '';
 
     h += `
-      <div class="card" style="margin-bottom:10px;">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <b style="color:#0f2b48;">${o.orderNumber || o.id}</b>
-          <span style="font-weight:bold;color:${isInactive ? 'red' : '#0f2b48'};">${rawStatus}</span>
+          <div>
+            <b style="color:#0f2b48;">${o.orderNumber || o.id}</b>
+            ${unpaidBadge}${pagerBadge}
+          </div>
+          <span style="font-weight:bold;color:${isInactive ? 'red' : '#0f2b48'};font-size:12px;">${rawStatus}</span>
         </div>
-        <div style="font-size:13px;color:#64748b;margin:4px 0;">
-          Customer: <b>${o.customerName || 'Walk-in'}</b> | Payment: <b>${o.paymentMethod || 'N/A'}</b>
+        <div style="font-size:12px;color:#64748b;margin:3px 0;">
+          Customer: <b>${o.customerName || 'Walk-in'}</b> ${o.customerPhone ? `(${o.customerPhone})` : ''} | Date: <b>${parseOrderDate(o.createdAt).toLocaleString()}</b> | Payment: <b>${o.paymentMethod || 'N/A'}</b>
         </div>
-        <div class="items">${itemsHtml(o.items)}</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <div class="items" style="font-size:12px;padding:6px;">${itemsHtml(o.items)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;">
           <span>Subtotal: ₱${o.subtotal || o.total || 0}</span>
           <span>Discount: ${o.discountType || 'None'} (-₱${o.discountAmount || 0})</span>
           <b style="color:#0f2b48;">Total: ₱${o.total || 0}</b>
         </div>
-        ${o.paymentMethod === 'Cash' && o.cashTendered ? `
-          <div style="font-size:12px;color:#0f2b48;margin-top:4px;">
+        ${!o.isUnpaid && o.paymentMethod === 'Cash' && o.cashTendered ? `
+          <div style="font-size:11.5px;color:#0f2b48;margin-top:3px;">
             Cash: ₱${o.cashTendered} | Change: ₱${o.changeGiven || 0}
           </div>
         ` : ''}
-        ${o.voidReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Void Reason: ${o.voidReason}</div>` : ''}
-        ${o.cancelReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
-        ${o.refundReason ? `<div style="color:red;font-size:12px;margin-top:4px;">Refund Reason: ${o.refundReason}</div>` : ''}
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          <button onclick="printFromHistory('${o.id}')" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">🖨️ Print Receipt</button>
+        ${o.voidReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Void Reason: ${o.voidReason}</div>` : ''}
+        ${o.cancelReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Cancel Reason: ${o.cancelReason}</div>` : ''}
+        ${o.refundReason ? `<div style="color:red;font-size:11px;margin-top:3px;">Refund Reason: ${o.refundReason}</div>` : ''}
+        <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
+          <button onclick="printFromHistory('${o.id}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🖨️ Print Receipt</button>
+          ${o.isUnpaid && !isInactive ? `<button onclick="posMarkTicketPaid('${o.id}')" style="background:#2e7d32;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💵 Mark Paid</button>` : ''}
           ${!isInactive ? `
-            <button onclick="posVoidTicket('${o.id}')" style="background:#64748b;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">🚫 Void</button>
-            <button onclick="posCancelTicket('${o.id}')" style="background:#dc2626;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">❌ Cancel</button>
-            <button onclick="posRefundTicket('${o.id}')" style="background:#1e3a5f;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">💸 Refund</button>
+            <button onclick="posVoidTicket('${o.id}')" style="background:#64748b;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">🚫 Void</button>
+            <button onclick="posCancelTicket('${o.id}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">❌ Cancel</button>
+            <button onclick="posRefundTicket('${o.id}')" style="background:#1e3a5f;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">💸 Refund</button>
           ` : ''}
         </div>
       </div>
     `;
   });
 
-  listEl.innerHTML = h || '<div style="text-align:center;color:#64748b;padding:20px;">No tickets found.</div>';
+  listEl.innerHTML = h || '<div style="text-align:center;color:#64748b;padding:14px;font-size:12px;">No tickets found.</div>';
 };
 
 // Inventory / Product Manager
@@ -1545,23 +1953,23 @@ window.renderProducts = () => {
   let h='';
   products.filter(p => (p.name||'').toLowerCase().includes(q)).forEach(p => {
     h += `
-    <div class='card' style="margin-bottom:10px;">
-      ${p.image ? `<img src='${p.image}' style='max-width:100%;border-radius:6px'><br>` : ''}
-      <b>${p.name}</b> (${p.category || 'Other'})<br>
-      ₱${p.price||0} | Qty: ${p.qty||0}
-      ${(p.qty||0)<=0 ? "<div style='color:red;font-weight:bold'>❌ OUT OF STOCK</div>" : ""}
-      <div style="margin-top:8px;">
-        <button onclick="editProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Edit</button>
-        <button onclick="deleteProduct('${p.id}')" style="background:#dc2626;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Delete</button>
+    <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
+      ${p.image ? `<img src='${p.image}' style='max-width:100%;border-radius:6px;max-height:80px;object-fit:cover;'><br>` : ''}
+      <b style="font-size:13px;">${p.name}</b> <span style="font-size:12px;color:#64748b;">(${p.category || 'Other'})</span><br>
+      <span style="font-size:12.5px;">₱${p.price||0} | Qty: ${p.qty||0}</span>
+      ${(p.qty||0)<=0 ? "<div style='color:red;font-weight:bold;font-size:11px;'>❌ OUT OF STOCK</div>" : ""}
+      <div style="margin-top:6px;">
+        <button onclick="editProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Edit</button>
+        <button onclick="deleteProduct('${p.id}')" style="background:#dc2626;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11.5px;">Delete</button>
       </div>
-      <div id="e_${p.id}" style="display:none;margin-top:10px;">
+      <div id="e_${p.id}" style="display:none;margin-top:8px;">
         <input id="c_${p.id}" value="${p.category||''}">
         <input id="n_${p.id}" value="${p.name||''}">
         <input id="d_${p.id}" value="${p.description||''}">
         <input id="p_${p.id}" value="${p.price||0}">
         <input id="q_${p.id}" value="${p.qty||0}">
         <input id="i_${p.id}" value="${p.image||''}">
-        <button onclick="saveProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;margin-top:4px;">Save</button>
+        <button onclick="saveProduct('${p.id}')" style="background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;margin-top:4px;font-size:12px;">Save</button>
       </div>
     </div>
     `;
