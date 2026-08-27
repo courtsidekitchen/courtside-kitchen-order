@@ -48,25 +48,57 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
 .menu-item-name{font-weight:bold;font-size:13px;margin-bottom:4px;color:#0f2b48}
 .menu-item-price{color:#0f2b48;font-weight:bold;font-size:13px;margin-bottom:6px}
 
-/* Milk Tea Boba (+₱5) Toggle Pill on Product Card */
-.boba-toggle-btn{
-  display:inline-flex;
+/* iOS-Style Slide Toggle Switch */
+.slide-toggle-wrapper{
+  display:flex;
   align-items:center;
   justify-content:center;
-  gap:4px;
-  background:#f8fafc;
-  border:1px solid #cbd5e1;
-  border-radius:14px;
-  padding:4px 8px;
-  font-size:11px;
-  font-weight:bold;
-  color:#475569;
+  gap:6px;
+  margin:4px 0 8px 0;
   cursor:pointer;
-  margin-bottom:8px;
   user-select:none;
-  transition:all 0.15s;
 }
-.boba-toggle-btn.active{background:#0f2b48;color:#ffffff;border-color:#0f2b48}
+.slide-toggle-label{
+  font-size:11px;
+  font-weight:700;
+  color:#475569;
+}
+.slide-switch{
+  position:relative;
+  display:inline-block;
+  width:34px;
+  height:18px;
+  pointer-events:none;
+}
+.slide-slider{
+  position:absolute;
+  cursor:pointer;
+  top:0;left:0;right:0;bottom:0;
+  background-color:#cbd5e1;
+  transition:0.25s;
+  border-radius:18px;
+}
+.slide-slider:before{
+  position:absolute;
+  content:"";
+  height:14px;
+  width:14px;
+  left:2px;
+  bottom:2px;
+  background-color:white;
+  transition:0.25s;
+  border-radius:50%;
+  box-shadow:0 1px 3px rgba(0,0,0,0.25);
+}
+.slide-toggle-wrapper.active .slide-slider{
+  background-color:#0f2b48;
+}
+.slide-toggle-wrapper.active .slide-slider:before{
+  transform:translateX(16px);
+}
+.slide-toggle-wrapper.active .slide-toggle-label{
+  color:#0f2b48;
+}
 
 .btn-add{background:#0f2b48;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;width:100%}
 
@@ -85,6 +117,7 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
 
 /* Payment & WhatsApp Confirmation Instructions */
 .payment-info-box{background:#f8fafc;border:1px dashed #0f2b48;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#0f2b48;display:block}
+.whatsapp-reminder-box{background:#ecfdf5;border:1px solid #10b981;border-radius:8px;padding:10px;margin:8px 0;font-size:12.5px;color:#065f46;text-align:center;line-height:1.35}
 
 /* Live Tracker View */
 #trackerScreen{display:none;max-width:500px;margin:20px auto;background:#ffffff;border-radius:14px;box-shadow:0 4px 20px rgba(15,43,72,0.08);border:1px solid #e2e8f0;padding:20px;text-align:center}
@@ -160,6 +193,11 @@ input, textarea, select{width:100%;padding:9px 10px;margin:4px 0;border:1px soli
       </select>
 
       <div id="paymentInfoBox" class="payment-info-box"></div>
+
+      <!-- Reminder to send confirmation via WhatsApp -->
+      <div class="whatsapp-reminder-box">
+        💬 <b>Reminder:</b> After tapping Place Order, please send your payment confirmation screenshot via WhatsApp to start preparation.
+      </div>
 
       <div class="summary-line"><span>Subtotal:</span><span>₱<span id="cartSub">0</span></span></div>
       <div class="summary-line total-line"><span>Total:</span><span>₱<span id="cartTot">0</span></span></div>
@@ -243,7 +281,7 @@ const PREFERRED_CAT_ORDER = [
 
 let products = [];
 let customerCart = {};
-let milkTeaBobaSelection = {};
+let cardModifiers = {}; // prodId -> { boba: bool, nutella: bool }
 let selectedCategory = 'ALL';
 let activeOrderId = null;
 let currentWaUrl = '';
@@ -309,8 +347,9 @@ window.selectCategory = (c) => {
   renderCatalog();
 };
 
-window.toggleMilkTeaBobaOnCard = (prodId) => {
-  milkTeaBobaSelection[prodId] = !milkTeaBobaSelection[prodId];
+window.toggleCardModifier = (prodId, modType) => {
+  if (!cardModifiers[prodId]) cardModifiers[prodId] = {};
+  cardModifiers[prodId][modType] = !cardModifiers[prodId][modType];
   renderCatalog();
 };
 
@@ -337,22 +376,42 @@ function renderCatalog() {
     filtered.forEach(p => {
       const isOut = (p.qty || 0) <= 0;
       const isMilkTea = normalizeCategoryName(p.category) === 'Milk Tea';
-      const hasBoba = !!milkTeaBobaSelection[p.id];
-      const displayedPrice = (p.price || 0) + (isMilkTea && hasBoba ? 5 : 0);
+      const isBananaServe = (p.name || '').trim().toLowerCase() === 'banana serve';
+
+      const hasBoba = isMilkTea && !!cardModifiers[p.id]?.boba;
+      const hasNutella = isBananaServe && !!cardModifiers[p.id]?.nutella;
+
+      let extraCost = 0;
+      if (hasBoba) extraCost += 5;
+      if (hasNutella) extraCost += 30;
+
+      const displayedPrice = (p.price || 0) + extraCost;
+      let displayName = p.name;
+      if (hasBoba) displayName += ' with Boba';
+      if (hasNutella) displayName = 'Banana Nutella';
 
       h += `
         <div class="menu-item-card" style="${isOut ? 'opacity:0.45;pointer-events:none;' : ''}">
           <div>
             ${p.image ? `<img src="${p.image}" style="max-width:100%;height:85px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : ''}
-            <div class="menu-item-name">${p.name}${isMilkTea && hasBoba ? ' with Boba' : ''}</div>
+            <div class="menu-item-name">${displayName}</div>
             <div class="menu-item-price">₱${displayedPrice}</div>
+
             ${isMilkTea ? `
-              <div class="boba-toggle-btn ${hasBoba ? 'active' : ''}" onclick="toggleMilkTeaBobaOnCard('${p.id}')">
-                ${hasBoba ? '✓ With Boba (+₱5)' : '+ Add Boba (+₱5)'}
+              <div class="slide-toggle-wrapper ${hasBoba ? 'active' : ''}" onclick="toggleCardModifier('${p.id}', 'boba')">
+                <span class="slide-toggle-label">+ Boba (+₱5)</span>
+                <span class="slide-switch"><span class="slide-slider"></span></span>
+              </div>
+            ` : ''}
+
+            ${isBananaServe ? `
+              <div class="slide-toggle-wrapper ${hasNutella ? 'active' : ''}" onclick="toggleCardModifier('${p.id}', 'nutella')">
+                <span class="slide-toggle-label">+ Nutella (+₱30)</span>
+                <span class="slide-switch"><span class="slide-slider"></span></span>
               </div>
             ` : ''}
           </div>
-          <button class="btn-add" onclick="addCustomizedToCart('${p.id}', ${isMilkTea && hasBoba})">${isOut ? 'Out of Stock' : '➕ Add to Cart'}</button>
+          <button class="btn-add" onclick="addCustomizedToCart('${p.id}')">${isOut ? 'Out of Stock' : '➕ Add to Cart'}</button>
         </div>
       `;
     });
@@ -376,8 +435,19 @@ function renderCatalog() {
   catalogEl.innerHTML = h;
 }
 
-window.addCustomizedToCart = (prodId, withBoba) => {
-  const cartKey = withBoba ? `${prodId}__boba` : prodId;
+window.addCustomizedToCart = (prodId) => {
+  const p = products.find(x => x.id === prodId);
+  if (!p) return;
+
+  const isMilkTea = normalizeCategoryName(p.category) === 'Milk Tea';
+  const isBananaServe = (p.name || '').trim().toLowerCase() === 'banana serve';
+  const hasBoba = isMilkTea && !!cardModifiers[prodId]?.boba;
+  const hasNutella = isBananaServe && !!cardModifiers[prodId]?.nutella;
+
+  let cartKey = prodId;
+  if (hasBoba) cartKey += '__boba';
+  if (hasNutella) cartKey += '__nutella';
+
   customerCart[cartKey] = (customerCart[cartKey] || 0) + 1;
   updateCartBadge();
   renderCartModal();
@@ -453,12 +523,22 @@ function renderCartModal() {
       itemName = addon.name;
       itemPrice = addon.price;
     } else {
-      const hasBoba = key.endsWith('__boba');
-      const prodId = hasBoba ? key.replace('__boba', '') : key;
+      const hasBoba = key.includes('__boba');
+      const hasNutella = key.includes('__nutella');
+      const prodId = key.replace('__boba', '').replace('__nutella', '');
       const p = products.find(x => x.id === prodId);
       if (!p) return;
-      itemName = hasBoba ? `${p.name} with Boba` : p.name;
-      itemPrice = (p.price || 0) + (hasBoba ? 5 : 0);
+
+      itemPrice = p.price || 0;
+      if (hasBoba) {
+        itemName = `${p.name} with Boba`;
+        itemPrice += 5;
+      } else if (hasNutella) {
+        itemName = 'Banana Nutella';
+        itemPrice += 30;
+      } else {
+        itemName = p.name;
+      }
     }
 
     const itemTotal = itemPrice * qty;
@@ -520,21 +600,34 @@ window.submitCustomerOrder = async () => {
       return;
     }
 
-    const hasBoba = key.endsWith('__boba');
-    const prodId = hasBoba ? key.replace('__boba', '') : key;
+    const hasBoba = key.includes('__boba');
+    const hasNutella = key.includes('__nutella');
+    const prodId = key.replace('__boba', '').replace('__nutella', '');
     const p = products.find(x => x.id === prodId);
     if (!p) return;
 
-    const unitPrice = (p.price || 0) + (hasBoba ? 5 : 0);
+    let unitPrice = p.price || 0;
+    let displayTitle = p.name;
+    const attachedAddons = [];
+
+    if (hasBoba) {
+      unitPrice += 5;
+      displayTitle = `${p.name} with Boba`;
+      attachedAddons.push('Boba (+₱5)');
+    } else if (hasNutella) {
+      unitPrice += 30;
+      displayTitle = 'Banana Nutella';
+      attachedAddons.push('Nutella (+₱30)');
+    }
+
     const lineCost = unitPrice * qty;
     subtotal += lineCost;
-    
-    const displayTitle = hasBoba ? `${p.name} with Boba` : p.name;
+
     items.push({ 
       name: displayTitle, 
       qty: qty, 
       price: unitPrice, 
-      addons: hasBoba ? ['Boba (+₱5)'] : [] 
+      addons: attachedAddons 
     });
     waItemsText += `• ${qty}x ${displayTitle} - ₱${lineCost}\n`;
   });
@@ -583,7 +676,7 @@ window.submitCustomerOrder = async () => {
       `📍 Track live status:\n${window.location.origin}/track_rc1.html?order=${formattedOrderNo}`;
 
     currentWaUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
-    
+
     // Automatically launch WhatsApp and move directly to Live Tracker
     window.open(currentWaUrl, '_blank');
     showLiveTracker(formattedOrderNo);
@@ -647,7 +740,7 @@ function showLiveTracker(orderId) {
       const name = typeof i === 'string' ? i : i.name;
       const qty = i.qty || 1;
       const price = i.price || 0;
-      let addonText = (i.addons && i.addons.length && !name.includes('with Boba')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
+      let addonText = (i.addons && i.addons.length && !name.includes('with Boba') && !name.includes('Nutella')) ? `<br><small style="color:#0f2b48;">+ ${i.addons.join(', ')}</small>` : '';
       itemsHtml += `<div class="item-row"><div><b>${name} x${qty}</b>${addonText}</div><div>₱${price * qty}</div></div>`;
       waItemsText += `• ${qty}x ${name} - ₱${price * qty}\n`;
     });
